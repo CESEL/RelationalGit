@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit", "RelationalGit.csproj", "{81892A70-D08B-4E4B-AE79-FBED4BB126AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81892A70-D08B-4E4B-AE79-FBED4BB126AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81892A70-D08B-4E4B-AE79-FBED4BB126AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81892A70-D08B-4E4B-AE79-FBED4BB126AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81892A70-D08B-4E4B-AE79-FBED4BB126AE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A357F5D1-E2AA-4367-96FA-CC56379181A2}
+	EndGlobalSection
+EndGlobal
