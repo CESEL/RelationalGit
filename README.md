@@ -26,7 +26,11 @@ To be able to use RelationalGit you need to go through some preliminary steps.
 
 RelationalGit extract Commits and Blames from the git structure (the .git folder). In Addition, RelationalGit shows you detailed information about changes that happend in each commit.
 
+### Commit
 
+```
+dotnet .\RelationalGit.dll -- -get-commits {github_token} {owner} {repo} {branch_name}
+```
 
 # :star: Github Pull Requests Exctraction
 
