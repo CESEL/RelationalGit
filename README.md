@@ -9,3 +9,9 @@ RelationalGit has been built on top of the most popular Git Libraries. It uses l
 
 RelationalGit extract Commits and Blames from the git structure (the .git folder). In Addition, RelationalGit shows you detailed information about changes that happend in each commit.
 
+
+
+# :star: Github `Pull Requests` Exctraction
+
+RelationalGit wants to help us to have a better insight about code review practices in our project. So, It fetches and saves `Pull Request`s, `Reviewer`s, `Reviewer Comment`s, and also `Pull Request's Files`.
+
