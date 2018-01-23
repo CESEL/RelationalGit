@@ -7,6 +7,13 @@ namespace RelationalGit
 {
     public class CommittedChange
     {
+        public CommittedChange()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        [Key]
+        public Guid Id { get; set; }
         public string Oid { get; set; }
         public string Path { get; set; }
         public short Status { get; set; }

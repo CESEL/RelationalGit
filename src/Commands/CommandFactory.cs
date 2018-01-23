@@ -51,20 +51,20 @@ namespace RelationalGit.Commands
                 var cmd = new GetGitCommitsCommand();
                 await cmd.Execute(args[1], args[2]);
             }
-            else if (command.ToLower() == "-get-git-commitsChanges")
+            else if (command.ToLower() == "-get-git-commitschanges")
             {
                 var cmd = new GetGitCommitsChangesCommand();
                 await cmd.Execute(args[1], args[2]);
             }
-            else if (command.ToLower() == "-get-git-blobsBlames")
+            else if (command.ToLower() == "-get-git-blobsblames")
             {
                 var cmd = new GetGitBlobsAndTheirBlamesOfCommitCommand();
                 await cmd.Execute(args[1], args[2], args[3],args[4].Split(","));
             }
-            else if (command.ToLower() == "-get-git-blobsBlames-for-periods")
+            else if (command.ToLower() == "-get-git-blobsblames-for-periods")
             {
                 var cmd = new GetGitBlobsAndTheirBlamesForPeriodsCommand();
-                await cmd.Execute(args[1], args[2], args[4].Split(","));
+                await cmd.Execute(args[1], args[2], args[3].Split(","));
             }
             else if (command.ToLower() == "-periodize-git-commits")
             {

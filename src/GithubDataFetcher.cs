@@ -162,7 +162,7 @@ namespace RelationalGit
             {
                 var user = await _client
                     .User
-                    .Get(users[i].Username);
+                    .Get(users[i].UserLogin);
 
                 users[i].Email = user.Email;
                 users[i].Name = user.Name;
@@ -179,6 +179,8 @@ namespace RelationalGit
 
                 foreach (var mappedFile in mappedFiles)
                     mappedFile.PullRequestNumber = pullRequests[i].Number;
+
+                result.AddRange(mappedFiles);
 
                 await WaitOnRateLimit();
             }

@@ -47,6 +47,7 @@ namespace RelationalGit.Commands
                 periods[currentPeriodIndex].LastCommitSha = commits[commits.Length - 1].Sha;
 
 
+                dbContext.Periods.AddRange(periods);
                 dbContext.CommitPeriods.AddRange(commitPeriods);
                 await dbContext.SaveChangesAsync();
             }

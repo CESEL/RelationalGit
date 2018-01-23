@@ -9,7 +9,7 @@ namespace RelationalGit
     {
         [MaxLength(40)]
         public string CommitSha { get; set; }
-        public long PeriodId { get; set; }
+        public Guid PeriodId { get; set; }
 
     }
 }

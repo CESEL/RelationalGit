@@ -16,6 +16,8 @@ namespace RelationalGit.Commands
                 var gitRepository = new GitRepository(repoPath);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
                 dbContext.Commits.AddRange(orderedCommits);
+                dbContext.CommitRelationships
+                    .AddRange(orderedCommits.SelectMany(q=>q.CommitRelationship));
                 await dbContext.SaveChangesAsync();
             }
         }

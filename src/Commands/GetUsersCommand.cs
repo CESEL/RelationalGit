@@ -15,19 +15,19 @@ namespace RelationalGit.Commands
             {
                 dbContext.Database.ExecuteSqlCommand($"TRUNCATE TABLE Users");
                 var unknownUsers = dbContext.Users
-                    .FromSql(@"Select Username,null AS Name, NULL as Email from (
-                            select distinct(Username) AS Username from PullRequests  WHERE Username IS NOT null
+                    .FromSql(@"Select UserLogin,null AS Name, NULL as Email from (
+                            select distinct(UserLogin) AS UserLogin from PullRequests  WHERE UserLogin IS NOT null
                             union   
-                            select distinct(Username) AS Username from PullRequestReviewers  WHERE Username IS NOT null
+                            select distinct(UserLogin) AS UserLogin from PullRequestReviewers  WHERE UserLogin IS NOT null
                             union   
-                            select distinct(Username) from PullRequestReviewerComments WHERE Username IS NOT null) AS Temp")
+                            select distinct(UserLogin) from PullRequestReviewerComments WHERE UserLogin IS NOT null) AS Temp")
                             .ToArray();
 
                 var githubExtractor = new GithubDataFetcher(token, agentName);
                 await githubExtractor.GetUsers(unknownUsers);
 
                 dbContext.AddRange(unknownUsers);
-                dbContext.SaveChanges();
+                await dbContext.SaveChangesAsync();
             }
         }
     }

@@ -4,13 +4,13 @@ using System.Collections.Generic;
 
 namespace RelationalGit.Migrations
 {
-    public partial class ChangePullRequestReviewerModels : Migration
+    public partial class ChangeUser : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameColumn(
                 name: "Username",
-                table: "PullRequestReviewers",
+                table: "Users",
                 newName: "UserLogin");
         }
 
@@ -18,7 +18,7 @@ namespace RelationalGit.Migrations
         {
             migrationBuilder.RenameColumn(
                 name: "UserLogin",
-                table: "PullRequestReviewers",
+                table: "Users",
                 newName: "Username");
         }
     }

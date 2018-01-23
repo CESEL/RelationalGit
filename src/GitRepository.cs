@@ -38,6 +38,11 @@ namespace RelationalGit
 
             var branch = _gitRepo.Branches[branchName];
 
+            if (branch == null)
+            {
+                throw new Exception($"No branch with name {branchName}");
+            }
+
             var filter = new CommitFilter
             {
                 SortBy = CommitSortStrategies.Topological

@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <Compile Remove="Migrations\20180111064306_SetIdentityInsertOff.cs" />
+    <Compile Remove="Migrations\20180123014016_Collation.cs" />
+    <Compile Remove="Migrations\20180123021825_Init.cs" />
   </ItemGroup>
 
   <ItemGroup>

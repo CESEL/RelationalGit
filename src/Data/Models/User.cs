@@ -9,7 +9,7 @@ namespace RelationalGit
     public class User
     {
         [Key]
-        public string Username { get; set; }
+        public string UserLogin { get; set; }
         public string Email { get; set; }
         public string Name { get; set; }
     }

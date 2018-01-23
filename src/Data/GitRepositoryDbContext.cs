@@ -23,7 +23,7 @@ namespace RelationalGit
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.EnableSensitiveDataLogging(true);
-            optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Trusted_Connection=True;AttachDBFilename=F:\RoslynGitRepo.mdf");
+            optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Trusted_Connection=True;Database=RefugeeAI");
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -144,8 +144,6 @@ namespace RelationalGit
     {
         public void Configure(EntityTypeBuilder<CommittedChange> configuration)
         {
-            configuration.HasKey(b => new { b.Path, b.CommitSha });
-
             configuration.HasIndex(b => b.Status);
 
             configuration.HasIndex(b => b.CommitSha);

@@ -14,7 +14,7 @@ namespace RelationalGit.Mapping
             {
                 cfg.CreateMap<Octokit.PullRequest, PullRequest>()
                 .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.Value.DateTime))
-                .ForMember(d => d.MergedAtDateTime, opt => opt.MapFrom(s => s.MergedAt.Value.DateTime));
+                .ForMember(d => d.MergedAtDateTime, opt => opt.MapFrom(s => s.MergedAt.HasValue? s.MergedAt.Value.DateTime:default(DateTime?)));
 
                 cfg.CreateMap<Octokit.PullRequestReview, PullRequestReviewer>()
                 .ForMember(d => d.State, opt => opt.MapFrom(s => s.State.ToString()));

@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
+using RelationalGit;
 using System;
 
 namespace RelationalGit.Migrations
 {
     [DbContext(typeof(GitRepositoryDbContext))]
-    [Migration("20180112054822_AddUser")]
-    partial class AddUser
+    [Migration("20180123041912_ChangeUser")]
+    partial class ChangeUser
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -20,7 +21,7 @@ namespace RelationalGit.Migrations
                 .HasAnnotation("ProductVersion", "2.0.1-rtm-125")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-            modelBuilder.Entity("RelationalGit.Models.Commit", b =>
+            modelBuilder.Entity("RelationalGit.Commit", b =>
                 {
                     b.Property<string>("Sha")
                         .ValueGeneratedOnAdd();
@@ -52,7 +53,7 @@ namespace RelationalGit.Migrations
                     b.ToTable("Commits");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.CommitBlobBlame", b =>
+            modelBuilder.Entity("RelationalGit.CommitBlobBlame", b =>
                 {
                     b.Property<string>("DeveloperIdentity");
 
@@ -75,12 +76,12 @@ namespace RelationalGit.Migrations
                     b.ToTable("CommitBlobBlames");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.CommitPeriod", b =>
+            modelBuilder.Entity("RelationalGit.CommitPeriod", b =>
                 {
                     b.Property<string>("CommitSha")
                         .HasMaxLength(40);
 
-                    b.Property<long>("PeriodId");
+                    b.Property<Guid>("PeriodId");
 
                     b.HasKey("CommitSha", "PeriodId");
 
@@ -91,7 +92,7 @@ namespace RelationalGit.Migrations
                     b.ToTable("CommitPeriods");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.CommitRelationship", b =>
+            modelBuilder.Entity("RelationalGit.CommitRelationship", b =>
                 {
                     b.Property<string>("Parent");
 
@@ -102,7 +103,7 @@ namespace RelationalGit.Migrations
                     b.ToTable("CommitRelationships");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.CommittedBlob", b =>
+            modelBuilder.Entity("RelationalGit.CommittedBlob", b =>
                 {
                     b.Property<string>("CommitSha");
 
@@ -121,13 +122,14 @@ namespace RelationalGit.Migrations
                     b.ToTable("CommittedBlob");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.CommittedChange", b =>
+            modelBuilder.Entity("RelationalGit.CommittedChange", b =>
                 {
-                    b.Property<string>("Path");
-
-                    b.Property<string>("CommitSha");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("CanonicalPath");
+
+                    b.Property<string>("CommitSha");
 
                     b.Property<string>("Oid");
 
@@ -135,9 +137,11 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("OldPath");
 
+                    b.Property<string>("Path");
+
                     b.Property<short>("Status");
 
-                    b.HasKey("Path", "CommitSha");
+                    b.HasKey("Id");
 
                     b.HasIndex("CanonicalPath");
 
@@ -154,9 +158,9 @@ namespace RelationalGit.Migrations
                     b.ToTable("CommittedChanges");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.Period", b =>
+            modelBuilder.Entity("RelationalGit.Period", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("FirstCommit");
@@ -172,20 +176,18 @@ namespace RelationalGit.Migrations
                     b.ToTable("Periods");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.PullRequest", b =>
+            modelBuilder.Entity("RelationalGit.PullRequest", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("BaseCommitSha");
+                    b.Property<string>("BaseSha");
 
-                    b.Property<DateTime?>("ClosedAt");
+                    b.Property<DateTime?>("ClosedAtDateTime");
 
-                    b.Property<DateTime?>("CreatedAt");
+                    b.Property<DateTime?>("CreatedAtDateTime");
 
                     b.Property<string>("HtmlUrl");
-
-                    b.Property<bool>("IsMerged");
 
                     b.Property<long>("IssueId");
 
@@ -193,15 +195,17 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("MergeCommitSha");
 
-                    b.Property<DateTime?>("MergedAt");
+                    b.Property<bool>("Merged");
+
+                    b.Property<DateTime?>("MergedAtDateTime");
 
                     b.Property<int>("Number");
 
-                    b.Property<string>("Username");
+                    b.Property<string>("UserLogin");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BaseCommitSha");
+                    b.HasIndex("BaseSha");
 
                     b.HasIndex("MergeCommitSha");
 
@@ -210,7 +214,35 @@ namespace RelationalGit.Migrations
                     b.ToTable("PullRequests");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.PullRequestReviewer", b =>
+            modelBuilder.Entity("RelationalGit.PullRequestFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int?>("Additions");
+
+                    b.Property<int?>("Changes");
+
+                    b.Property<int?>("Deletions");
+
+                    b.Property<string>("FileName");
+
+                    b.Property<int>("PullRequestNumber");
+
+                    b.Property<string>("Sha");
+
+                    b.Property<string>("Status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileName");
+
+                    b.HasIndex("PullRequestNumber");
+
+                    b.ToTable("PullRequestFiles");
+                });
+
+            modelBuilder.Entity("RelationalGit.PullRequestReviewer", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
@@ -221,18 +253,14 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("State");
 
-                    b.Property<string>("Username");
+                    b.Property<string>("UserLogin");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CommitId");
-
-                    b.HasIndex("PullRequestNumber");
 
                     b.ToTable("PullRequestReviewers");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.PullRequestReviewerComment", b =>
+            modelBuilder.Entity("RelationalGit.PullRequestReviewerComment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
@@ -241,7 +269,7 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("CommitId");
 
-                    b.Property<DateTime>("CreatedAt");
+                    b.Property<DateTime>("CreatedAtDateTime");
 
                     b.Property<int?>("InReplyTo");
 
@@ -253,7 +281,7 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("Url");
 
-                    b.Property<string>("Username");
+                    b.Property<string>("UserLogin");
 
                     b.HasKey("Id");
 
@@ -263,21 +291,21 @@ namespace RelationalGit.Migrations
 
                     b.HasIndex("PullRequestReviewId");
 
-                    b.HasIndex("Username");
+                    b.HasIndex("UserLogin");
 
                     b.ToTable("PullRequestReviewerComments");
                 });
 
-            modelBuilder.Entity("RelationalGit.Models.User", b =>
+            modelBuilder.Entity("RelationalGit.User", b =>
                 {
-                    b.Property<string>("Username")
+                    b.Property<string>("UserLogin")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("Email");
 
                     b.Property<string>("Name");
 
-                    b.HasKey("Username");
+                    b.HasKey("UserLogin");
 
                     b.ToTable("Users");
                 });

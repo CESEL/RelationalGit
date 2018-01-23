@@ -16,7 +16,7 @@ namespace RelationalGit.Commands
                 var canonicalDic = dbContext.GetCanonicalPaths();
 
                 var gitRepository = new GitRepository(repoPath);
-                var orderedCommits = gitRepository.ExtractCommitsFromBranch();
+                var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
 
                 var commit = orderedCommits.Single(q => q.Sha == commitSha);
                 gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions, canonicalDic);

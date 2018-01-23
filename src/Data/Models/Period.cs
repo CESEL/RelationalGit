@@ -6,7 +6,12 @@ namespace RelationalGit
 {
     public class Period
     {
-        public long Id { get; set; }
+        public Period()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public Guid Id { get; set; }
 
         public DateTime FromDateTime { get; set; }
 
