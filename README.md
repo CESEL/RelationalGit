@@ -11,7 +11,7 @@ RelationalGit extract Commits and Blames from the git structure (the .git folder
 
 
 
-# :star: Github `Pull Requests` Exctraction
+# :star: Github Pull Requests Exctraction
 
-RelationalGit wants to help us to have a better insight about code review practices in our project. So, It fetches and saves `Pull Request`s, `Reviewer`s, `Reviewer Comment`s, and also `Pull Request's Files`.
+RelationalGit wants to help us to have a better insight about code review practices in our project. So, It fetches and saves `Pull Requests`, `Reviewers`, `Reviewer Comments`, and also `Pull Request's Files`.
 
