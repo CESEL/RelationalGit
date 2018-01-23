@@ -4,3 +4,8 @@ RelationalGit extracts valuable information about commits, blames, changes, devs
 
 # RelationalGit :cupid: Open Source
 RelationalGit has been built on top of the most popular Git Libraries. It uses libgit2Sharp and Octokit.Net in order to extract data from git data structure and Github respectively.
+
+# :star: Git Exctraction
+
+RelationalGit extract Commits and Blames from the git structure (the .git folder). In Addition, RelationalGit shows you detailed information about changes that happend in each commit.
+
