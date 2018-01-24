@@ -25,7 +25,7 @@ RelationalGit has been built on top of the most popular Git Libraries. It uses l
 To be able to use RelationalGit you need to go through some preliminary steps.
 
 0. Install free and awesome [dotnet core](https://www.microsoft.com/net/download/windows) 2
-1. Extract RelationalGit on a folder on your system
+1. Extract [RelationalGit](https://github.com/mirsaeedi/RelationalGit/releases) on a folder on your system
 2. Create a database on your favorite RDBMS
 3. The Collation of your database should enforce case sensitivity. For example in SQL Server it could be Latin1_General_CS_AS.
 4. Introduce the connection string of your database to RelationGit. You can do that by editing the appsettings.json file.
