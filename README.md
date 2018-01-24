@@ -5,6 +5,8 @@ RelationalGit imports the extracted data to a relational database. So, You can e
 
 :raised_hand: Currently, RelationalGit has been tested on `SQL Server`. Support for other popular databases (Sqllite, PostgreSQL) will be added.
 
+:heart_eyes: You can download awesome Sql Server - LocalDb, Express, and Developer Editions - and Sql Server Management Studio free of charge. Sql Server 2017 is cross platform and also docker images are available.
+
 # RelationalGit :cupid: .NET
 
 RelationalGit has been implemented in awsesome C# (dotnet core 2.0) and it's cross platform. So you can easily run it on your platform of choice.
@@ -31,19 +33,19 @@ Before going with the commands, let's assume that we have cloned the repository 
 ### Commit
 
 ```
-dotnet .\RelationalGit.dll -- -get-commits {repo_path} {branch_name}
+dotnet .\RelationalGit.dll -get-commits {repo_path} {branch_name}
 ```
 
 ### Committed Changes
 
 ```
-dotnet .\RelationalGit.dll -- -get-commitsChanges {repo_path} {branch_name}
+dotnet .\RelationalGit.dll -get-commitsChanges {repo_path} {branch_name}
 ```
 
 ### Blames
 
 ```
-dotnet .\RelationalGit.dll -- -get-blobsblames {repo_path} {branch_name} {commit_sha} {file_extensions_seperated_by_comma}
+dotnet .\RelationalGit.dll -get-blobsblames {repo_path} {branch_name} {commit_sha} {file_extensions_seperated_by_comma}
 ```
 
 # :star: Github Pull Requests Exctraction
