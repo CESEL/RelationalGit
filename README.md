@@ -4,14 +4,14 @@ RelationalGit extracts valuable information about commits, blames, changes, devs
 For example you can find answers to following questions by running simple Sql queries:
 
 * Which developer has the most commits?
-* Which developer has the most knowledge about a file or project?
+* Which developer has the most knowledge about a file or project?[Rigby's paper] (http://ieeexplore.ieee.org/document/7886975/)
 * Which files are changing constantly? maybe they are bug-prone.
 
 RelationalGit imports the extracted data to a relational database. So, You can easily query the database and find answers to many interesing questions. Todays source code mining is one of the hottest topics in academia and RelationalGit wants to helps researchers to start their investigations more conveniently.
 
 :raised_hand: Currently, RelationalGit has been tested on `SQL Server`. Support for other popular databases (Sqllite, PostgreSQL) will be added.
 
-:heart_eyes: You can download awesome Sql Server - LocalDb, Express, and Developer Editions - and Sql Server Management Studio free of charge. Sql Server 2017 is cross platform and also docker images are available.
+:heart_eyes: You can download awesome Sql Server - [LocalDb, Express, and Developer Editions](https://www.microsoft.com/en-ca/sql-server/sql-server-downloads) - and [Sql Server Management Studio](https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms) free of charge. Sql Server 2017 is cross platform and also docker images are available.
 
 # RelationalGit :cupid: .NET
 
@@ -24,7 +24,7 @@ RelationalGit has been built on top of the most popular Git Libraries. It uses l
 
 To be able to use RelationalGit you need to go through some preliminary steps.
 
-0. Install free and awesome dotnet core 2
+0. Install free and awesome [dotnet core](https://www.microsoft.com/net/download/windows) 2
 1. Extract RelationalGit on a folder on your system
 2. Create a database on your favorite RDBMS
 3. The Collation of your database should enforce case sensitivity. For example in SQL Server it could be Latin1_General_CS_AS.
