@@ -42,11 +42,15 @@ Before going with the commands, let's assume that we have cloned the repository 
 dotnet .\RelationalGit.dll -get-commits {repo_path} {branch_name}
 ```
 
+This command save the extracted data in `Commits` and `CommitRelationship` tables.
+
 ### Committed Changes
 
 ```
 dotnet .\RelationalGit.dll -get-commitsChanges {repo_path} {branch_name}
 ```
+
+This command save the extracted data in `CommitChanges` table.
 
 ### Blames
 
@@ -54,7 +58,11 @@ dotnet .\RelationalGit.dll -get-commitsChanges {repo_path} {branch_name}
 dotnet .\RelationalGit.dll -get-blobsblames {repo_path} {branch_name} {commit_sha} {file_extensions_seperated_by_comma}
 ```
 
+This command save the extracted data in `CommittedBlob` and `CommitBlobBlames` tables.
+
 # :star: Github Pull Requests Exctraction
 
-RelationalGit wants to help us to have a better insight about code review practices in our project. So, It fetches and saves `Pull Requests`, `Reviewers`, `Reviewer Comments`, and also `Pull Request's Files`.
+RelationalGit wants to help us to have a better insight about code review practices in our project. So if you have hosted your project on Github, It can fetche and save `Pull Requests`, `Reviewers`, `Reviewer Comments`, and also `Pull Request's Files`.
+
+
 
