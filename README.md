@@ -1,6 +1,12 @@
 # RelationalGit
 RelationalGit extracts valuable information about commits, blames, changes, devs, and pull requests from git data structure and import them to a relational structure. These data can be a ground for further source code mining analysis.
 
+For example you can find answers to following questions by running simple Sql queries:
+
+* Which developer has the most commits?
+* Which developer has the most knowledge about a file or project?
+* Which files are changing constantly? maybe they are bug-prone.
+
 RelationalGit imports the extracted data to a relational database. So, You can easily query the database and find answers to many interesing questions. Todays source code mining is one of the hottest topics in academia and RelationalGit wants to helps researchers to start their investigations more conveniently.
 
 :raised_hand: Currently, RelationalGit has been tested on `SQL Server`. Support for other popular databases (Sqllite, PostgreSQL) will be added.
@@ -20,9 +26,9 @@ To be able to use RelationalGit you need to go through some preliminary steps.
 
 0. Install free and awesome dotnet core 2
 1. Extract RelationalGit on a folder on your system
-2. Create a database (with whatever name you want) on your favorite RDBMS
+2. Create a database on your favorite RDBMS
 3. The Collation of your database should enforce case sensitivity. For example in SQL Server it could be Latin1_General_CS_AS.
-4. Introduce the connection string of your database to RelationGit
+4. Introduce the connection string of your database to RelationGit. You can do that by editing the appsettings.json file.
 
 # :star: Git Exctraction
 
