@@ -140,7 +140,7 @@ namespace RelationalGit
                 Similarity = new SimilarityOptions
                 {
                     RenameDetectionMode = RenameDetectionMode.Exact,
-                    RenameLimit = 9999
+                    //RenameLimit = 9999
                 }
             };
 
@@ -244,11 +244,24 @@ namespace RelationalGit
         {
             var result = new List<CommittedChange>();
 
+            var renameOccurrences = new HashSet<string>(); // handle a bug in LibGit2Sharp which reports two renames of one file in a commit
+
             foreach (TreeEntryChanges change in repo.Diff.Compare<TreeChanges>(oldTree, newTree, compareOptions))
             {
                 var changeStatus = change.Status;
                 if (changeStatus == ChangeKind.Copied)
                     changeStatus = ChangeKind.Added;
+                else if (changeStatus == ChangeKind.Renamed)
+                {
+                    if (renameOccurrences.Contains(change.OldPath))
+                    {
+                        changeStatus = ChangeKind.Added;
+                        _trackedChanges.Add(change.Oid.Sha + change.Path + ChangeKind.Renamed);
+                    }
+                        
+                    else
+                        renameOccurrences.Add(change.OldPath);
+                }
 
                 if (changeStatus == ChangeKind.Unmodified)
                     continue;

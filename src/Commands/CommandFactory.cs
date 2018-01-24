@@ -16,6 +16,7 @@ namespace RelationalGit.Commands
 
         private static async Task RunCommand(string command, string[] args)
         {
+            
             if (command.ToLower() == "-get-pullrequests")
             {
                 var cmd = new GetPullRequestsCommand();

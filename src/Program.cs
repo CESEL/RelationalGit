@@ -22,23 +22,23 @@ namespace RelationalGit
 
             ConfigMapping.Config();
 
-           args = new string[]
-           {
-               "-get-merge-events", // command
-               "618196d41ee2db3e6879ce8899300d1aa9c6fb53", //token
-               "mirsaeedi", // agent name
-               "jeremy091", // owner
-               "refugeeAI", // repo
-               "dev" // branch
-           };
+            /*args = new string[]
+            {
+                "-get-users", // command
+                "618196d41ee2db3e6879ce8899300d1aa9c6fb53", //token
+                "mirsaeedi", // agent name
+                //"jeremy091", // owner
+                //"refugeeAI", // repo
+                //"dev" // branch
+            };*/
 
-           /*args = new string[]
-           {
-               "-get-git-blobsblames-for-periods", // command
-               @"C:\Users\Ehsan Mirsaeedi\Desktop\Repo\refugeeAI", //token
-               "dev",
-               ".cs,.vb,.ts,.js,.jsx,.sh,.yml"// agent name
-           };*/
+            /*args = new string[]
+            {
+                "-get-git-blobsblames-for-periods", // command
+                @"C:\Users\Ehsan Mirsaeedi\Desktop\New folder\crowdsourceEvidence", //token
+                "master",
+                ".cs,.vb,.ts,.js,.jsx,.sh,.yml,.tsx,.css,.json"// agent name
+            };*/
 
             /*args = new string[]
             {
@@ -50,16 +50,16 @@ namespace RelationalGit
             /*args = new string[]
             {
                 "-get-git-commitsChanges", // command
-                @"C:\Users\Ehsan Mirsaeedi\Desktop\Repo\refugeeAI", //token
-                "dev", // agent name
+                @"C:\Users\Ehsan Mirsaeedi\Desktop\New folder\crowdsourceEvidence", //token
+                "master", // agent name
             };*/
 
 
             /*args = new string[]
             {
                 "-get-git-commits", // command
-                @"C:\Users\Ehsan Mirsaeedi\Desktop\Repo\refugeeAI", //token
-                "dev", // agent name
+                @"C:\Users\Ehsan Mirsaeedi\Desktop\New folder\crowdsourceEvidence", //token
+                "master", // agent name
             };*/
 
 

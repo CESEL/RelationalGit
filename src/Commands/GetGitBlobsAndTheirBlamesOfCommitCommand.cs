@@ -11,7 +11,7 @@ namespace RelationalGit.Commands
     {
         public async Task Execute(string repoPath,string branchName,string commitSha,string[] validExtensions)
         {
-            using (var dbContext = new GitRepositoryDbContext())
+            using (var dbContext = new GitRepositoryDbContext(false))
             {
                 var canonicalDic = dbContext.GetCanonicalPaths();
 
