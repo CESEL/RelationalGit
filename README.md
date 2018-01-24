@@ -42,7 +42,7 @@ Before going with the commands, let's assume that we have cloned the repository 
 dotnet .\RelationalGit.dll -get-commits {repo_path} {branch_name}
 ```
 
-This command save the extracted data in `Commits` and `CommitRelationship` tables.
+This command saves the extracted data in `Commits` and `CommitRelationship` tables.
 
 ### Committed Changes
 
@@ -50,7 +50,7 @@ This command save the extracted data in `Commits` and `CommitRelationship` table
 dotnet .\RelationalGit.dll -get-commitsChanges {repo_path} {branch_name}
 ```
 
-This command save the extracted data in `CommitChanges` table.
+This command saves the extracted data in `CommitChanges` table.
 
 ### Blames
 
@@ -58,11 +58,33 @@ This command save the extracted data in `CommitChanges` table.
 dotnet .\RelationalGit.dll -get-blobsblames {repo_path} {branch_name} {commit_sha} {file_extensions_seperated_by_comma}
 ```
 
-This command save the extracted data in `CommittedBlob` and `CommitBlobBlames` tables.
+This command saves the extracted data in `CommittedBlob` and `CommitBlobBlames` tables.
 
 # :star: Github Pull Requests Exctraction
 
-RelationalGit wants to help us to have a better insight about code review practices in our project. So if you have hosted your project on Github, It can fetche and save `Pull Requests`, `Reviewers`, `Reviewer Comments`, and also `Pull Request's Files`.
+RelationalGit wants to help us to have a better insight about code review practices in our project. So if you have hosted your project on Github, It can fetche and save `Pull Requests`, `Reviewers`, `Reviewer Comments`, and also `Pull Request's Files`. To use Github APIs you need to generate a token. Bear in mind that each token is allowed to sent 5000 requests per hour to Github's servers. So, for larger projects you need to wait a bit more.
 
+### Pull Requests
 
+```
+dotnet .\RelationalGit.dll -get-pullrequests {github_token} {owner_name} {repo_name} {branch_name}
+```
+
+### Reviewers
+
+```
+dotnet .\RelationalGit.dll -get-pullrequest-reviewers {github_token} {owner_name} {repo_name} {branch_name}
+```
+
+### Reviewers' Comments
+
+```
+dotnet .\RelationalGit.dll -get-pullrequest-reviewer-comments {github_token} {owner_name} {repo_name} {branch_name}
+```
+
+### Pull Requests' Files
+
+```
+dotnet .\RelationalGit.dll get-pullrequests-files {github_token} {owner_name} {repo_name} {branch_name}
+```
 
