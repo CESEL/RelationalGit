@@ -4,6 +4,7 @@ RelationalGit extracts valuable information about commits, blames, changes, devs
 For example you can find answers to following questions by running simple Sql queries:
 
 * Which developer has the most commits?
+* What files usually changed together? this way you can detect and document your hidden dependencies.
 * Which developer has the most knowledge about a file or project? This idea is based on [Rigby's paper](http://ieeexplore.ieee.org/document/7886975/).
 * Which files are changing constantly? maybe they are bug-prone.
 
