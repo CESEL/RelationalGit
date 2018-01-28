@@ -3,10 +3,13 @@ RelationalGit extracts valuable information about commits, blames, changes, devs
 
 For example you can find answers to following questions by running simple Sql queries:
 
+* What are the files that are recently changed by a given developer?
+* Who is the author of a specific line in a specific file? (Git Blame)
 * Which developer has the most commits?
 * What files usually are changed together? this way you can detect and document your hidden dependencies.
 * Which developer has the most knowledge about a file or project? This idea is based on [Rigby's paper](http://ieeexplore.ieee.org/document/7886975/).
 * Which files are changing constantly? maybe they are bug-prone.
+* Who is the most appropriate developer to work on a given file?
 
 RelationalGit imports the extracted data to a relational database. So, You can easily query the database and find answers to many interesing questions. Todays source code mining is one of the hottest topics in academia and RelationalGit wants to helps researchers to start their investigations more conveniently.
 
