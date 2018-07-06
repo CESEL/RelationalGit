@@ -1,76 +1,90 @@
-﻿using System;
+﻿using RelationalGit.CommandLine;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace RelationalGit.Commands
 {
-    public class CommandFactory
+    internal class CommandFactory
     {
-        public async Task Execute(string[] args)
+        public async Task Execute(InputOption options)
         {
-            var command = args[0];
-
-            await RunCommand(command, args);
+            await RunCommand(options);
         }
 
-        private static async Task RunCommand(string command, string[] args)
+        private static async Task RunCommand(InputOption options)
         {
             
-            if (command.ToLower() == "-get-pullrequests")
+            if (options.Command.ToLower() == CommandType.GetPullRequests)
             {
                 var cmd = new GetPullRequestsCommand();
-                await cmd.Execute(args[1], args[2], args[3], args[4], args[5]);
+                await cmd.Execute(options.GitHubToken, agenName:"mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
-            else if (command.ToLower() == "-get-pullrequest-reviewers")
+            else if (options.Command.ToLower() ==CommandType.GetPullRequestReviewes)
             {
                 var cmd = new GetPullRequestReviewersCommand();
-                await cmd.Execute(args[1], args[2], args[3], args[4], args[5]);
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
-            else if (command.ToLower() == "-get-pullrequest-reviewer-comments")
+            else if (options.Command.ToLower() == CommandType.GetPullRequestRevieweComments)
             {
                 var cmd = new GetPullRequestReviewerCommentsCommand();
-                await cmd.Execute(args[1], args[2], args[3], args[4], args[5]);
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
-            else if (command.ToLower() == "-get-merge-events")
+            else if (options.Command.ToLower() == "-get-merge-events")
             {
                 var cmd = new GetPullRequestMergeEventsCommand();
-                await cmd.Execute(args[1], args[2], args[3], args[4], args[5]);
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
-            else if (command.ToLower() == "-get-users")
+            else if (options.Command.ToLower() == "-get-users")
             {
                 var cmd = new GetUsersCommand();
-                await cmd.Execute(args[1], args[2]);
+                await cmd.Execute(options.GitHubToken, agentName: "mirsaeedi");
             }
-            else if (command.ToLower() == "-get-pullrequests-files")
+            else if (options.Command.ToLower() == CommandType.GetPullRequestFiles)
             {
                 var cmd = new GetPullRequestFilesCommand();
-                await cmd.Execute(args[1], args[2], args[3], args[4], args[5]);
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
-            else if (command.ToLower() == "-get-git-commits")
+            else if (options.Command.ToLower() == "-get-issues")
+            {
+                var cmd = new GetIssuesCommand();
+
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", owner: options.GitHubOwner, repo: options.GitHubRepo, 
+                    labels:options.IssueLabels.ToArray(), 
+                    state: options.IssueState);
+            }
+            else if (options.Command.ToLower() == "-get-issuesevents")
+            {
+                var cmd = new GetIssuesEventsCommand();
+
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi",owner: options.GitHubOwner,repo: options.GitHubRepo);
+            }
+            else if (options.Command.ToLower() == CommandType.GetGitCommits)
             {
                 var cmd = new GetGitCommitsCommand();
-                await cmd.Execute(args[1], args[2]);
+                await cmd.Execute(options.RepositoryPath, options.GitBranch);
             }
-            else if (command.ToLower() == "-get-git-commitschanges")
+            else if (options.Command.ToLower() == CommandType.GetGitCommitsChanges)
             {
                 var cmd = new GetGitCommitsChangesCommand();
-                await cmd.Execute(args[1], args[2]);
+                await cmd.Execute(options.RepositoryPath, options.GitBranch);
             }
-            else if (command.ToLower() == "-get-git-blobsblames")
+            else if (options.Command.ToLower() == CommandType.ExtractBlameFromCommit)
             {
                 var cmd = new GetGitBlobsAndTheirBlamesOfCommitCommand();
-                await cmd.Execute(args[1], args[2], args[3],args[4].Split(","));
+                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.CommitSha,options.Extensions.ToArray());
             }
-            else if (command.ToLower() == "-get-git-blobsblames-for-periods")
+            else if (options.Command.ToLower() == CommandType.ExtractBlameForEachPeriod)
             {
                 var cmd = new GetGitBlobsAndTheirBlamesForPeriodsCommand();
-                await cmd.Execute(args[1], args[2], args[3].Split(","));
+                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.Extensions.ToArray());
             }
-            else if (command.ToLower() == "-periodize-git-commits")
+            else if (options.Command.ToLower() == CommandType.Periodize)
             {
                 var cmd = new PeriodizeGitCommits();
-                await cmd.Execute(args[1], args[2], 90);
+                await cmd.Execute(options.RepositoryPath, options.GitBranch, 90);
             }
         }
     }

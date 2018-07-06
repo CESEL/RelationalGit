@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Threading;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
@@ -21,6 +22,7 @@ namespace RelationalGit
         private string _localClonePath;
         private Dictionary<string, string> _fileOidHolder = new Dictionary<string, string>();
         private HashSet<string> _trackedChanges = new HashSet<string>();
+        private ILogger _logger;
 
         #endregion
 
@@ -28,6 +30,10 @@ namespace RelationalGit
         {
             _gitRepo = new Repository(localRepositoryPath);
             _localClonePath = localRepositoryPath;
+
+            var loggerFactory = new LoggerFactory();
+            loggerFactory.AddConsole().AddDebug();
+            _logger = loggerFactory.CreateLogger("Github.Octokit");
         }
 
         #region Public Interface
@@ -68,18 +74,24 @@ namespace RelationalGit
 
             for (int i = 0; i < orderedCommits.Length; i++)
             {
+                if(i%500==0)
+                    _logger.LogInformation("{dateTime}: {index}",DateTime.Now,i);
+
                 LoadChangesOfCommit(orderedCommits[i]);
             }
         }
 
         public void LoadBlobsAndTheirBlamesOfCommit(Commit commit, string[] validExtensions, Dictionary<string, string> canonicalPathDic, string branchName = "master")
         {
-            var blobsPath = GetBlobsPathFromCommitTree(commit.GitCommit.Tree, validExtensions);            
+            var blobsPath = GetBlobsPathFromCommitTree(commit.GitCommit.Tree, validExtensions); 
+            
             var committedBlobs = new ConcurrentBag<CommittedBlob>();
+
+            _logger.LogInformation("{datetime}: Commit {sha}",DateTime.Now,commit.Sha);
 
             Parallel.ForEach(
                 blobsPath,
-                new ParallelOptions() {MaxDegreeOfParallelism=4},
+                new ParallelOptions() {MaxDegreeOfParallelism=8},
                 () =>
                 {
                     return  GetPowerShellInstance();
@@ -88,6 +100,8 @@ namespace RelationalGit
                 {
                     if (canonicalPathDic.ContainsKey(blobPath))
                     {
+                        _logger.LogInformation("Extracting Blame: {blobPath}", blobPath);
+
                         var blobBlames = GetBlobBlamesOfCommit(powerShellInstance, commit.Sha, blobPath, canonicalPathDic);
 
                         committedBlobs.Add(new CommittedBlob()
@@ -139,8 +153,7 @@ namespace RelationalGit
                 Algorithm = DiffAlgorithm.Minimal,
                 Similarity = new SimilarityOptions
                 {
-                    RenameDetectionMode = RenameDetectionMode.Exact,
-                    //RenameLimit = 9999
+                    RenameDetectionMode = RenameDetectionMode.Renames,
                 }
             };
 
@@ -148,28 +161,26 @@ namespace RelationalGit
                 committedChanges = GetDiffOfTrees(_gitRepo, gitCommit.Parents.SingleOrDefault()?.Tree, gitCommit.Tree, compareOptions);
             else
             {
-                foreach (var parent in gitCommit.Parents)
-                    committedChanges.AddRange(GetDiffOfTrees(_gitRepo, parent.Tree, gitCommit.Tree, compareOptions));
-
-                var items = committedChanges
-                    .Where(m => m.Status == (short)ChangeKind.Deleted)
-                    .GroupBy(c => c.Path)
-                    .Where(grp => grp.Count() == 1)
-                    .Select(m => m.Max(c => c)).ToArray();
-
-                foreach (var item in items)
-                {
-                    committedChanges.Remove(item);
-                }
-
-                committedChanges = committedChanges.GroupBy(i => i.Path)
-                    .Select(g => g.First()).ToList();
+                committedChanges.AddRange(GetDiffOfTrees(_gitRepo, gitCommit.Parents, gitCommit.Tree, compareOptions));
             }
 
             foreach (var committedFile in committedChanges)
                 committedFile.CommitSha = commit.Sha;
 
             commit.CommittedChanges = committedChanges;
+        }
+
+        private IEnumerable<CommittedChange> GetDiffOfTrees(Repository gitRepo, IEnumerable<LibGit2Sharp.Commit> parents, Tree tree, CompareOptions compareOptions)
+        {
+            var firstParent = parents.ElementAt(0);
+            var secondParent = parents.ElementAt(1);
+
+            var firstChanges = GetDiffOfTrees(gitRepo,firstParent.Tree,tree,compareOptions);
+            var secondChanges = GetDiffOfTrees(gitRepo, secondParent.Tree, tree, compareOptions);
+
+            var result = firstChanges.Where(c1 => secondChanges.Any(c2 => c2.Oid==c1.Oid));
+            var k = result.Count() > 0;
+            return result;
         }
 
         private ICollection<CommitBlobBlame> ParseRawBlameLines(string[] blameLines)
@@ -215,8 +226,10 @@ namespace RelationalGit
         private PowerShell GetPowerShellInstance()
         {
             var powerShellInstance = PowerShell.Create();
-            powerShellInstance.AddScript($@"set-location '{_localClonePath}'");
-            powerShellInstance.Invoke();
+
+            powerShellInstance
+                .AddScript($@"set-location '{_localClonePath}'")
+                .Invoke();
             
             return powerShellInstance;
         }
@@ -244,47 +257,12 @@ namespace RelationalGit
         {
             var result = new List<CommittedChange>();
 
-            var renameOccurrences = new HashSet<string>(); // handle a bug in LibGit2Sharp which reports two renames of one file in a commit
-
             foreach (TreeEntryChanges change in repo.Diff.Compare<TreeChanges>(oldTree, newTree, compareOptions))
             {
                 var changeStatus = change.Status;
-                if (changeStatus == ChangeKind.Copied)
-                    changeStatus = ChangeKind.Added;
-                else if (changeStatus == ChangeKind.Renamed)
-                {
-                    if (renameOccurrences.Contains(change.OldPath))
-                    {
-                        changeStatus = ChangeKind.Added;
-                        _trackedChanges.Add(change.Oid.Sha + change.Path + ChangeKind.Renamed);
-                    }
-                        
-                    else
-                        renameOccurrences.Add(change.OldPath);
-                }
 
                 if (changeStatus == ChangeKind.Unmodified)
                     continue;
-
-                var key = "";
-
-                if (changeStatus == ChangeKind.Deleted)
-                    key = change.OldOid.Sha + change.Path + changeStatus;
-                else
-                    key = change.Oid.Sha + change.Path + changeStatus;
-
-                if (_trackedChanges.Contains(key))
-                    continue;
-
-                if (changeStatus == ChangeKind.Added)
-                {
-                    if (_trackedChanges.Contains(change.Oid.Sha + change.Path + ChangeKind.Modified))
-                        continue;
-                    if (_trackedChanges.Contains(change.Oid.Sha + change.Path + ChangeKind.Renamed))
-                        continue;
-                }
-
-                _trackedChanges.Add(key);
 
                 string canonicalPath;
 

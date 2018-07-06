@@ -10,7 +10,7 @@ namespace RelationalGit.Commands
     {
         public async Task Execute(string token, string agenName, string owner, string repo, string branch)
         {
-            using (var dbContext = new GitRepositoryDbContext())
+            using (var dbContext = new GitRepositoryDbContext(false))
             {
                 var loadedPullRequests = await dbContext.PullRequests.ToArrayAsync();
 

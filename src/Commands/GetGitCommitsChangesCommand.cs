@@ -11,7 +11,7 @@ namespace RelationalGit.Commands
     {
         public async Task Execute(string repoPath,string branchName)
         {
-            using (var dbContext = new GitRepositoryDbContext())
+            using (var dbContext = new GitRepositoryDbContext(false))
             {
                 var gitRepository = new GitRepository(repoPath);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);

@@ -10,7 +10,7 @@ namespace RelationalGit.Commands
     {
         public async Task Execute(string token, string agenName, string owner, string repo, string branch)
         {
-            using (var dbContext = new GitRepositoryDbContext())
+            using (var dbContext = new GitRepositoryDbContext(true))
             {
                 dbContext.Database.ExecuteSqlCommand($"TRUNCATE TABLE PullRequests");
                 var githubExtractor = new GithubDataFetcher(token, agenName);

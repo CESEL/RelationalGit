@@ -11,7 +11,7 @@ namespace RelationalGit.Commands
     {
         public async Task Execute(string token, string agenName, string owner, string repo, string branch)
         {
-            using (var dbContext = new GitRepositoryDbContext())
+            using (var dbContext = new GitRepositoryDbContext(true))
             {
                 var loadedPullRequests = dbContext.PullRequests
                     .FromSql(@"select * from PullRequests
@@ -21,7 +21,7 @@ namespace RelationalGit.Commands
                 var githubExtractor = new GithubDataFetcher(token, agenName);
                 await githubExtractor.MergeEvents(owner, repo, loadedPullRequests);
 
-                dbContext.SaveChanges();
+                await dbContext.SaveChangesAsync();
             }
         }
     }

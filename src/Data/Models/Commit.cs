@@ -11,7 +11,9 @@ namespace RelationalGit
         [Key]
         public string Sha { get; set; }
         public string AuthorEmail { get; set; }
+        public string AuthorName { get; set; }
         public string CommitterEmail { get; set; }
+        public string CommitterName { get; set; }
         public DateTime AuthorDateTime { get; set; }
         public DateTime CommitterDateTime { get; set; }
         public string MessageShort  { get; set; }

@@ -13,6 +13,7 @@ namespace RelationalGit
     {
         public GitRepositoryDbContext()
         {
+
         }
 
         public GitRepositoryDbContext(bool autoDetectChangesEnabled=true,int commandTimeout= 150000)
@@ -34,7 +35,8 @@ namespace RelationalGit
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
+            modelBuilder.ApplyConfiguration(new IssueEventEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new IssueEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommitRelationshipEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommitPeriodEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommitEntityTypeConfiguration());
@@ -46,6 +48,8 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new PullRequestReviewerCommentEntityTypeConfiguration());
         }
 
+        public DbSet<IssueEvent> IssueEvents { get; set; }
+        public DbSet<Issue> Issue { get; set; }
         public DbSet<PullRequestFile> PullRequestFiles { get; set; }
         public DbSet<CommitRelationship> CommitRelationships { get; set; }
         public DbSet<Commit> Commits { get; set; }
@@ -120,6 +124,18 @@ namespace RelationalGit
         }
     }
 
+    class IssueEventEntityTypeConfiguration : IEntityTypeConfiguration<IssueEvent>
+    {
+        public void Configure(EntityTypeBuilder<IssueEvent> configuration)
+        {
+            configuration.HasIndex(b => b.CommitId);
+
+            configuration.HasIndex(b => b.IssueNumber);
+
+            configuration.HasIndex(b => b.Event);
+        }
+    }
+
     class CommitBlobBlameEntityTypeConfiguration : IEntityTypeConfiguration<CommitBlobBlame>
     {
         public void Configure(EntityTypeBuilder<CommitBlobBlame> configuration)
@@ -174,6 +190,14 @@ namespace RelationalGit
             configuration.HasIndex(b => b.BaseSha);
         }
     }
+    class IssueEntityTypeConfiguration : IEntityTypeConfiguration<Issue>
+    {
+        public void Configure(EntityTypeBuilder<Issue> configuration)
+        {
+            configuration.HasIndex(b => b.Number);
+        }
+    }
+
     class PullRequestReviewerEntityTypeConfiguration : IEntityTypeConfiguration<PullRequestReviewer>
     {
         public void Configure(EntityTypeBuilder<PullRequestReviewer> configuration)
