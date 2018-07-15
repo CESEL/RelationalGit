@@ -41,6 +41,14 @@ namespace RelationalGit
                 .Create(new ProductHeaderValue(agentName), new Octokit.Credentials(token),new InMemoryCacheProvider());
         }
 
+        internal async Task<GitHubCommit> GetCommit(string owner, string repo, string commitSha)
+        {
+            return await _client
+                    .Repository
+                    .Commit
+                    .Get(owner,repo, commitSha);       
+        }
+
         internal async Task<IssueEvent[]> GetIssueEvents(string owner, string repo, Issue[] loadedIssues)
         {
             var githubEvents = new List<IssueEvent>();

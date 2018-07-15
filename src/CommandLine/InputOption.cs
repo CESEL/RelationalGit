@@ -40,5 +40,24 @@ namespace RelationalGit.CommandLine
 
         [Option("p-length")]
         public int PeriodLength { get; set; }
+
+        [Option("tq-threshold")]
+        public double TopQuantileThreshold { get; set; }
+
+
+        [Option("mega-commit-size")]
+        public int MegaCommitSize { get; set; }
+
+        [Option("save-strategy")]
+        public string KnowledgeSaveStrategyType { get; set; }
+
+        [Option("abondoned-threshold")]
+        public double FileAbondonedThreshold { get; set; }
+        
+        [Option("mega-pr-size")]
+        public int MegaPullRequestSize { get; set; }
+
+        [Option("leavers-type")]
+        public string LeaversType { get; set; }
     }
 }

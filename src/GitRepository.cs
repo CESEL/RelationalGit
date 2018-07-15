@@ -17,11 +17,10 @@ namespace RelationalGit
     public class GitRepository
     {
         #region Fields
-
+        private static readonly Regex _blameRegex = new Regex(@"<(?<email>[\w\.\-]+@[\w\-]+\.\w{2,3})>",RegexOptions.Compiled);
         private Repository _gitRepo;
         private string _localClonePath;
         private Dictionary<string, string> _fileOidHolder = new Dictionary<string, string>();
-        private HashSet<string> _trackedChanges = new HashSet<string>();
         private ILogger _logger;
 
         #endregion
@@ -61,7 +60,7 @@ namespace RelationalGit
                 .Commits
                 .QueryBy(filter)
                 .ToArray();
-
+            
             var extractedCommits = Mapper.Map<Commit[]>(commits);
 
             return extractedCommits;
@@ -69,7 +68,6 @@ namespace RelationalGit
 
         public void LoadChangesOfCommits(Commit[] orderedCommits)
         {
-            _trackedChanges.Clear();
             _fileOidHolder.Clear();
 
             for (int i = 0; i < orderedCommits.Length; i++)
@@ -87,32 +85,30 @@ namespace RelationalGit
             
             var committedBlobs = new ConcurrentBag<CommittedBlob>();
 
-            _logger.LogInformation("{datetime}: Commit {sha}",DateTime.Now,commit.Sha);
-
             Parallel.ForEach(
                 blobsPath,
-                new ParallelOptions() {MaxDegreeOfParallelism=8},
+                new ParallelOptions() {MaxDegreeOfParallelism=4},
                 () =>
                 {
                     return  GetPowerShellInstance();
                 },
                 (blobPath, i, powerShellInstance) =>
                 {
-                    if (canonicalPathDic.ContainsKey(blobPath))
+                    var blobBlames = GetBlobBlamesOfCommit(powerShellInstance, commit.Sha, blobPath, canonicalPathDic);
+
+                    committedBlobs.Add(new CommittedBlob()
                     {
-                        _logger.LogInformation("Extracting Blame: {blobPath}", blobPath);
+                        NumberOfLines = blobBlames.Sum(m => m.AuditedLines),
+                        Path = blobPath,
+                        CommitSha = commit.Sha,
+                        CanonicalPath = canonicalPathDic.GetValueOrDefault(blobPath),
+                        CommitBlobBlames = blobBlames
+                    });
 
-                        var blobBlames = GetBlobBlamesOfCommit(powerShellInstance, commit.Sha, blobPath, canonicalPathDic);
+                    if(committedBlobs.Count()%500==0)
+                        _logger.LogInformation("{datetime} : Extracted Blames {currentCount} out of {total}"
+                        ,DateTime.Now,committedBlobs.Count(),blobsPath.Count);
 
-                        committedBlobs.Add(new CommittedBlob()
-                        {
-                            NumberOfLines = blobBlames.Sum(m => m.AuditedLines),
-                            Path = blobPath,
-                            CommitSha = commit.Sha,
-                            CanonicalPath = canonicalPathDic[blobPath],
-                            CommitBlobBlames = blobBlames
-                        });
-                    }
 
                     return powerShellInstance;
                 },
@@ -131,13 +127,7 @@ namespace RelationalGit
         {
             var rawBlameLines = GetBlameFromPowerShell(powerShellInstance, commitSha, blobPath);
 
-            var blobBlames = ParseRawBlameLines(rawBlameLines);
-
-            foreach (var blobBlame in blobBlames)
-            {
-                blobBlame.CommitSha = commitSha;
-                blobBlame.CanonicalPath = canonicalPathDic[blobPath];
-            }
+            var blobBlames = ExtraxtBlames(rawBlameLines,blobPath,commitSha,canonicalPathDic);
 
             return blobBlames;
         }
@@ -161,7 +151,7 @@ namespace RelationalGit
                 committedChanges = GetDiffOfTrees(_gitRepo, gitCommit.Parents.SingleOrDefault()?.Tree, gitCommit.Tree, compareOptions);
             else
             {
-                committedChanges.AddRange(GetDiffOfTrees(_gitRepo, gitCommit.Parents, gitCommit.Tree, compareOptions));
+                committedChanges.AddRange(GetDiffOfMergedTrees(_gitRepo, gitCommit.Parents, gitCommit.Tree, compareOptions));
             }
 
             foreach (var committedFile in committedChanges)
@@ -170,7 +160,7 @@ namespace RelationalGit
             commit.CommittedChanges = committedChanges;
         }
 
-        private IEnumerable<CommittedChange> GetDiffOfTrees(Repository gitRepo, IEnumerable<LibGit2Sharp.Commit> parents, Tree tree, CompareOptions compareOptions)
+        private IEnumerable<CommittedChange> GetDiffOfMergedTrees(Repository gitRepo, IEnumerable<LibGit2Sharp.Commit> parents, Tree tree, CompareOptions compareOptions)
         {
             var firstParent = parents.ElementAt(0);
             var secondParent = parents.ElementAt(1);
@@ -183,7 +173,7 @@ namespace RelationalGit
             return result;
         }
 
-        private ICollection<CommitBlobBlame> ParseRawBlameLines(string[] blameLines)
+        private ICollection<CommitBlobBlame> ExtraxtBlames(string[] blameLines,string blobPath,string commitSha,Dictionary<string, string> canonicalPathDic)
         {
             var blobBlames = new List<CommitBlobBlame>();
 
@@ -191,25 +181,34 @@ namespace RelationalGit
 
             foreach (var blameLine in blameLines)
             {
-                var blameRegex = new Regex(@"(?<sha>\w{40})\s+\(<(?<email>[\w\.\-]+@[\w\-]+\.\w{2,3})>\s+(?<datetime>\d\d\d\d-\d\d-\d\d\s\d\d\:\d\d:\d\d\s(-|\+)\d\d\d\d)\s+(?<lineNumber>\d+)\)\.*");
-                var mc = blameRegex.Matches(blameLine);
-
+                var mc = _blameRegex.Matches(blameLine);
                 if (mc.Count == 0)
                     continue;
 
-                if (!developerLineOwnershipDictionary.ContainsKey(mc[0].Groups["email"].Value))
-                    developerLineOwnershipDictionary[mc[0].Groups["email"].Value] = 0;
+                var email = mc[0].Groups["email"].Value;
+                var sha=blameLine.Substring(0,40);
+                var key=sha+email;
 
-                developerLineOwnershipDictionary[mc[0].Groups["email"].Value]++;
+                if (!developerLineOwnershipDictionary.ContainsKey(key))
+                    developerLineOwnershipDictionary[key] = 0;
+
+                developerLineOwnershipDictionary[key]++;
             }
 
             foreach (var developerLineOwnership in developerLineOwnershipDictionary)
             {
+                var authorSha=developerLineOwnership.Key.Substring(0,40);
+                var email=developerLineOwnership.Key.Substring(40);
+
                 blobBlames.Add(new CommitBlobBlame()
                 {
+                    Path=blobPath,
                     AuditedLines = developerLineOwnership.Value,
-                    DeveloperIdentity = developerLineOwnership.Key,
-                    AuditedPercentage = developerLineOwnership.Value / (double)blameLines.Length
+                    DeveloperIdentity = email,
+                    AuditedPercentage = developerLineOwnership.Value / (double)blameLines.Length,
+                    CommitSha = commitSha,
+                    AuthorCommitSha=authorSha,
+                    CanonicalPath = canonicalPathDic.GetValueOrDefault(blobPath)
                 });
             }
 
@@ -239,7 +238,6 @@ namespace RelationalGit
             var result = new List<string>();
 
             var blobs = tree.Where(m => m.TargetType == TreeEntryTargetType.Blob
-            && m.Mode == Mode.NonExecutableFile
             && validExtensions.Any(f=> m.Name.EndsWith(f)));
 
             result.AddRange(blobs.Select(m => m.Path).ToArray());
@@ -281,7 +279,10 @@ namespace RelationalGit
                     Oid = change.Oid.Sha,
                     OldPath = change.OldPath,
                     Path = change.Path,
-                    OldOid = change.OldOid.Sha
+                    OldOid = change.OldOid.Sha,
+                    Extension=FileUtility.GetExtension(canonicalPath),
+                    FileType=FileUtility.GetFileType(canonicalPath),
+                    IsTest=FileUtility.IsTestFile(canonicalPath)
                 };
 
                 result.Add(committedFile);

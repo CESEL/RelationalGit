@@ -14,6 +14,7 @@ using System.IO;
 using System.Management.Automation;
 using RelationalGit.CommandLine;
 using CommandLine;
+using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
@@ -21,53 +22,45 @@ namespace RelationalGit
     {
         static async Task Main(string[] args)
         {
-            /*var inputLines = File.ReadAllLines(@"J:\vscode_commits.txt");
-            var commitShas = inputLines.Select(q => q.Replace("\"", ""));
-            var agentName = "mirsaeedi";
-            var token = "c221f73fe7fd9806e10ffe6fe9f0cba2e12b650f";
+            var loggerFactory = new LoggerFactory();
+            loggerFactory.AddConsole().AddDebug();
+            var logger = loggerFactory.CreateLogger("Github.Octokit");
 
-            var credentials = new InMemoryCredentialStore(new Octokit.Credentials(token));
-            var githubClient = new GitHubClient(new ProductHeaderValue(agentName), credentials);
-            var outputLines = "";
-            var commits = new List<GitHubCommit>();
+            ConfigMapping.Config();
 
-            foreach (var commitSha in commitShas)
-            {
-                var commit= await githubClient
-                    .Repository
-                    .Commit
-                    .Get("Microsoft", "vscode", commitSha);
-
-                commits.Add(commit);
-                outputLines += $"{commit.Sha},{commit.Author?.Login}" + Environment.NewLine;
-            }
-
-            File.WriteAllText("output.csv",outputLines);*/
             var userInput = new InputOption();
 
-            Parser.Default.ParseArguments<InputOption>(args)
+            /*Parser.Default.ParseArguments<InputOption>(args)
                 .WithParsed(options=> userInput=options)
-                .WithNotParsed(errors=>Console.WriteLine(errors.ToString()));
+                .WithNotParsed(errors=>Console.WriteLine(errors.ToString()));*/
             
             using (var client = new GitRepositoryDbContext())
             {
                 client.Database.Migrate();
             }
 
-            ConfigMapping.Config();
-
             userInput = new InputOption()
              {
-                 Command=CommandType.ExtractBlameForEachPeriod, 
-                 RepositoryPath=@"E:\Repos\coreclr", 
-                 GitBranch= "master", 
-                 Extensions = ".cs,.vb,.ts,.js,.jsx,.sh,.yml,.tsx,.css,.json,.py,.c,.h,.cpp,.il,.make,.cmake,.ps1,.r,.cmd,.html,.conf".Split(',')
+                Command=CommandType.ComputeKnowledgeLoss,
+                KnowledgeSaveStrategyType=KnowledgeShareStrategyType.Expertise,
+                LeaversType=LeaversType.All,
+                FileAbondonedThreshold=0.10,
+                TopQuantileThreshold=0.80,
+                MegaPullRequestSize=500000,
+                MegaCommitSize=200,
+                PeriodType=PeriodType.Month,
+                PeriodLength=3, 
+                GitHubOwner="dotnet",
+                GitHubToken="f1bf8a0d539b6aa8724e1921dd8f89b5b1785fa8",
+                GitHubRepo="coreclr",
+                RepositoryPath=@"/home/ehsan/Documents/Repositories/coreclr", 
+                GitBranch= "master", 
+                Extensions = ".cs,.vb,.ts,.js,.jsx,.sh,.yml,.tsx,.css,.json,.py,.c,.h,.cpp,.il,.make,.cmake,.ps1,.r,.cmd,.html,.conf".Split(',')
              };
 
             var arguments = Parser.Default.FormatCommandLine(userInput);
 
-
-            await new CommandFactory().Execute(userInput);
+            await new CommandFactory().Execute(userInput,logger);
         }
 
     }

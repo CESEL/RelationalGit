@@ -21,5 +21,8 @@ namespace RelationalGit
         public string CanonicalPath { get; set; }
         public string OldPath { get; set; }
         public string OldOid { get; set; }
+        public string Extension { get; internal set; }
+        public string FileType { get; internal set; }
+        public bool IsTest { get; internal set; }
     }
 }

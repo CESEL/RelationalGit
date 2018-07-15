@@ -45,8 +45,8 @@ namespace RelationalGit.Mapping
 
                 cfg.CreateMap<LibGit2Sharp.Commit, Commit>()
                 .ForMember(d => d.GitCommit, opts => opts.MapFrom(s => s))
-                .ForMember(d => d.AuthorDateTime, opts => opts.MapFrom(s => s.Author.When.DateTime))
-                .ForMember(d => d.CommitterDateTime, opts => opts.MapFrom(s => s.Committer.When.DateTime))
+                .ForMember(d => d.AuthorDateTime, opts => opts.MapFrom(s => s.Author.When.UtcDateTime))
+                .ForMember(d => d.CommitterDateTime, opts => opts.MapFrom(s => s.Committer.When.UtcDateTime))
                 .ForMember(d => d.CommitRelationship, opts => opts.MapFrom(s => s.Parents.Select(p => new CommitRelationship()
                 {
                     Child = s.Sha,

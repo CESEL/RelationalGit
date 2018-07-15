@@ -11,24 +11,16 @@ namespace RelationalGit.Commands
     {
         public async Task Execute(string repoPath, string branchName)
         {
-            try
+
+            using (var dbContext = new GitRepositoryDbContext())
             {
-                using (var dbContext = new GitRepositoryDbContext())
-                {
-                    var gitRepository = new GitRepository(repoPath);
-                    var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
-                    dbContext.Commits.AddRange(orderedCommits);
-                    var relationships = orderedCommits.SelectMany(q => q.CommitRelationship);
-                    dbContext.CommitRelationships.AddRange(relationships);
-                    await dbContext.SaveChangesAsync();
-                }
+                var gitRepository = new GitRepository(repoPath);
+                var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
+                dbContext.Commits.AddRange(orderedCommits);
+                var relationships = orderedCommits.SelectMany(q => q.CommitRelationship);
+                dbContext.CommitRelationships.AddRange(relationships);
+                await dbContext.SaveChangesAsync();
             }
-            catch (Exception e)
-            {
-
-            }
-
-
         }
     }
 }

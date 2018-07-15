@@ -1,4 +1,5 @@
-﻿using RelationalGit.CommandLine;
+﻿using Microsoft.Extensions.Logging;
+using RelationalGit.CommandLine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,12 +10,12 @@ namespace RelationalGit.Commands
 {
     internal class CommandFactory
     {
-        public async Task Execute(InputOption options)
+        public async Task Execute(InputOption options,ILogger logger)
         {
-            await RunCommand(options);
+            await RunCommand(options,logger);
         }
 
-        private static async Task RunCommand(InputOption options)
+        private static async Task RunCommand(InputOption options,ILogger logger)
         {
             
             if (options.Command.ToLower() == CommandType.GetPullRequests)
@@ -73,18 +74,48 @@ namespace RelationalGit.Commands
             }
             else if (options.Command.ToLower() == CommandType.ExtractBlameFromCommit)
             {
-                var cmd = new GetGitBlobsAndTheirBlamesOfCommitCommand();
+                var cmd = new GetGitBlobsAndTheirBlamesOfCommitCommand(logger);
                 await cmd.Execute(options.RepositoryPath, options.GitBranch, options.CommitSha,options.Extensions.ToArray());
             }
             else if (options.Command.ToLower() == CommandType.ExtractBlameForEachPeriod)
             {
-                var cmd = new GetGitBlobsAndTheirBlamesForPeriodsCommand();
+                var cmd = new GetGitBlobsAndTheirBlamesForPeriodsCommand(logger);
                 await cmd.Execute(options.RepositoryPath, options.GitBranch, options.Extensions.ToArray());
             }
             else if (options.Command.ToLower() == CommandType.Periodize)
             {
                 var cmd = new PeriodizeGitCommits();
-                await cmd.Execute(options.RepositoryPath, options.GitBranch, 90);
+                await cmd.Execute(options.RepositoryPath, options.GitBranch,options.PeriodType,options.PeriodLength);
+            }
+            else if (options.Command.ToLower() == CommandType.DoNameAliasing)
+            {
+                var cmd = new AliasGitNamesCommand();
+                await cmd.Execute();
+            }
+            else if (options.Command.ToLower() == CommandType.ApplyNameAliasing)
+            {
+                var cmd = new ApplyNameAliasingCommand();
+                await cmd.Execute();
+            }
+            else if (options.Command.ToLower() == CommandType.ExtractDeveloperInformation)
+            {
+                var cmd = new ExtractDeveloperInformationCommand();
+                await cmd.Execute(options.TopQuantileThreshold);
+            }
+            else if (options.Command.ToLower() == CommandType.IgnoreMegaCommits)
+            {
+                var cmd = new IgnoreMegaCommitsCommand();
+                await cmd.Execute(options.MegaCommitSize);
+            }  
+            else if (options.Command.ToLower() == CommandType.MapGitHubGitNames)
+            {
+                var cmd = new MapGitHubGitNamesCommand();
+                await cmd.Execute(options.GitHubToken, agenName:"mirsaeedi", options.GitHubOwner, options.GitHubRepo);
+            }
+            else if (options.Command.ToLower() == CommandType.ComputeKnowledgeLoss)
+            {
+                var cmd = new ShareKnowledgeCommand();
+                await cmd.Execute(options.KnowledgeSaveStrategyType,options.FileAbondonedThreshold,options.MegaPullRequestSize,options.LeaversType);
             }
         }
     }

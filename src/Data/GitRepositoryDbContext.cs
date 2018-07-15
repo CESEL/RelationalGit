@@ -35,10 +35,13 @@ namespace RelationalGit
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfiguration(new AliasedDeveloperNameEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new FileTouchEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new RecommendedPullRequestReviewerEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new AliasedDeveloperNameEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new IssueEventEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new IssueEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommitRelationshipEntityTypeConfiguration());
-            modelBuilder.ApplyConfiguration(new CommitPeriodEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommitEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommitBlobBlameEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommittedBlobEntityTypeConfiguration());
@@ -56,12 +59,20 @@ namespace RelationalGit
         public DbSet<CommittedChange> CommittedChanges { get; set; }
         public DbSet<CommittedBlob> CommittedBlob { get; set; }
         public DbSet<CommitBlobBlame> CommitBlobBlames { get; set; }
-        public DbSet<Period> Periods { get; set; }
-        public DbSet<CommitPeriod> CommitPeriods { get; set; }
-        public DbSet<PullRequestReviewer> PullRequestReviewers { get; set; }
+        public DbSet<Period> Periods { get; set; }        public DbSet<PullRequestReviewer> PullRequestReviewers { get; set; }
         public DbSet<PullRequestReviewerComment> PullRequestReviewerComments { get; set; }
         public DbSet<PullRequest> PullRequests { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<AliasedDeveloperName> AliasedDeveloperNames { get; set; }
+        public DbSet<Developer> Developers { get; set; }
+        public DbSet<DeveloperContribution> DeveloperContributions { get; set; }
+        public DbSet<GitHubGitUser> GitHubGitUsers { get; set; }
+        public DbSet<LossSimulation> LossSimulations { get; set; }
+        public DbSet<FileTouch> FileTouches { get; set; }
+        public DbSet<RecommendedPullRequestReviewer> RecommendedPullRequestReviewers { get; set; }
+        public DbSet<SimulatedAbondonedFile> SimulatedAbondonedFiles { get; set; }
+        public DbSet<SimulatedLeaver> SimulatedLeavers { get; set; }
+
         public Dictionary<string, string> GetCanonicalPaths()
         {
             var canonicalResults = this.CommittedChanges.Select(m => new { m.CanonicalPath, m.Path })
@@ -94,18 +105,33 @@ namespace RelationalGit
         }
     }
 
-    class CommitPeriodEntityTypeConfiguration : IEntityTypeConfiguration<CommitPeriod>
+    class FileTouchEntityTypeConfiguration : IEntityTypeConfiguration<FileTouch>
     {
-        public void Configure(EntityTypeBuilder<CommitPeriod> configuration)
+        public void Configure(EntityTypeBuilder<FileTouch> configuration)
         {
             configuration
+                .HasIndex(b => b.CanonicalPath);
+
+            configuration
+                .HasIndex(b => b.NormalizeDeveloperName);
+
+            configuration
                 .HasIndex(b => b.PeriodId);
+            
+            configuration
+                .HasIndex(b => b.TouchType);
+        }
+    }
+
+    class RecommendedPullRequestReviewerEntityTypeConfiguration : IEntityTypeConfiguration<RecommendedPullRequestReviewer>
+    {
+        public void Configure(EntityTypeBuilder<RecommendedPullRequestReviewer> configuration)
+        {
+            configuration
+                .HasIndex(b => b.PullRequestNumber);
 
             configuration
-                .HasIndex(b => b.CommitSha);
-
-            configuration
-                .HasKey(b => new { b.CommitSha, b.PeriodId });
+                .HasIndex(b => b.NormalizedReviewerName);
         }
     }
 
@@ -116,11 +142,34 @@ namespace RelationalGit
             configuration
                 .HasIndex(b => b.AuthorEmail);
 
+              configuration
+                .HasIndex(b => b.AuthorName);
+
             configuration
                 .HasIndex(b => b.CommitterEmail);
 
             configuration
                 .HasIndex(b => b.Sha);
+
+            configuration.HasIndex(b => b.NormalizedAuthorName);
+
+            configuration.HasIndex(b=>b.Ignore);
+
+        }
+    }
+
+   class AliasedDeveloperNameEntityTypeConfiguration : IEntityTypeConfiguration<AliasedDeveloperName>
+    {
+        public void Configure(EntityTypeBuilder<AliasedDeveloperName> configuration)
+        {
+            configuration
+                .HasIndex(b => b.Email);
+
+            configuration
+                .HasIndex(b => b.NormalizedName);
+
+            configuration
+                .HasIndex(b => b.Name);
         }
     }
 
@@ -141,22 +190,22 @@ namespace RelationalGit
         public void Configure(EntityTypeBuilder<CommitBlobBlame> configuration)
         {
 
-            configuration.HasKey(b => new { b.DeveloperIdentity, b.CommitSha, b.CanonicalPath });
+            configuration.HasIndex(b => b.NormalizedDeveloperIdentity);
 
             configuration.HasIndex(b => b.DeveloperIdentity);
 
             configuration.HasIndex(b => b.CommitSha);
 
             configuration.HasIndex(b => b.CanonicalPath);
+
+            configuration.HasIndex(b=>b.Ignore);
+
         }
     }
     class CommittedBlobEntityTypeConfiguration : IEntityTypeConfiguration<CommittedBlob>
     {
         public void Configure(EntityTypeBuilder<CommittedBlob> configuration)
         {
-
-            configuration.HasKey(b => new { b.CommitSha, b.CanonicalPath });
-
             configuration.HasIndex(b => b.CommitSha);
 
             configuration.HasIndex(b => b.CanonicalPath);
@@ -205,6 +254,9 @@ namespace RelationalGit
             configuration.HasIndex(b => b.PullRequestNumber);
 
             configuration.HasIndex(b => b.CommitId);
+
+            configuration.HasIndex(b => b.State);
+
         }
     }
 

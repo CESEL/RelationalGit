@@ -10,7 +10,7 @@ namespace RelationalGit.Commands
 {
     public class PeriodizeGitCommits
     {
-        public async Task Execute(string repoPath, string branchName, int gapBetweenPeriods)
+        public async Task Execute(string repoPath, string branchName, string periodType, int periodLength)
         {
             var currentPeriodIndex = 0;
             var commitPeriods = new List<CommitPeriod>();
@@ -18,43 +18,42 @@ namespace RelationalGit.Commands
             using (var dbContext = new GitRepositoryDbContext())
             {
                 var commits = dbContext.Commits
-                .Select(m => new { m.AuthorDateTime, m.Sha })
+                //.Where(q=>!q.Ignore)
                 .OrderBy(m => m.AuthorDateTime)
                 .ToArray();
 
-                var beginDatetime = commits.Min(m=>m.AuthorDateTime);
-                var endDatetime = commits.Max(m=>m.AuthorDateTime);
+                
+                var beginDatetime = commits.Min(m => m.AuthorDateTime);
+                var qaurterMonth=(int)Math.Ceiling(beginDatetime.Month/3.0)*3-2;
+                beginDatetime=new DateTime(beginDatetime.Year,qaurterMonth,1);
+                var endDatetime = commits.Max(m => m.AuthorDateTime);
 
-                var periods = GetPeriods(gapBetweenPeriods, beginDatetime, endDatetime);
+                var periods = GetPeriods(periodType, periodLength, beginDatetime, endDatetime);
 
                 for (int i = 0; i < commits.Length; i++)
                 {
                     if (periods[currentPeriodIndex].ToDateTime < commits[i].AuthorDateTime)
                     {
-                        periods[currentPeriodIndex].LastCommitSha = commits[i - 1].Sha;
+                        periods[currentPeriodIndex].LastCommitSha = 
+                        commits.Last(q=>!q.Ignore && q.AuthorDateTime<=commits[i-1].AuthorDateTime)
+                        .Sha;
+                        
                         currentPeriodIndex++;
                     }
 
-                    var commitPeriod = new CommitPeriod()
-                    {
-                        CommitSha = commits[i].Sha,
-                        PeriodId = periods[currentPeriodIndex].Id
-                    };
-
-                    commitPeriods.Add(commitPeriod);
+                    commits[i].PeriodId = periods[currentPeriodIndex].Id;
                 }
 
                 periods[currentPeriodIndex].LastCommitSha = commits[commits.Length - 1].Sha;
 
-
                 dbContext.Periods.AddRange(periods);
-                dbContext.CommitPeriods.AddRange(commitPeriods);
                 await dbContext.SaveChangesAsync();
             }
         }
 
-        private Period[] GetPeriods(int gapBetweenPeriods, DateTime beginDatetime, DateTime endDatetime)
+        private Period[] GetPeriods(string periodType, int periodLength, DateTime beginDatetime, DateTime endDatetime)
         {
+            var periodId=0;
             var periods = new List<Period>();
             var pinDatetime = beginDatetime;
 
@@ -62,11 +61,17 @@ namespace RelationalGit.Commands
             {
                 periods.Add(new Period()
                 {
+                    Id=++periodId,                    
                     FromDateTime = pinDatetime,
-                    ToDateTime = pinDatetime.AddDays(gapBetweenPeriods),
+                    ToDateTime = periodType == PeriodType.Month 
+                    ? pinDatetime.AddMonths(periodLength)
+                    : pinDatetime.AddDays(periodLength),
                 });
 
-                pinDatetime = pinDatetime.AddDays(gapBetweenPeriods);
+                pinDatetime = periodType == PeriodType.Month 
+                ? pinDatetime.AddMonths(periodLength)
+                : pinDatetime.AddDays(periodLength);
+
             }
 
             return periods.ToArray();
