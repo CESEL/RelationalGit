@@ -386,9 +386,7 @@ namespace RelationalGit.Migrations
 
             modelBuilder.Entity("RelationalGit.Period", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                    b.Property<long>("Id");
 
                     b.Property<string>("FirstCommit");
 
@@ -405,9 +403,7 @@ namespace RelationalGit.Migrations
 
             modelBuilder.Entity("RelationalGit.PullRequest", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                    b.Property<long>("Id");
 
                     b.Property<string>("BaseSha");
 

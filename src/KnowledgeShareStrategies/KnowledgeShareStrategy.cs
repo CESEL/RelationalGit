@@ -26,10 +26,6 @@ namespace RelationalGit
             {
                 return new ActualKnowledgeShareStrategy();
             }
-            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Expertise)
-            {
-                return new ExpertiseBasedKnowledgeShareStrategy();
-            }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Ideal)
             {
                 return new IdealKnowledgeShareStrategy();
@@ -37,6 +33,10 @@ namespace RelationalGit
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedExpertiseReviewers)
             {
                 return new ExpertiseCommitBasedKnowledgeShareStrategy();
+            }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileBasedExpertiseReviewers)
+            {
+                return new ExpertiseFileBasedKnowledgeShareStrategy();
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedSpreadingReviewers)
             {

@@ -10,8 +10,8 @@ using RelationalGit;
 namespace RelationalGit.Migrations
 {
     [DbContext(typeof(GitRepositoryDbContext))]
-    [Migration("20180710193247_map_users")]
-    partial class map_users
+    [Migration("20180716013534_identity_off_pr")]
+    partial class identity_off_pr
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -83,6 +83,8 @@ namespace RelationalGit.Migrations
 
                     b.HasIndex("CommitterEmail");
 
+                    b.HasIndex("Ignore");
+
                     b.HasIndex("NormalizedAuthorName");
 
                     b.HasIndex("Sha");
@@ -121,6 +123,8 @@ namespace RelationalGit.Migrations
                     b.HasIndex("CommitSha");
 
                     b.HasIndex("DeveloperIdentity");
+
+                    b.HasIndex("Ignore");
 
                     b.HasIndex("NormalizedDeveloperIdentity");
 
@@ -247,6 +251,35 @@ namespace RelationalGit.Migrations
                     b.ToTable("DeveloperContributions");
                 });
 
+            modelBuilder.Entity("RelationalGit.FileTouch", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("CanonicalPath");
+
+                    b.Property<long>("LossSimulationId");
+
+                    b.Property<string>("NormalizeDeveloperName");
+
+                    b.Property<long>("PeriodId");
+
+                    b.Property<string>("TouchType");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CanonicalPath");
+
+                    b.HasIndex("NormalizeDeveloperName");
+
+                    b.HasIndex("PeriodId");
+
+                    b.HasIndex("TouchType");
+
+                    b.ToTable("FileTouches");
+                });
+
             modelBuilder.Entity("RelationalGit.GitHubGitUser", b =>
                 {
                     b.Property<long>("Id")
@@ -330,11 +363,32 @@ namespace RelationalGit.Migrations
                     b.ToTable("IssueEvents");
                 });
 
-            modelBuilder.Entity("RelationalGit.Period", b =>
+            modelBuilder.Entity("RelationalGit.LossSimulation", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<DateTime>("EndDateTime");
+
+                    b.Property<double>("FileAbondonedThreshold");
+
+                    b.Property<string>("KnowledgeShareStrategyType");
+
+                    b.Property<string>("LeaversType");
+
+                    b.Property<int>("MegaPullRequestSize");
+
+                    b.Property<DateTime>("StartDateTime");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LossSimulations");
+                });
+
+            modelBuilder.Entity("RelationalGit.Period", b =>
+                {
+                    b.Property<long>("Id");
 
                     b.Property<string>("FirstCommit");
 
@@ -351,9 +405,7 @@ namespace RelationalGit.Migrations
 
             modelBuilder.Entity("RelationalGit.PullRequest", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                    b.Property<long>("Id");
 
                     b.Property<string>("BaseSha");
 
@@ -472,6 +524,67 @@ namespace RelationalGit.Migrations
                     b.HasIndex("UserLogin");
 
                     b.ToTable("PullRequestReviewerComments");
+                });
+
+            modelBuilder.Entity("RelationalGit.RecommendedPullRequestReviewer", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long>("LossSimulationId");
+
+                    b.Property<string>("NormalizedReviewerName");
+
+                    b.Property<long>("PullRequestNumber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedReviewerName");
+
+                    b.HasIndex("PullRequestNumber");
+
+                    b.ToTable("RecommendedPullRequestReviewers");
+                });
+
+            modelBuilder.Entity("RelationalGit.SimulatedAbondonedFile", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("AbandonedLinesInPeriod");
+
+                    b.Property<string>("FilePath");
+
+                    b.Property<long>("LossSimulationId");
+
+                    b.Property<long>("PeriodId");
+
+                    b.Property<int>("SavedLinesInPeriod");
+
+                    b.Property<int>("TotalLinesInPeriod");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SimulatedAbondonedFiles");
+                });
+
+            modelBuilder.Entity("RelationalGit.SimulatedLeaver", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long>("LossSimulationId");
+
+                    b.Property<string>("NormalizedName");
+
+                    b.Property<long>("PeriodId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SimulatedLeavers");
                 });
 
             modelBuilder.Entity("RelationalGit.User", b =>

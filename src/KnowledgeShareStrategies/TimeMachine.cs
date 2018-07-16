@@ -178,7 +178,9 @@ namespace RelationalGit
                 var normalizedName = gitHubGitUsernameMapper
                     .FirstOrDefault(q => q.GitHubUsername == pullRequestReviewers[i].UserLogin);
 
-                if (normalizedName != null)
+                // PullRequestReviewers contains duplicated items, So we need to check for it
+                // https://api.github.com/repos/dotnet/coreclr/pulls/7886/reviews
+                if (normalizedName != null  && !result[key].Any(q => q == normalizedName.GitNormalizedUsername))
                     result[key].Add(normalizedName.GitNormalizedUsername);
             }
 
@@ -200,8 +202,7 @@ namespace RelationalGit
                 var normalizedName = gitHubGitUsernameMapper
                     .FirstOrDefault(q => q.GitHubUsername == pullRequestReviewComments[i].UserLogin);
 
-                
-
+            
                 if (normalizedName != null && !result[key].Any(q => q == normalizedName.GitNormalizedUsername))
                 {
                     result[key].Add(normalizedName.GitNormalizedUsername);
@@ -292,7 +293,7 @@ namespace RelationalGit
 
             foreach (var developer in Developers.Values)
             {
-                if (developer.FirstPeriodId >= period.Id && developer.LastPeriodId <= period.Id)
+                if (developer.FirstPeriodId <= period.Id && developer.LastPeriodId >= period.Id)
                     yield return developer;
             }
         }

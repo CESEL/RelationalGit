@@ -16,9 +16,13 @@ namespace RelationalGit
 {
     public class ExpertiseCommitBasedKnowledgeShareStrategy : ExpertiseBasedKnowledgeShareStrategy
     {
-        protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges)
+        protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
         {
-            return developerKnowledges
+            var presentDevs  = developerKnowledges
+            .Where(q=>pullRequestContext
+            .availableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
+
+            return presentDevs
             .OrderBy(q => q.NumberOfCommits)
             .ThenBy(q=>q.NumberOfTouchedFiles);
         }

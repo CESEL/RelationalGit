@@ -22,7 +22,6 @@ namespace RelationalGit.Commands
                 .OrderBy(m => m.AuthorDateTime)
                 .ToArray();
 
-                
                 var beginDatetime = commits.Min(m => m.AuthorDateTime);
                 var qaurterMonth=(int)Math.Ceiling(beginDatetime.Month/3.0)*3-2;
                 beginDatetime=new DateTime(beginDatetime.Year,qaurterMonth,1);

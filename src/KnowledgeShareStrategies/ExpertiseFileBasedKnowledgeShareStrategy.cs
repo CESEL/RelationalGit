@@ -14,23 +14,18 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class CommitBasedSpreadingKnowledgeShareStrategy  : ExpertiseBasedKnowledgeShareStrategy
+    public class ExpertiseFileBasedKnowledgeShareStrategy : ExpertiseBasedKnowledgeShareStrategy
     {
         protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
         {
-            var maxTouchedFiles=developerKnowledges.Max(q=>q.NumberOfTouchedFiles);
-
             var presentDevs  = developerKnowledges
             .Where(q=>pullRequestContext
             .availableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
 
-            var lessKnowledgedDevelopers= presentDevs
-            .Where(q=>q.NumberOfTouchedFiles<=maxTouchedFiles*(0.66));
-
-            if(lessKnowledgedDevelopers.Count()>0)
-                return lessKnowledgedDevelopers.OrderBy(q => q.NumberOfCommits).ThenBy(q=>q.NumberOfTouchedFiles);
-
-            return lessKnowledgedDevelopers.OrderBy(q=>q.NumberOfCommits).ThenBy(q=>q.NumberOfTouchedFiles);
+            return presentDevs
+            .OrderBy(q => q.NumberOfAuthoredLines)
+            .ThenBy(q => q.NumberOfCommits)
+            .ThenBy(q=>q.NumberOfReviews);
         }
     }
 }

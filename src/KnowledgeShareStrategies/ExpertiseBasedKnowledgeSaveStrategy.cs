@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class ExpertiseBasedKnowledgeShareStrategy : RecommendingReviewersKnowledgeShareStrategy
+    public abstract class ExpertiseBasedKnowledgeShareStrategy : RecommendingReviewersKnowledgeShareStrategy
     {
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
         {
@@ -86,17 +86,10 @@ namespace RelationalGit
                 AddFileOwnership(pullRequestContext, developersKnowledge, file);
             }
             
-            return SortDevelopersKnowledge(developersKnowledge.Values.ToArray());
+            return SortDevelopersKnowledge(developersKnowledge.Values.ToArray(),pullRequestContext);
         }
 
-        protected virtual IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges)
-        {
-            return developerKnowledges
-            .OrderBy(q => q.NumberOfAuthoredLines)
-            .ThenBy(q => q.NumberOfCommits)
-            .ThenBy(q=>q.NumberOfReviews);
-        }
-
+        protected abstract IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext);
         private void AddFileOwnership(PullRequestContext pullRequestContext,
         Dictionary<string, DeveloperKnowledge> developersKnowledge,
         PullRequestFile file)
