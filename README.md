@@ -16,26 +16,19 @@ For example you can find answers to the following questions by running a simple 
 
 :raised_hand: Currently, RelationalGit has been tested on `SQL Server`. Support for other popular databases (Sqllite, PostgreSQL) will be added in near future.
 
-# .NET Core
+##  :cupid: .NET Core
 
-# SQL Server
+You need to get the lastes bits of [.NET Core](https://www.microsoft.com/net/download).
+
+##  :cupid: SQL Server
 :heart_eyes: On Windows, you can download awesome Sql Server - [LocalDb, Express, and Developer Editions](https://www.microsoft.com/en-ca/sql-server/sql-server-downloads) - and [Sql Server Management Studio](https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms) free of charge.
 
 If you are using Linux or Mac you can download the [SQL Server Docker image](https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-linux-2017) to run it natively on your system. Then you need to install [Microsoft SQL Operation Studio](https://docs.microsoft.com/en-us/sql/sql-operations-studio/download) or [SQLCMD](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-linux-2017) to query the database.
 
-# PowerShell Core
+##  :cupid: PowerShell Core
 
-## On Windows
+You need to get the lastes version of [PowerShell Core](https://github.com/PowerShell/PowerShell/releases). RelationalGit uses PowerShell for extracting blames.
 
-
-## On Linux & Mac
-
-
-
-
-# RelationalGit :cupid: .NET
-
-RelationalGit has been implemented in awsesome C# (dotnet core 2.0) and it's cross platform. So you can easily run it on your platform of choice.
 
 # RelationalGit :cupid: Open Source
 RelationalGit has been built on top of the most popular Git Libraries. It uses libgit2Sharp and Octokit.Net in order to extract data from git data structure and Github respectively.
