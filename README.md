@@ -31,7 +31,7 @@ You need to get the lastes version of [PowerShell Core](https://github.com/Power
 
 
 # RelationalGit :cupid: Open Source
-RelationalGit has been built on top of the most popular Git Libraries. It uses libgit2Sharp and Octokit.Net in order to extract data from git data structure and Github respectively.
+RelationalGit has been built on top of the most popular Git Libraries. It uses [libgit2Sharp](https://github.com/libgit2/libgit2sharp), [Octokit.Net](https://github.com/octokit/octokit.net), and [Octokit.Extensions](https://github.com/mirsaeedi/octokit.net.extensions) in order to extract data from git data structure and Github respectively.
 
 # :star: Setup
 
