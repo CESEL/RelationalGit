@@ -1,7 +1,8 @@
 # RelationalGit
-RelationalGit extracts valuable information about commits, blames, changes, devs, and pull requests from git data structure and import them to a relational structure. These data can be a ground for further source code mining analysis.
+RelationalGit extracts valuable information about commits, blames, changes, devs, and pull requests out of git's data structure and imports them to a relational database such as Microsoft SQL Server. These data can be a ground for further source code mining analysis.
 
-For example you can find answers to following questions by running simple Sql queries:
+So, You can easily query the database and find answers to many interesing questions. Since, source code mining is one of the hottest topics in academia and industry, RelationalGit wants to help researchers to start their investigations more conveniently.
+For example you can find answers to the following questions by running a simple SQL query over extracted data.
 
 * What are the files that are recently changed by a given developer?
 * Who is the author of a specific line in a specific file? (Git Blame)
@@ -11,7 +12,7 @@ For example you can find answers to following questions by running simple Sql qu
 * Which files are changing constantly? maybe they are bug-prone.
 * Who is the most appropriate developer to work on a given file?
 
-RelationalGit imports the extracted data to a relational database. So, You can easily query the database and find answers to many interesing questions. Todays source code mining is one of the hottest topics in academia and RelationalGit wants to helps researchers to start their investigations more conveniently.
+
 
 :raised_hand: Currently, RelationalGit has been tested on `SQL Server`. Support for other popular databases (Sqllite, PostgreSQL) will be added.
 
