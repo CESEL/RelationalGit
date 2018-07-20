@@ -33,7 +33,7 @@ namespace RelationalGit.Commands
                 var cmd = new GetPullRequestReviewerCommentsCommand();
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
-            else if (options.Command.ToLower() == "-get-merge-events")
+            else if (options.Command.ToLower() == CommandType.GetPullRequestMergeEvents)
             {
                 var cmd = new GetPullRequestMergeEventsCommand();
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
@@ -100,12 +100,12 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.ExtractDeveloperInformation)
             {
                 var cmd = new ExtractDeveloperInformationCommand();
-                await cmd.Execute(options.TopQuantileThreshold);
+                await cmd.Execute(options.CoreDeveloperThreshold,options.CoreDeveloperCalculationType);
             }
-            else if (options.Command.ToLower() == CommandType.IgnoreMegaCommits)
+            else if (options.Command.ToLower() == CommandType.IgnoreMegaCommitsAndDevelopers)
             {
                 var cmd = new IgnoreMegaCommitsCommand();
-                await cmd.Execute(options.MegaCommitSize);
+                await cmd.Execute(options.MegaCommitSize,options.MegaDevelopers);
             }  
             else if (options.Command.ToLower() == CommandType.MapGitHubGitNames)
             {
@@ -115,7 +115,18 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.ComputeKnowledgeLoss)
             {
                 var cmd = new ShareKnowledgeCommand();
-                await cmd.Execute(options.KnowledgeSaveStrategyType,options.FileAbondonedThreshold,options.MegaPullRequestSize,options.LeaversType);
+
+                var lossSimulationOption = new LossSimulationOption()
+                {
+                    KnowledgeShareStrategyType=options.KnowledgeSaveStrategyType,
+                    MegaPullRequestSize=options.MegaPullRequestSize,
+                    LeaversType=options.LeaversType,
+                    FilesAtRiksOwnershipThreshold = options.FilesAtRiksOwnershipThreshold,
+                    FilesAtRiksOwnersThreshold = options.FilesAtRiksOwnersThreshold,
+                    LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence
+                };
+
+                await cmd.Execute(lossSimulationOption);
             }
         }
     }

@@ -72,7 +72,7 @@ namespace RelationalGit
         public DbSet<RecommendedPullRequestReviewer> RecommendedPullRequestReviewers { get; set; }
         public DbSet<SimulatedAbondonedFile> SimulatedAbondonedFiles { get; set; }
         public DbSet<SimulatedLeaver> SimulatedLeavers { get; set; }
-
+        public DbQuery<PeriodReviewerCountQuery> PeriodReviewerCountQuery {get;set;}
         public Dictionary<string, string> GetCanonicalPaths()
         {
             var canonicalResults = this.CommittedChanges.Select(m => new { m.CanonicalPath, m.Path })
@@ -93,6 +93,44 @@ namespace RelationalGit
             }
 
             return canonicalDictionary;
+        }
+
+        public Dictionary<string, Dictionary<long,int>> GetPeriodReviewerCounts()
+        {
+            var query = @"select Commits.PeriodId,reviewers.UserLogin as GitHubUserLogin,count(*) as Count from PullRequests
+            INNER JOIN Commits On Commits.Sha=PullRequests.MergeCommitSha
+            INNER JOIN ( 
+                SELECT distinct PullRequestNumber,PullRequestReviewers.UserLogin FROM PullRequestReviewers
+                INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewers.PullRequestNumber
+                where PullRequestReviewers.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewers.UserLogin and Merged=1
+                    UNION 
+                SELECT distinct PullRequestNumber,PullRequestReviewerComments.UserLogin FROM PullRequestReviewerComments
+                INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewerComments.PullRequestNumber
+                where PullRequestReviewerComments.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewerComments.UserLogin 
+                AND PullRequestReviewerComments.CreatedAtDateTime> PullRequests.MergedAtDateTime and Merged=1) as reviewers
+            on reviewers.PullRequestNumber=PullRequests.Number
+            group by Commits.PeriodId,reviewers.UserLogin";
+
+            var reviewersInPeriods = this.PeriodReviewerCountQuery.FromSql(query);
+            var githubGitMapper = this.GitHubGitUsers.ToArray();
+
+            var dic = new Dictionary<string, Dictionary<long,int>>();
+
+            foreach(var reviewerInPeriod in reviewersInPeriods)
+            {
+                var normalizedName = githubGitMapper.FirstOrDefault(q=>q.GitHubUsername==reviewerInPeriod.GitHubUserLogin)
+                ?.GitNormalizedUsername;
+
+                if(normalizedName==null)
+                    continue;
+
+                if(!dic.ContainsKey(normalizedName))
+                    dic[normalizedName]=new Dictionary<long,int>();
+                
+                dic[normalizedName][reviewerInPeriod.PeriodId]=reviewerInPeriod.Count;
+            }
+
+            return dic;
         }
     }
 

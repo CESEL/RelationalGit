@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class NothingKnowledgeShareStrategy : RecommendingReviewersKnowledgeShareStrategy
+    public class NothingKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
         {

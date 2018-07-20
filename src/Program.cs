@@ -36,19 +36,23 @@ namespace RelationalGit
 
             userInput = new InputOption()
             {
-                Command = CommandType.GetPullRequestReviewes,
-                KnowledgeSaveStrategyType = KnowledgeShareStrategyType.CommitBasedSpreadingReviewers,
+                Command = CommandType.ComputeKnowledgeLoss,
+                KnowledgeSaveStrategyType = KnowledgeShareStrategyType.Ideal,
+                CoreDeveloperCalculationType=CoreDeveloperCalculationType.AuthoredLines,
                 LeaversType = LeaversType.All,
-                FileAbondonedThreshold = 0.10,
-                TopQuantileThreshold = 0.80,
-                MegaPullRequestSize = 500000,
+                CoreDeveloperThreshold = 15000,
+                MegaPullRequestSize = 100,
+                FilesAtRiksOwnershipThreshold=0.90,
+                LeaversOfPeriodExtendedAbsence = 4,
+                FilesAtRiksOwnersThreshold=1,
                 MegaCommitSize = 200,
+                MegaDevelopers = new []{"dotnetbot"},//,"dotnet-maestro-bot",
                 PeriodType = PeriodType.Month,
                 PeriodLength = 3,
                 GitHubOwner = "dotnet",
                 GitHubToken = "f1bf8a0d539b6aa8724e1921dd8f89b5b1785fa8",
                 GitHubRepo = "corefx",
-                RepositoryPath = @"/home/ehsan/Documents/Repositories/corefx",
+                RepositoryPath = @"/home/ehsan/Documents/Repositories/coreclr",
                 GitBranch = "master",
                 Extensions = ".cs,.vb,.ts,.js,.jsx,.sh,.yml,.tsx,.css,.json,.py,.c,.h,.cpp,.il,.make,.cmake,.ps1,.r,.cmd,.html,.conf".Split(',')
             };

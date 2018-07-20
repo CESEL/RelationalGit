@@ -14,19 +14,19 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class IdealKnowledgeShareStrategy : RecommendingReviewersKnowledgeShareStrategy
+    public class IdealKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            if (pullRequestContext.ActualReviewers.Count() == 0)
-                return new string[0];
+            /*if (pullRequestContext.ActualReviewers.Count() == 0)
+                return new string[0];*/
                 
             var oldestDevelopers = pullRequestContext.Developers
             .Values
-            .Where(q=>q.FirstPeriodId<=pullRequestContext.Period.Id);
+            .Where(q=>q.FirstCommitPeriodId<=pullRequestContext.Period.Id);
 
             var longtermStayedDeveloper = oldestDevelopers
-            .OrderBy(q=>q.LastPeriodId-q.FirstPeriodId).Last();
+            .OrderBy(q=>q.LastCommitPeriodId-q.FirstCommitPeriodId).Last();
 
             return new string[]{longtermStayedDeveloper.NormalizedName};
         }

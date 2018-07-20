@@ -14,9 +14,9 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public abstract class RecommendingReviewersKnowledgeShareStrategy
+    public abstract class KnowledgeShareStrategy
     {
-        public static RecommendingReviewersKnowledgeShareStrategy Create(string knowledgeShareStrategyType)
+        public static KnowledgeShareStrategy Create(string knowledgeShareStrategyType)
         {
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Nothing)
             {
@@ -32,15 +32,19 @@ namespace RelationalGit
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedExpertiseReviewers)
             {
-                return new ExpertiseCommitBasedKnowledgeShareStrategy();
+                return new CommitBasedKnowledgeShareStrategy();
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileBasedExpertiseReviewers)
             {
-                return new ExpertiseFileBasedKnowledgeShareStrategy();
+                return new FileBasedKnowledgeShareStrategy();
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedSpreadingReviewers)
             {
-                return new CommitBasedSpreadingKnowledgeShareStrategy();
+                return new SpreadingKnowledgeShareStrategy();
+            }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RendomReviewers)
+            {
+                return new RandomKnowledgeShareStrategy();
             }
 
             throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");

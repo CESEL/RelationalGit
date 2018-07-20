@@ -17,7 +17,7 @@ namespace RelationalGit
     public class GitRepository
     {
         #region Fields
-        private static readonly Regex _blameRegex = new Regex(@"<(?<email>[\w\.\-]+@[\w\-]+\.\w{2,3})>",RegexOptions.Compiled);
+        private static readonly Regex _blameRegex = new Regex(@"\w{40}\t\(<(?<email>.*)>\t",RegexOptions.Compiled);
         private Repository _gitRepo;
         private string _localClonePath;
         private Dictionary<string, string> _fileOidHolder = new Dictionary<string, string>();
@@ -87,7 +87,7 @@ namespace RelationalGit
 
             Parallel.ForEach(
                 blobsPath,
-                new ParallelOptions() {MaxDegreeOfParallelism=4},
+                new ParallelOptions() {MaxDegreeOfParallelism=6},
                 () =>
                 {
                     return  GetPowerShellInstance();
@@ -125,6 +125,7 @@ namespace RelationalGit
 
         private ICollection<CommitBlobBlame> GetBlobBlamesOfCommit(PowerShell powerShellInstance,string commitSha, string blobPath, Dictionary<string, string> canonicalPathDic)
         {
+
             var rawBlameLines = GetBlameFromPowerShell(powerShellInstance, commitSha, blobPath);
 
             var blobBlames = ExtraxtBlames(rawBlameLines,blobPath,commitSha,canonicalPathDic);
@@ -169,12 +170,12 @@ namespace RelationalGit
             var secondChanges = GetDiffOfTrees(gitRepo, secondParent.Tree, tree, compareOptions);
 
             var result = firstChanges.Where(c1 => secondChanges.Any(c2 => c2.Oid==c1.Oid));
-            var k = result.Count() > 0;
             return result;
         }
 
         private ICollection<CommitBlobBlame> ExtraxtBlames(string[] blameLines,string blobPath,string commitSha,Dictionary<string, string> canonicalPathDic)
         {
+
             var blobBlames = new List<CommitBlobBlame>();
 
             var developerLineOwnershipDictionary = new Dictionary<string, int>();
@@ -186,6 +187,7 @@ namespace RelationalGit
                     continue;
 
                 var email = mc[0].Groups["email"].Value;
+
                 var sha=blameLine.Substring(0,40);
                 var key=sha+email;
 

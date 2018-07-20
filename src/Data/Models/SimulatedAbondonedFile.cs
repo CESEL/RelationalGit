@@ -11,8 +11,9 @@ namespace RelationalGit
         public string FilePath { get; set; }
         public long LossSimulationId { get; set; }   
         public long PeriodId { get; set; }
-        public int TotalLinesInPeriod { get; internal set; }
-        public int AbandonedLinesInPeriod { get; internal set; }
-        public int SavedLinesInPeriod { get; internal set; }
+        public int TotalLinesInPeriod { get;  set; }
+        public int AbandonedLinesInPeriod { get;  set; }
+        public int SavedLinesInPeriod { get;  set; }
+        public string RiskType { get; set; }
     }
 }

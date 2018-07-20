@@ -14,7 +14,7 @@ namespace RelationalGit
 
         public DateTime ToDateTime { get; set; }
 
-        public string FirstCommit { get; set; }
+        public string FirstCommitSha { get; set; }
 
         public string LastCommitSha { get; set; }
     }

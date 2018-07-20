@@ -18,109 +18,323 @@ namespace RelationalGit
     public class TimeMachine
     {
         #region Fields
-        private Commit[] Commits { get; set; }
-        public Dictionary<long, Dictionary<string,Dictionary<string,FileBlame>>> CommitBlobBlamesDic { get; private set; }
+        private Commit[] SortedCommits { get; set; }
+        public Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>> CommitBlobBlamesDic { get; private set; }
         private Dictionary<string, Commit> CommitsDic { get; set; }
-        private Dictionary<string, Developer> Developers { get; set; }
+        private Dictionary<string, Developer> DevelopersDic { get; set; }
         private DeveloperContribution[] DevelopersContributions { get; set; }
         private Dictionary<string, List<CommittedChange>> CommittedChangesDic { get; set; }
-        private Dictionary<int,PullRequest> PullRequests { get; set; }
+        private Dictionary<int, PullRequest> PullRequestsDic { get; set; }
         private Dictionary<long, List<PullRequestFile>> PullRequestFilesDic { get; set; }
         private Dictionary<long, List<string>> PullRequestReviewersDic { get; set; }
         private PullRequestReviewerComment[] PullRequestReviewComments { get; set; }
         private Dictionary<string, string> CanononicalPathMapper { get; set; }
-        private GitHubGitUser[] GitHubGitUsernameMapper { get; set; }
+        private UsernameRepository UsernameRepository { get; set; }
         private Dictionary<long, Period> PeriodsDic { get; set; }
-        private IEnumerable<CommitPullRequest> SortedCommitsPullRequests { get; set; }
         private Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> CommitBasedKnowledgeMap = new Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>>();
         private Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> ReviewBasedKnowledgeMap = new Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>>();
-        private Func<PullRequestContext,string[]> ChangeThePastByRecommendingReviewersFunc;
+        private Func<PullRequestContext, string[]> ChangeThePastByRecommendingReviewersFunc;
 
         #endregion
-        
-        public TimeMachine(Func<PullRequestContext,string[]> changeThePastByRecommendingReviewersFunc=null)
+
+        public TimeMachine(Func<PullRequestContext, string[]> changeThePastByRecommendingReviewersFunc = null)
         {
-            ChangeThePastByRecommendingReviewersFunc=changeThePastByRecommendingReviewersFunc;
+            ChangeThePastByRecommendingReviewersFunc = changeThePastByRecommendingReviewersFunc;
         }
-        internal void Initiate(Commit[] commits,CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
+        public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
         CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles,
          PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
-         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] gitHubGitUsernameMapper, Period[] periods)
+         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods)
         {
-            Commits = commits.OrderBy(q=>q.AuthorDateTime).ToArray();
-            CommitsDic = commits.ToDictionary(q => q.Sha);
-            PeriodsDic = periods.ToDictionary(q => q.Id);
-            CommitBlobBlamesDic =GetCommitBlobBlamesDictionary(commitBlobBlames);
-            Developers = developers.ToDictionary(q => q.NormalizedName);
+            UsernameRepository = new UsernameRepository(githubGitUsers, developers);
+
+            SortedCommits = commits.OrderBy(q => q.AuthorDateTime).ToArray();
+
             DevelopersContributions = developersContributions;
-            CommittedChangesDic = GetCommittedChangesDictionary(committedChanges);
-            PullRequests = pullRequests.ToDictionary(q=>q.Number);
-            PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
-            PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments, gitHubGitUsernameMapper);
             PullRequestReviewComments = pullRequestReviewComments;
             CanononicalPathMapper = canononicalPathMapper;
-            GitHubGitUsernameMapper = gitHubGitUsernameMapper;
-            SortedCommitsPullRequests=GetCommitsPullRequests();
+
+            CommitsDic = commits.ToDictionary(q => q.Sha);
+            PeriodsDic = periods.ToDictionary(q => q.Id);
+            DevelopersDic = developers.ToDictionary(q => q.NormalizedName);
+            PullRequestsDic = pullRequests.ToDictionary(q => q.Number);
+
+            CommitBlobBlamesDic = GetCommitBlobBlamesDictionary(commitBlobBlames);
+            CommittedChangesDic = GetCommittedChangesDictionary(committedChanges);
+            PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
+            PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments);
+
+
+            GetCommitsPullRequests(SortedCommits, pullRequests);
+            GetDevelopersContributions(developers, developersContributions);
         }
 
-        private Dictionary<long,Dictionary<string,Dictionary<string,FileBlame>>>  GetCommitBlobBlamesDictionary(CommitBlobBlame[] commitBlobBlames)
+        public KnowledgeDistributionMap FlyInTime()
         {
-            var commitBlobBlamesDic=new Dictionary<long,Dictionary<string,Dictionary<string,FileBlame>>>();
 
-            foreach(var commitBlobBlame in commitBlobBlames)
+            var knowledgeMap = new KnowledgeDistributionMap()
             {
-                var commit=CommitsDic.GetValueOrDefault(commitBlobBlame.CommitSha);
-                var periodId=commit.PeriodId.Value;
-                var period=PeriodsDic[periodId];
-                var filePath= commitBlobBlame.CanonicalPath;
+                CommitBasedKnowledgeMap = this.CommitBasedKnowledgeMap,
+                ReviewBasedKnowledgeMap = this.ReviewBasedKnowledgeMap,
+                PullRequestReviewers = PullRequestReviewersDic,
+                BlameDistribution = CommitBlobBlamesDic
+            };
+
+            foreach (var commit in SortedCommits)
+            {
+                UpdateCommitBasedKnowledgeMap(commit);
+                UpdateReviewBasedKnowledgeMap(knowledgeMap, commit, commit.MergedPullRequest);
+            }
+
+            return knowledgeMap;
+        }
+
+        #region Private Methods
+
+        private void UpdateReviewBasedKnowledgeMap(KnowledgeDistributionMap knowledgeMap, Commit commit, PullRequest pullRequest)
+        {
+            if (pullRequest != null)
+            {
+                AddProposedChangesToPrSubmitterKnowledge(pullRequest, commit);
+
+                ChangeThePastByRecommendingReviewers(knowledgeMap, pullRequest);
+
+                UpdateReviewBasedKnowledgeMap(pullRequest);
+            }
+        }
+
+        private void ChangeThePastByRecommendingReviewers(KnowledgeDistributionMap knowledgeMap, PullRequest pullRequest)
+        {
+            if (ChangeThePastByRecommendingReviewersFunc != null)
+            {
+                var pullRequestContext = GetPullRequestContext(pullRequest, knowledgeMap);
+                var recommendedReviewers = ChangeThePastByRecommendingReviewersFunc(pullRequestContext);
+                PullRequestReviewersDic[pullRequest.Number] = recommendedReviewers.ToList();
+            }
+        }
+        private PullRequestContext GetPullRequestContext(PullRequest pullRequest, KnowledgeDistributionMap knowledgeMap)
+        {
+            var actualReviewers = PullRequestReviewersDic
+            .GetValueOrDefault(pullRequest.Number, defaultValue: new List<string>())
+            .ToArray();
+
+            var pullRequestFiles = this.PullRequestFilesDic
+            .GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>())
+            .ToArray();
+
+            var availableDevelopers = GetAvailableDevelopersForPullRequest(pullRequest)
+            .ToArray();
+
+            var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
+
+            var period = GetPeriodOfPullRequest(pullRequest);
+
+            return new PullRequestContext()
+            {
+                PRSubmitterNormalizedName = prSubmitter?.NormalizedName,
+                ActualReviewers = actualReviewers,
+                PullRequestFiles = pullRequestFiles,
+                availableDevelopers = availableDevelopers,
+                PullRequest = pullRequest,
+                KnowledgeMap = knowledgeMap,
+                CanononicalPathMapper = CanononicalPathMapper,
+                Period = period,
+                Developers = new ReadOnlyDictionary<string, Developer>(DevelopersDic),
+                Blames = CommitBlobBlamesDic[period.Id]
+            };
+
+        }
+        private IEnumerable<Developer> GetAvailableDevelopersForPullRequest(PullRequest pullRequest)
+        {
+            Period period = GetPeriodOfPullRequest(pullRequest);
+
+            foreach (var developer in DevelopersDic.Values)
+            {
+                if (developer.FirstCommitPeriodId <= period.Id && developer.LastCommitPeriodId >= period.Id)
+                    yield return developer;
+            }
+        }
+
+        private Period GetPeriodOfPullRequest(PullRequest pullRequest)
+        {
+            var mergeCommitd = CommitsDic[pullRequest.MergeCommitSha];
+            var period = PeriodsDic[mergeCommitd.PeriodId.Value];
+            return period;
+        }
+
+        private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
+        {
+            var reviewersNamesOfPullRequest = PullRequestReviewersDic[pullRequest.Number];
+            var period = GetPeriodOfPullRequest(pullRequest);
+
+            // some of the pull requests have no modified files strangely
+            // for example, https://github.com/dotnet/coreclr/pull/13534
+            var filesOfPullRequest = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>());
+
+            foreach (var file in filesOfPullRequest)
+            {
+                var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
+                AssignKnowledgeToReviewers(pullRequest, reviewersNamesOfPullRequest, period, canonicalPath);
+            }
+        }
+
+        private void AssignKnowledgeToReviewers(PullRequest pullRequest, IEnumerable<string> reviewersNamesOfPullRequest, Period period, string filePath)
+        {
+            if (filePath == null)
+                return;
+
+            if (!ReviewBasedKnowledgeMap.ContainsKey(filePath))
+                ReviewBasedKnowledgeMap[filePath] = new Dictionary<string, DeveloperFileReveiewDetail>();
+
+            foreach (var reviewerName in reviewersNamesOfPullRequest)
+            {
+                AssignKnowledgeToReviewer(pullRequest,reviewerName, period, filePath);
+            }
+        }
+
+        private void AssignKnowledgeToReviewer(PullRequest pullRequest, string reviewerName, Period period, string filePath)
+        {
+            if (!ReviewBasedKnowledgeMap[filePath].ContainsKey(reviewerName))
+            {
+                ReviewBasedKnowledgeMap[filePath][reviewerName] = new DeveloperFileReveiewDetail()
+                {
+                    FilePath = filePath,
+                    Developer = DevelopersDic[reviewerName]
+                };
+            }
+
+            if (!ReviewBasedKnowledgeMap[filePath][reviewerName].Periods.Any(q => q.Id == period.Id))
+                ReviewBasedKnowledgeMap[filePath][reviewerName].Periods.Add(period);
+
+            ReviewBasedKnowledgeMap[filePath][reviewerName].PullRequests.Add(pullRequest);
+        }
+
+        private void AddProposedChangesToPrSubmitterKnowledge(PullRequest pullRequest, Commit prMergedCommit)
+        {
+            // we assume the PR submitter is the dev who has modified the files
+            // however it's not the case always. for example https://github.com/dotnet/coreclr/pull/1
+            // we assume all the proposed file changes are committed and owned by the main pull request's author
+            // which may not be correct in rare scenarios
+
+            if (prMergedCommit == null || pullRequest == null)
+                return;
+
+            if (pullRequest.MergeCommitSha != prMergedCommit.Sha)
+                return;
+
+            // some of the pull requests have no modified files
+            // https://github.com/dotnet/coreclr/pull/13534
+            var pullRequestFiles = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>());
+
+            var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin)?.NormalizedName;
+
+            // we have ignored mega developers
+            if(prSubmitter==null)
+                return;
+
+            var period = GetPeriodOfCommit(prMergedCommit);
+
+            foreach (var file in pullRequestFiles)
+            {
+                var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
+                AssignKnowledgeToDeveloper(prMergedCommit, prSubmitter, period, canonicalPath);
+            }
+        }
+
+        private void AssignKnowledgeToDeveloper(Commit commit, string developerName, Period period, string filePath)
+        {
+            if (filePath == null || developerName == null)
+                return;
+
+            if (!CommitBasedKnowledgeMap.ContainsKey(filePath))
+                CommitBasedKnowledgeMap[filePath] = new Dictionary<string, DeveloperFileCommitDetail>();
+
+            if (!CommitBasedKnowledgeMap[filePath].ContainsKey(developerName))
+            {
+                CommitBasedKnowledgeMap[filePath][developerName] = new DeveloperFileCommitDetail()
+                {
+                    FilePath = filePath,
+                    Developer = DevelopersDic[developerName],
+                };
+            }
+
+            if (!CommitBasedKnowledgeMap[filePath][developerName].Commits.Any(q => q.Sha == commit.Sha))
+                CommitBasedKnowledgeMap[filePath][developerName].Commits.Add(commit);
+
+            if (!CommitBasedKnowledgeMap[filePath][developerName].Periods.Any(q => q.Id == period.Id))
+                CommitBasedKnowledgeMap[filePath][developerName].Periods.Add(period);
+        }
+
+        private void UpdateCommitBasedKnowledgeMap(Commit commit)
+        {
+            // merged commits probably contain no changes
+            var changes = CommittedChangesDic.GetValueOrDefault(commit.Sha, new List<CommittedChange>());
+            var developerName = commit.NormalizedAuthorName;
+            var period = GetPeriodOfCommit(commit);
+
+            foreach (var change in changes)
+            {
+                // should we consider Canonical Path or Path?
+                var canonicalPath = change.CanonicalPath;
+                AssignKnowledgeToDeveloper(commit, developerName, period, canonicalPath);
+            }
+        }
+
+        private Period GetPeriodOfCommit(Commit commit)
+        {
+            return PeriodsDic[commit.PeriodId.Value];
+        }
+
+        private Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>> GetCommitBlobBlamesDictionary(CommitBlobBlame[] commitBlobBlames)
+        {
+            var commitBlobBlamesDic = new Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>>();
+
+            foreach (var commitBlobBlame in commitBlobBlames)
+            {
+                var commit = CommitsDic.GetValueOrDefault(commitBlobBlame.CommitSha);
+                var periodId = commit.PeriodId.Value;
+                var period = PeriodsDic[periodId];
+                var filePath = commitBlobBlame.CanonicalPath;
                 var devName = commitBlobBlame.NormalizedDeveloperIdentity;
 
-                if(!commitBlobBlamesDic.ContainsKey(periodId))
+                if (!commitBlobBlamesDic.ContainsKey(periodId))
                 {
-                    commitBlobBlamesDic[periodId] = new Dictionary<string,Dictionary<string,FileBlame>>();
+                    commitBlobBlamesDic[periodId] = new Dictionary<string, Dictionary<string, FileBlame>>();
                 }
 
-                if(!commitBlobBlamesDic[periodId].ContainsKey(filePath))
+                if (!commitBlobBlamesDic[periodId].ContainsKey(filePath))
                 {
-                    commitBlobBlamesDic[periodId][filePath] = new Dictionary<string,FileBlame>();
-                }    
+                    commitBlobBlamesDic[periodId][filePath] = new Dictionary<string, FileBlame>();
+                }
 
-                if(!commitBlobBlamesDic[periodId][filePath].ContainsKey(devName))
+                if (!commitBlobBlamesDic[periodId][filePath].ContainsKey(devName))
                 {
                     commitBlobBlamesDic[periodId][filePath][devName] = new FileBlame()
                     {
-                        FileName=filePath,
-                        Period=period,
-                        NormalizedDeveloperName=devName
+                        FileName = filePath,
+                        Period = period,
+                        NormalizedDeveloperName = devName
                     };
                 }
 
-                commitBlobBlamesDic[periodId][filePath][devName].TotalAuditedLines+=commitBlobBlame.AuditedLines;
+                commitBlobBlamesDic[periodId][filePath][devName].TotalAuditedLines += commitBlobBlame.AuditedLines;
             }
 
             return commitBlobBlamesDic;
 
         }
 
-        private IEnumerable<CommitPullRequest> GetCommitsPullRequests()
+        private void GetCommitsPullRequests(Commit[] commits, PullRequest[] pullRequests)
         {
-            foreach(var commit in Commits)
+            foreach (var commit in commits)
             {
                 // It's possible that two pull requests have the same merge commit
                 // it's a bug in github. We take only one of them in such a scenario.
                 // https://github.com/dotnet/coreclr/pull/9909
                 // https://github.com/dotnet/coreclr/pull/9379
-                var mergedPullRequest=PullRequests
-                .Values
-                .FirstOrDefault(q=>q.MergeCommitSha==commit.Sha);
-
-                yield return new CommitPullRequest(){
-                
-                    Commit=commit,
-                    MergedPullRequest=mergedPullRequest
-                };
+                var mergedPullRequest = pullRequests.FirstOrDefault(q => q.MergeCommitSha == commit.Sha);
+                commit.MergedPullRequest = mergedPullRequest;
             }
-
         }
 
         private Dictionary<long, List<PullRequestFile>> GetPullRequestFilesDictionary(PullRequestFile[] pullRequestFiles)
@@ -159,329 +373,69 @@ namespace RelationalGit
 
         private Dictionary<long, List<string>> GetPullRequestReviewersDictionary(
             PullRequestReviewer[] pullRequestReviewers,
-            PullRequestReviewerComment[] pullRequestReviewComments,
-            GitHubGitUser[] gitHubGitUsernameMapper)
+            PullRequestReviewerComment[] pullRequestReviewComments)
         {
             var result = new Dictionary<long, List<string>>();
 
             for (var i = 0; i < pullRequestReviewers.Length; i++)
             {
-                var key = (int) pullRequestReviewers[i].PullRequestNumber; // what a bullshit cast!! :(
-                var prSubmitter = PullRequests[key].UserLogin;
-
-                if(prSubmitter==pullRequestReviewers[i].UserLogin)
-                    continue;
-
-                if (!result.ContainsKey(key))
-                    result[key] = new List<string>();
-
-                var normalizedName = gitHubGitUsernameMapper
-                    .FirstOrDefault(q => q.GitHubUsername == pullRequestReviewers[i].UserLogin);
-
-                // PullRequestReviewers contains duplicated items, So we need to check for it
-                // https://api.github.com/repos/dotnet/coreclr/pulls/7886/reviews
-                if (normalizedName != null  && !result[key].Any(q => q == normalizedName.GitNormalizedUsername))
-                    result[key].Add(normalizedName.GitNormalizedUsername);
+                var prNumber = (int)pullRequestReviewers[i].PullRequestNumber; // what a bullshit cast!! :(
+                AssignReviewerToPullRequest(pullRequestReviewers[i].UserLogin,  prNumber,result);
             }
 
             for (var i = 0; i < pullRequestReviewComments.Length; i++)
             {
-                var key = pullRequestReviewComments[i].PullRequestNumber;
-                var prMergedDateTime = PullRequests[key].MergedAtDateTime;
-                var prSubmitter = PullRequests[key].UserLogin;
+                var prNumber = pullRequestReviewComments[i].PullRequestNumber;
 
-                if(prMergedDateTime< pullRequestReviewComments[i].CreatedAtDateTime)
-                    continue;
-
-                if(prSubmitter==pullRequestReviewComments[i].UserLogin)
-                    continue;
-
-                if (!result.ContainsKey(key))
-                    result[key] = new List<string>();
-
-                var normalizedName = gitHubGitUsernameMapper
-                    .FirstOrDefault(q => q.GitHubUsername == pullRequestReviewComments[i].UserLogin);
-
-            
-                if (normalizedName != null && !result[key].Any(q => q == normalizedName.GitNormalizedUsername))
-                {
-                    result[key].Add(normalizedName.GitNormalizedUsername);
-                }
+                if(ShouldConsiderComment(prNumber,pullRequestReviewComments[i]))
+                    AssignReviewerToPullRequest(pullRequestReviewComments[i].UserLogin,  prNumber,result);
             }
 
             return result;
         }
 
-        internal KnowledgeMap FlyInTime()
+        private bool ShouldConsiderComment(int prNumber, PullRequestReviewerComment pullRequestReviewerComment)
         {
+            var prMergedDateTime = PullRequestsDic[prNumber].MergedAtDateTime;
 
-            var knowledgeMap = new KnowledgeMap()
-            {
-                CommitBasedKnowledgeMap = this.CommitBasedKnowledgeMap,
-                ReviewBasedKnowledgeMap = this.ReviewBasedKnowledgeMap,
-                PullRequestReviewers=PullRequestReviewersDic
-            };
+                // if a comment has been left after merge, we don't consider the commenter
+                // as a knoledgeable person about the PR
+            if (prMergedDateTime < pullRequestReviewerComment.CreatedAtDateTime)
+                return false;
 
-            foreach (var commitPullRequest in SortedCommitsPullRequests)
-            {
-                var commit=commitPullRequest.Commit;
-                var pullRequest=commitPullRequest.MergedPullRequest;
-
-                UpdateCommitBasedKnowledgeMap(commit);
-
-                if(pullRequest!=null)
-                {
-                    AddProposedChangesToPrSubmitterKnowledge(pullRequest, commit);
-
-                    ChangeThePastByRecommendingReviewers(knowledgeMap, pullRequest);
-
-                    UpdateReviewBasedKnowledgeMap(pullRequest);
-                }
-            }
-
-
-
-            return knowledgeMap;
+            return true;
         }
 
-        private void ChangeThePastByRecommendingReviewers(KnowledgeMap knowledgeMap, PullRequest pullRequest)
+        private void AssignReviewerToPullRequest(string reviewerName, int prNumber,Dictionary<long, List<string>> prReviewers)
         {
-            if (ChangeThePastByRecommendingReviewersFunc != null)
-            {
-                var pullRequestContext = GetPullRequestContext(pullRequest, knowledgeMap);
-                var recommendedReviewers = ChangeThePastByRecommendingReviewersFunc(pullRequestContext);
-                PullRequestReviewersDic[pullRequest.Number] = recommendedReviewers.ToList();
-            }
-        }
-        private PullRequestContext GetPullRequestContext(PullRequest pullRequest, KnowledgeMap knowledgeMap)
-        {
-            var actualReviewers = PullRequestReviewersDic
-            .GetValueOrDefault(pullRequest.Number, defaultValue: new List<string>())
-            .ToArray();
+            var prSubmitter = PullRequestsDic[prNumber].UserLogin;
 
-            var pullRequestFiles = this.PullRequestFilesDic
-            .GetValueOrDefault(pullRequest.Number,new List<PullRequestFile>())
-            .ToArray();
-
-            var availableDevelopers = GetAvailableDevelopersForPullRequest(pullRequest)
-            .ToArray();
-
-            var prSubmitterNormalizedName = GitHubGitUsernameMapper
-            .FirstOrDefault(q=>q.GitHubUsername==pullRequest.UserLogin)
-            ?.GitNormalizedUsername;
-
-            var period = GetPeriodOfPullRequest(pullRequest); 
-
-            return new PullRequestContext()
-            {
-                PRSubmitterNormalizedName=prSubmitterNormalizedName,
-                ActualReviewers = actualReviewers,
-                PullRequestFiles = pullRequestFiles,
-                availableDevelopers = availableDevelopers,
-                PullRequest = pullRequest,
-                KnowledgeMap = knowledgeMap,
-                CanononicalPathMapper=CanononicalPathMapper,
-                Period=period,
-                Developers=new ReadOnlyDictionary<string,Developer>(Developers),
-                Blames= CommitBlobBlamesDic[period.Id]
-            };
-
-        }
-        private IEnumerable<Developer> GetAvailableDevelopersForPullRequest(PullRequest pullRequest)
-        {
-            Period period = GetPeriodOfPullRequest(pullRequest);
-
-            foreach (var developer in Developers.Values)
-            {
-                if (developer.FirstPeriodId <= period.Id && developer.LastPeriodId >= period.Id)
-                    yield return developer;
-            }
-        }
-
-        private Period GetPeriodOfPullRequest(PullRequest pullRequest)
-        {
-            var mergeCommitd = CommitsDic[pullRequest.MergeCommitSha];
-            var period = PeriodsDic[mergeCommitd.PeriodId.Value];
-            return period;
-        }
-
-        private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
-        {
-            var reviewersNamesOfPullRequest = PullRequestReviewersDic[pullRequest.Number];
-
-            // some of the pull requests have no modified files strangely
-            // for example, https://github.com/dotnet/coreclr/pull/13534
-            var filesOfPullRequest = PullRequestFilesDic
-                .GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>(0));
-
-            foreach (var file in filesOfPullRequest)
-            {
-                var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-
-                if (canonicalPath == null)
-                    continue;
-
-                if (!ReviewBasedKnowledgeMap.ContainsKey(canonicalPath))
-                    ReviewBasedKnowledgeMap[canonicalPath] = new Dictionary<string, DeveloperFileReveiewDetail>();
-
-                var period = GetPeriodOfPullRequest(pullRequest);
-
-                foreach (var reviewerName in reviewersNamesOfPullRequest)
-                {
-                    if (!ReviewBasedKnowledgeMap[canonicalPath].ContainsKey(reviewerName))
-                    {
-                        ReviewBasedKnowledgeMap[canonicalPath][reviewerName] =
-                        new DeveloperFileReveiewDetail()
-                        {
-                            FilePath = canonicalPath,
-                            Developer = Developers[reviewerName]
-                        };
-                    }
-
-                    if(!ReviewBasedKnowledgeMap[canonicalPath][reviewerName].Periods.Any(q=>q.Id==period.Id))
-                        ReviewBasedKnowledgeMap[canonicalPath][reviewerName].Periods.Add(period);
-
-                    ReviewBasedKnowledgeMap[canonicalPath][reviewerName].PullRequests.Add(pullRequest);
-                }
-            }
-        }
-
-        private void AddProposedChangesToPrSubmitterKnowledge(PullRequest pullRequest, Commit prMergedCommit)
-        {
-            // we assume the PR submitter is the dev who has modified the files
-            // however it's not the case always. for example https://github.com/dotnet/coreclr/pull/1
-
-            if (prMergedCommit == null || pullRequest == null)
+            if (prSubmitter == reviewerName)
                 return;
 
-            if (pullRequest.MergeCommitSha != prMergedCommit.Sha)
-                return;
+            if (!prReviewers.ContainsKey(prNumber))
+                prReviewers[prNumber] = new List<string>();
 
-            // some of the pull requests has no modified file
-            // https://github.com/dotnet/coreclr/pull/13534
-            var pullRequestFiles = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number);
+            var reviewerNormalizedName = UsernameRepository.GetByGitHubLogin(reviewerName)?.NormalizedName;
 
-            if(pullRequestFiles==null)
-                return;
-
-            var devName = GitHubGitUsernameMapper
-            .FirstOrDefault(q => q.GitHubUsername == pullRequest.UserLogin)
-            ?.GitNormalizedUsername;
-
-            if (devName == null)
-                return; 
-        
-            var period = PeriodsDic[prMergedCommit.PeriodId.Value];
-
-            foreach (var file in pullRequestFiles)
-            {
-                var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-
-                if (canonicalPath == null)
-                    continue;
-
-                // we assume all the file changes are committed by the main pull request's author
-                if (!CommitBasedKnowledgeMap.ContainsKey(canonicalPath))
-                    CommitBasedKnowledgeMap[canonicalPath] = new Dictionary<string, DeveloperFileCommitDetail>();
-
-                if (!CommitBasedKnowledgeMap[canonicalPath].ContainsKey(devName))
-                {
-                    CommitBasedKnowledgeMap[canonicalPath][devName] = new DeveloperFileCommitDetail()
-                    {
-                        FilePath = canonicalPath,
-                        Developer = Developers[devName],
-                    };
-                }
-
-                if(!CommitBasedKnowledgeMap[canonicalPath][devName].Commits.Any(q=>q.Sha==prMergedCommit.Sha))
-                    CommitBasedKnowledgeMap[canonicalPath][devName].Commits.Add(prMergedCommit);
-
-                if(!CommitBasedKnowledgeMap[canonicalPath][devName].Periods.Any(q=>q.Id==period.Id))
-                    CommitBasedKnowledgeMap[canonicalPath][devName].Periods.Add(period);
-            }
+            // Pull Request Reviewers and Comments contains duplicated items, So we need to check for it
+            // https://api.github.com/repos/dotnet/coreclr/pulls/7886/reviews
+            if (reviewerNormalizedName != null && !prReviewers[prNumber].Any(q => q == reviewerNormalizedName))
+                prReviewers[prNumber].Add(reviewerNormalizedName);
         }
 
-        private void UpdateCommitBasedKnowledgeMap(Commit currentCommit)
+
+        private void GetDevelopersContributions(Developer[] developers, DeveloperContribution[] developersContributions)
         {
-            // merged commits probably contain no changes
-            var changes = CommittedChangesDic.GetValueOrDefault(currentCommit.Sha, new List<CommittedChange>(0));
-            var devName = currentCommit.NormalizedAuthorName;
-            var period = PeriodsDic[currentCommit.PeriodId.Value];
-
-            foreach (var change in changes)
+            foreach (var developer in developers)
             {
-                var canonicalPath=change.CanonicalPath;
-                // should we consider Canonical Path or Path?
-                if (!CommitBasedKnowledgeMap.ContainsKey(canonicalPath))
-                    CommitBasedKnowledgeMap[canonicalPath] = new Dictionary<string, DeveloperFileCommitDetail>();
+                var contributions = developersContributions
+                    .Where(q => q.NormalizedName == developer.NormalizedName);
 
-                if (!CommitBasedKnowledgeMap[canonicalPath].ContainsKey(devName))
-                {
-                    CommitBasedKnowledgeMap[canonicalPath][devName]
-                    = new DeveloperFileCommitDetail()
-                    {
-                        FilePath = canonicalPath,
-                        Developer = Developers[devName],
-                    };
-                }
-
-                if(!CommitBasedKnowledgeMap[canonicalPath][devName].Periods.Any(q=>q.Id==period.Id))
-                        CommitBasedKnowledgeMap[canonicalPath][devName].Periods.Add(period);
-
-                CommitBasedKnowledgeMap[canonicalPath][devName].Commits.Add(currentCommit);
+                developer.AddContributions(contributions);
             }
         }
-    }
 
-    public class KnowledgeMap
-    {
-        public Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> CommitBasedKnowledgeMap;
-        public Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> ReviewBasedKnowledgeMap;
-
-        public Dictionary<long, List<string>> PullRequestReviewers { get; internal set; }
-    }
-
-    public class DeveloperFileReveiewDetail
-    {
-        public string FilePath { get; set; }
-        public Developer Developer { get; set; }
-        public List<Period> Periods { get; set; } = new List<Period>();
-        public List<PullRequest> PullRequests { get; set; } = new List<PullRequest>();
-    }
-
-    public class DeveloperFileCommitDetail
-    {
-        public string FilePath { get; set; }
-        public Developer Developer { get; set; }
-        public List<Period> Periods { get; set; } = new List<Period>();
-        public List<Commit> Commits { get; set; } = new List<Commit>();
-    }
-
-    public class PullRequestContext
-    {
-        public string PRSubmitterNormalizedName { get; set; }
-        internal Developer[] availableDevelopers;
-        public string[] ActualReviewers { get; internal set; }
-        public PullRequestFile[] PullRequestFiles { get; internal set; }
-        public PullRequest PullRequest { get; internal set; }
-        public KnowledgeMap KnowledgeMap { get; internal set; }
-        public Dictionary<string, string> CanononicalPathMapper { get; internal set; }
-        public Period Period { get; internal set; }
-        public ReadOnlyDictionary<string, Developer> Developers { get; internal set; }
-        public Dictionary<string, Dictionary<string, FileBlame>> Blames { get; internal set; }
-    }
-
-    public class CommitPullRequest
-    {
-        public Commit Commit { get; set; }
-        public PullRequest MergedPullRequest { get; set; }
-    }
-
-    public class FileBlame
-    {
-        public int TotalAuditedLines { get; set; }
-        public string FileName { get; set; }
-        public Period Period { get; set; }
-        public string NormalizedDeveloperName { get; set; }
+        #endregion
     }
 }

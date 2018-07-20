@@ -22,6 +22,8 @@ namespace RelationalGit
         public bool IsMergeCommit { get; set; }
         public string NormalizedAuthorName { get; set; }
         public bool Ignore { get; set; }
+        public long? PeriodId { get; internal set; }
+
 
         [NotMapped]
         public ICollection<CommitRelationship> CommitRelationship { get; set; }
@@ -34,6 +36,8 @@ namespace RelationalGit
 
         [NotMapped]
         public ICollection<CommittedBlob> Blobs { get; set; }
-        public long? PeriodId { get; internal set; }
+
+        [NotMapped]
+        public PullRequest MergedPullRequest { get; internal set; }
     }
 }

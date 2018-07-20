@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +11,7 @@ namespace RelationalGit.Commands
 {
     public class ShareKnowledgeCommand
     {
+        #region Fields
         private GitRepositoryDbContext _dbContext;
         private Commit[] _commits;
         private CommitBlobBlame[] _commitBlobBlames;
@@ -26,37 +26,49 @@ namespace RelationalGit.Commands
         private GitHubGitUser[] _GitHubGitUsernameMapper;
         private Period[] _periods;
 
-        internal async Task Execute(string knowledgeShareStrategyType, double abondonedThreshold,int megaPullRequestSize, string leaversType)
+        #endregion
+        internal async Task Execute(LossSimulationOption lossSimulationOption)
         {
             _dbContext = new GitRepositoryDbContext(false);
 
-            LossSimulation lossSimulation = CreateLossSimulation(knowledgeShareStrategyType, abondonedThreshold, megaPullRequestSize, leaversType);
+            var lossSimulation = CreateLossSimulation(lossSimulationOption);
 
-            TimeMachine timeMachine = CreateTimeMachine(knowledgeShareStrategyType, megaPullRequestSize);
+            var timeMachine = CreateTimeMachine(lossSimulation.KnowledgeShareStrategyType, lossSimulation.MegaPullRequestSize);
 
-            var knowledgeMap = timeMachine.FlyInTime();
+            var knowledgeDistributioneMap = timeMachine.FlyInTime();
 
-            foreach (var period in _periods)
-            {
-                CommitBlobBlame[] committedBlobBlames = GetBlames(period);
-
-                var leavers = GetLeavers(period, _developers, _developersContributions, leaversType);
-                SaveLeavers(period, lossSimulation, leavers);
-
-                var abondonedFiles = GetAbandonedFiles(period, leavers, _developers, knowledgeMap, committedBlobBlames, abondonedThreshold);
-                SaveFiles(period, lossSimulation, abondonedFiles);
-            }
-
-            SavePullRequestReviewes(knowledgeMap,lossSimulation);
-            SaveKnowledgeSharingStatus(knowledgeMap,lossSimulation);
+            SaveLeaversAndFilesAtRisk(lossSimulation, knowledgeDistributioneMap);
+            SavePullRequestReviewes(knowledgeDistributioneMap, lossSimulation);
+            SaveKnowledgeSharingStatus(knowledgeDistributioneMap, lossSimulation);
 
             lossSimulation.EndDateTime = DateTime.Now;
-
+            _dbContext.Entry(lossSimulation).State=EntityState.Modified;
+            
             _dbContext.SaveChanges();
             _dbContext.Dispose();
         }
 
-        private void SaveKnowledgeSharingStatus(KnowledgeMap knowledgeMap,LossSimulation lossSimulation)
+        private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap)
+        {
+            var hashsetAbandonedFiles = new HashSet<string>();
+
+            foreach (var period in _periods)
+            {
+                var availableDevelopers = _developers.Where(q=>q.LastCommitPeriodId>=period.Id && q.FirstCommitPeriodId<=period.Id);
+
+                var leavers = GetLeavers(period, availableDevelopers, _developersContributions, lossSimulation);
+                _dbContext.AddRange(leavers);
+
+                var abandonedFiles = GetAbandonedFiles(period,leavers,availableDevelopers,knowledgeDistributioneMap,lossSimulation);
+                var uniqueAbandonedFiles = abandonedFiles.Where(q=>!hashsetAbandonedFiles.Contains(q.FilePath));
+                _dbContext.AddRange(uniqueAbandonedFiles);
+
+                foreach(var abandonedFile in abandonedFiles)
+                    hashsetAbandonedFiles.Add(abandonedFile.FilePath);
+            }
+        }
+
+        private void SaveKnowledgeSharingStatus(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
         {
             var developerFileCommitDetails = knowledgeMap
             .CommitBasedKnowledgeMap
@@ -99,7 +111,7 @@ namespace RelationalGit.Commands
             }
         }
 
-        private void SavePullRequestReviewes(KnowledgeMap knowledgeMap,LossSimulation lossSimulation)
+        private void SavePullRequestReviewes(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
         {
             foreach(var pullRequestReviewerItem in knowledgeMap.PullRequestReviewers)
             {
@@ -116,22 +128,17 @@ namespace RelationalGit.Commands
             }
         }
 
-        private CommitBlobBlame[] GetBlames(Period period)
-        {
-            return _commitBlobBlames
-            .Where(q => q.CommitSha == period.LastCommitSha && !q.Ignore)
-            .ToArray();
-        }
-
-        private LossSimulation CreateLossSimulation(string knowledgeSaveStrategyType, double abondonedThreshold, int megaPullRequestSize, string leaversType)
+        private LossSimulation CreateLossSimulation(LossSimulationOption lossSimulationOption)
         {
             var lossSimulation = new LossSimulation()
             {
-                FileAbondonedThreshold = abondonedThreshold,
-                MegaPullRequestSize = megaPullRequestSize,
-                KnowledgeShareStrategyType = knowledgeSaveStrategyType,
                 StartDateTime = DateTime.Now,
-                LeaversType = leaversType
+                MegaPullRequestSize = lossSimulationOption.MegaPullRequestSize,
+                KnowledgeShareStrategyType = lossSimulationOption.KnowledgeShareStrategyType,
+                LeaversType = lossSimulationOption.LeaversType,
+                FilesAtRiksOwnershipThreshold= lossSimulationOption.FilesAtRiksOwnershipThreshold,
+                FilesAtRiksOwnersThreshold = lossSimulationOption.FilesAtRiksOwnersThreshold,
+                LeaversOfPeriodExtendedAbsence = lossSimulationOption.LeaversOfPeriodExtendedAbsence
             };
 
             _dbContext.Add(lossSimulation);
@@ -141,7 +148,7 @@ namespace RelationalGit.Commands
 
         private TimeMachine CreateTimeMachine(string knowledgeShareStrategyType, int megaPullRequestSize)
         {
-            var knowledgeShareStrategy = RecommendingReviewersKnowledgeShareStrategy.Create(knowledgeShareStrategyType);
+            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(knowledgeShareStrategyType);
 
             var timeMachine = new TimeMachine(knowledgeShareStrategy.RecommendReviewers);
 
@@ -235,104 +242,145 @@ namespace RelationalGit.Commands
             return timeMachine;
         }
 
-        private void SaveLeavers(Period period, LossSimulation lossSimulation, Dictionary<string, Developer> leavers)
-        {
-            foreach(var leaver in leavers.Keys)
-            {
-                _dbContext.Add(new SimulatedLeaver()
-                {
-                    NormalizedName=leaver,
-                    LossSimulationId=lossSimulation.Id,
-                    PeriodId=period.Id
-                });
-            }        
-        }
-
-        private void SaveFiles(Period period, LossSimulation lossSimulation, AbandonedFile[] abandonedFiles)
-        {
-            foreach(var abandonedFile in abandonedFiles)
-            {
-                _dbContext.Add(new SimulatedAbondonedFile()
-                {
-                    FilePath=abandonedFile.FilePath,
-                    LossSimulationId=lossSimulation.Id,
-                    PeriodId=period.Id,
-                    TotalLinesInPeriod = abandonedFile.TotalLinesInPeriod,
-                    AbandonedLinesInPeriod = abandonedFile.AbandonedLinesInPeriod,
-                    SavedLinesInPeriod = abandonedFile.SavedLines,
-                });
-            }
-        }
-
-        private AbandonedFile[] GetAbandonedFiles(Period period,
-            Dictionary<string, Developer> leavers,
-            Developer[] developers, 
-            KnowledgeMap knowledgeMap, 
-            CommitBlobBlame[] committedBlobBlames,
-            double abondonedThreshold)
-        {
-
-            var leaversKnowledgeOfFiles = GetLeaversKnowledgeOfPeriod (period,leavers,committedBlobBlames);
-
-            var currentKnowledgeOfFiles = GetRemainingKnowledgeOfPeriod(period,developers,committedBlobBlames);
-
-            var abondonedFiles = GetAbandonedFiles(period,leaversKnowledgeOfFiles,currentKnowledgeOfFiles,knowledgeMap.ReviewBasedKnowledgeMap,abondonedThreshold);
-        
-            return abondonedFiles.ToArray();
-        }
-
-        private Dictionary<string,Developer> GetLeavers(
+        private IEnumerable<SimulatedLeaver> GetLeavers(
             Period period, 
-            Developer[] developers, 
+            IEnumerable<Developer> availableDevelopers, 
             DeveloperContribution[] developersContributions,
-            string leaversType)
+            LossSimulation lossSimulation)
         {
-            var leavers = new Dictionary<string,Developer>();
+            var allPotentialLeavers = GetPotentialLeavers(period, availableDevelopers, developersContributions, lossSimulation);
+            var filteredLeavers = FilterDevelopersBasedOnLeaverType(period, developersContributions, lossSimulation.LeaversType, allPotentialLeavers);
 
-            var allLeavers = developers.Where(q=>q.LastPeriodId==period.Id).ToArray();
-            var isCore=leaversType==LeaversType.Core;
-            var isAll = leaversType==LeaversType.All;   
+            return filteredLeavers;
 
-            foreach(var leaver in allLeavers)
+        }
+        private static IEnumerable<SimulatedLeaver> FilterDevelopersBasedOnLeaverType(Period period, DeveloperContribution[] developersContributions, string leaversType, IEnumerable<SimulatedLeaver> leavers)
+        {
+            var isCore = leaversType == LeaversType.Core;
+            var isAll = leaversType == LeaversType.All;
+
+            foreach (var leaver in leavers)
             {
                 var developerContribution = developersContributions
-                    .SingleOrDefault(q=>q.NormalizedName==leaver.NormalizedName && q.PeriodId==period.Id
-                    && (isAll || q.IsCore==isCore));
+                    .SingleOrDefault(q => q.NormalizedName == leaver.NormalizedName && q.PeriodId == period.Id
+                    && (isAll || q.IsCore == isCore));
 
                 // some of the devs have no contribution,
                 // because they authored files with unknown extensions
                 // or we have ignored they knowledge because of mega commits or mega PRs
                 // or their knowledge is rewritten by someone else 
-                if(developerContribution==null)
+                if (developerContribution == null)
                     continue;
 
-                leavers[leaver.NormalizedName]=leaver;
+               yield return leaver;
             }
-
-            return leavers;
         }
 
-        private IEnumerable<AbandonedFile> GetAbandonedFiles(
-        Period period,
-        Dictionary<string, int> leaversKnowledgeOfFiles, 
-        Dictionary<string, int> totalKnowledgeOfFiles, 
-        Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> reviewMap, 
-        double abondonedThreshold)
+        private static IEnumerable<SimulatedLeaver> GetPotentialLeavers(Period period, IEnumerable<Developer> potentialLeavers, DeveloperContribution[] developersContributions, LossSimulation lossSimulation)
         {
-            foreach(var file in totalKnowledgeOfFiles.Keys)
-            {
-                var totalLines = totalKnowledgeOfFiles[file];
-                var abandonedLines = leaversKnowledgeOfFiles.GetValueOrDefault(file,defaultValue: 0);
-                var savedLines = totalLines - abandonedLines;
-                var savedPercentage = savedLines/(double)totalLines;
+            var extendedAbsence = lossSimulation.LeaversOfPeriodExtendedAbsence;
+            
+            var leaversOfPeriod = potentialLeavers.Where(q => q.LastCommitPeriodId == period.Id);
+            
+            var extendedLeaversOfPeriod = lossSimulation.LeaversOfPeriodExtendedAbsence>0
+            ? potentialLeavers.Where(q => q.LastCommitPeriodId > period.Id).ToList()
+            :new List<Developer>();
 
-                if(savedPercentage<abondonedThreshold && !IsFileSavedByReview(file,reviewMap,period))
+            for(var j=extendedLeaversOfPeriod.Count()-1;j>=0;j--)
+            {
+                var hasPariticipatedInExtendedPeriods=false;
+
+                for (var i = 1; i <= extendedAbsence && !hasPariticipatedInExtendedPeriods; i++)
                 {
-                    yield return new AbandonedFile()
+                    var extendedPeriodId = period.Id + i;
+                    hasPariticipatedInExtendedPeriods = developersContributions.Any(q => q.PeriodId == extendedPeriodId
+                        && q.NormalizedName == extendedLeaversOfPeriod[j].NormalizedName && q.TotalCommits > 0);
+                }
+
+                if (hasPariticipatedInExtendedPeriods)
+                        extendedLeaversOfPeriod.RemoveAt(j);
+            }
+
+            var allLeavers = extendedLeaversOfPeriod
+            .Select(q=> new SimulatedLeaver()
+            {
+                PeriodId=period.Id,
+                LossSimulationId=lossSimulation.Id,
+                Developer=q,
+                NormalizedName=q.NormalizedName,
+                LeavingType = "extended"
+            }).Concat(leaversOfPeriod.Select(q=> new SimulatedLeaver()
+            {
+                PeriodId=period.Id,
+                LossSimulationId=lossSimulation.Id,
+                Developer=q,
+                NormalizedName=q.NormalizedName,
+                LeavingType = "last-commit"
+            }));
+
+            return allLeavers;
+        }
+
+        private IEnumerable<SimulatedAbondonedFile> GetAbandonedFiles(
+        Period period,
+        IEnumerable<SimulatedLeaver> leavers, 
+        IEnumerable<Developer> availableDevelopers, 
+        KnowledgeDistributionMap knowledgeMap, 
+        LossSimulation lossSimulation)
+        {
+
+            var leaversDic = leavers.ToDictionary(q=>q.Developer.NormalizedName);
+            var availableDevelopersDic = availableDevelopers.ToDictionary(q=>q.NormalizedName);
+
+            var authorsFileBlames = knowledgeMap.BlameDistribution[period.Id];
+
+            foreach(var filePath in authorsFileBlames.Keys)
+            {
+                var allFileBlamesOfPeriod = authorsFileBlames[filePath].Values
+                    .Where(q=>availableDevelopersDic.ContainsKey(q.NormalizedDeveloperName))
+                    .OrderByDescending(q=>q.TotalAuditedLines)
+                    .ToArray();
+
+                var remainingFileBlamesOfPeriod = allFileBlamesOfPeriod
+                .Where(q=> !leaversDic.ContainsKey(q.NormalizedDeveloperName))
+                .ToArray();
+
+                var totalLinesOfAllAuthors = allFileBlamesOfPeriod.Sum(q=>q.TotalAuditedLines);
+                var totalLinesOfRemainingAuthors  = remainingFileBlamesOfPeriod.Sum(q=>q.TotalAuditedLines);
+                var leftKnowledge = 1 - totalLinesOfRemainingAuthors/(double)totalLinesOfAllAuthors;
+                var isFileSavedByReviewe = IsFileSavedByReview(filePath,knowledgeMap.ReviewBasedKnowledgeMap,period);
+
+                if(leftKnowledge>=lossSimulation.FilesAtRiksOwnershipThreshold && !isFileSavedByReviewe )
+                {
+                    yield return new SimulatedAbondonedFile()
                     {
-                        FilePath=file,
-                        TotalLinesInPeriod=totalLines,
-                        AbandonedLinesInPeriod=abandonedLines
+                        FilePath=filePath,
+                        PeriodId=period.Id,
+                        TotalLinesInPeriod=totalLinesOfAllAuthors,
+                        LossSimulationId=lossSimulation.Id,
+                        AbandonedLinesInPeriod = totalLinesOfAllAuthors - totalLinesOfRemainingAuthors,
+                        SavedLinesInPeriod = totalLinesOfRemainingAuthors,
+                        RiskType = "abandoned"
+                    };
+                }
+
+                var topOwnedPortion = 0.0;
+                for(var i=0;i<remainingFileBlamesOfPeriod.Count() && i<lossSimulation.FilesAtRiksOwnersThreshold;i++)
+                {
+                    topOwnedPortion+=remainingFileBlamesOfPeriod[i].TotalAuditedLines/(double)totalLinesOfRemainingAuthors;
+                }
+
+                if(topOwnedPortion>=lossSimulation.FilesAtRiksOwnershipThreshold && !isFileSavedByReviewe)
+                {
+                    yield return new SimulatedAbondonedFile()
+                    {
+                        FilePath=filePath,
+                        PeriodId=period.Id,
+                        TotalLinesInPeriod=totalLinesOfAllAuthors,
+                        LossSimulationId=lossSimulation.Id,
+                        AbandonedLinesInPeriod = totalLinesOfAllAuthors - totalLinesOfRemainingAuthors,
+                        SavedLinesInPeriod = totalLinesOfRemainingAuthors,
+                        RiskType = "hoarded"
                     };
                 }
             }
@@ -352,61 +400,12 @@ namespace RelationalGit.Commands
 
             foreach(var reviewDetail in reviewsDetails)
             {
-                if(reviewDetail.Periods.Min(q=>q.Id)<=period.Id && reviewDetail.Developer.LastPeriodId>period.Id)
+                if(reviewDetail.Periods.Min(q=>q.Id)<=period.Id && reviewDetail.Developer.LastCommitPeriodId>period.Id)
                     return true;
             }
 
             return false;
         }
 
-        private Dictionary<string,int> GetRemainingKnowledgeOfPeriod(Period period,Developer[] developers, CommitBlobBlame[] committedBlobBlames)
-        {
-             var fileKnowledgeMap = new Dictionary<string,int>();
-
-            var devs = developers.Where(q=>q.LastPeriodId>=period.Id).ToDictionary(q=>q.NormalizedName);
-
-            foreach(var committedBlobBlame in committedBlobBlames)
-            {
-                if(!devs.ContainsKey(committedBlobBlame.NormalizedDeveloperIdentity))
-                    continue; // we have missed his knowledge already in previous periods.
-                
-                if(!fileKnowledgeMap.ContainsKey(committedBlobBlame.CanonicalPath))
-                {
-                    fileKnowledgeMap[committedBlobBlame.CanonicalPath]=0;
-                }
-
-                fileKnowledgeMap[committedBlobBlame.CanonicalPath]+=committedBlobBlame.AuditedLines;
-            }
-
-            return fileKnowledgeMap;
-        }
-
-        private Dictionary<string,int> GetLeaversKnowledgeOfPeriod(Period period, Dictionary<string, Developer> leavers, CommitBlobBlame[] committedBlobBlames)
-        {
-            var leaversFileKnowledgeMap = new Dictionary<string,int>();
-
-            foreach(var committedBlobBlame in committedBlobBlames)
-            {
-                if(!leavers.ContainsKey(committedBlobBlame.NormalizedDeveloperIdentity))
-                    continue;
-                
-                if(!leaversFileKnowledgeMap.ContainsKey(committedBlobBlame.CanonicalPath))
-                {
-                    leaversFileKnowledgeMap[committedBlobBlame.CanonicalPath]=0;
-                }
-
-                leaversFileKnowledgeMap[committedBlobBlame.CanonicalPath]+=committedBlobBlame.AuditedLines;
-            }
-
-            return leaversFileKnowledgeMap;
-        }
-    }
-
-    public class AbandonedFile
-    {
-        public string FilePath { get; set; }         
-        public int TotalLinesInPeriod { get; set; }
-        public int AbandonedLinesInPeriod { get; set; }
-        public int SavedLines =>TotalLinesInPeriod-AbandonedLinesInPeriod;
     }
 }

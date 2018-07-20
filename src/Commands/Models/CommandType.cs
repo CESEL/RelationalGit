@@ -18,8 +18,9 @@ namespace RelationalGit.Commands
          public static string DoNameAliasing => "alias-git-names";
         public static string ApplyNameAliasing => "apply-git-aliased";
         public static string ExtractDeveloperInformation => "extract-dev-info";
-        public static string IgnoreMegaCommits => "ignore-mega-commits";
+        public static string IgnoreMegaCommitsAndDevelopers => "ignore-mega-commits";
         public static string MapGitHubGitNames => "map-git-github-names";
         public static string ComputeKnowledgeLoss => "compute-loss";
+        public static string GetPullRequestMergeEvents =>"-get-merge-events";
     }
 }

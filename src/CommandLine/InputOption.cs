@@ -35,29 +35,41 @@ namespace RelationalGit.CommandLine
         public IEnumerable<string> IssueLabels { get; set; }
         public string IssueState { get; set; }
 
-        [Option("p-type")]
+        [Option("period-type")]
         public string PeriodType { get; set; }
 
-        [Option("p-length")]
+        [Option("period-length")]
         public int PeriodLength { get; set; }
 
-        [Option("tq-threshold")]
-        public double TopQuantileThreshold { get; set; }
-
+        [Option("core-dev-threshold")]
+        public double CoreDeveloperThreshold { get; set; }
 
         [Option("mega-commit-size")]
         public int MegaCommitSize { get; set; }
 
         [Option("save-strategy")]
         public string KnowledgeSaveStrategyType { get; set; }
-
-        [Option("abondoned-threshold")]
-        public double FileAbondonedThreshold { get; set; }
         
         [Option("mega-pr-size")]
         public int MegaPullRequestSize { get; set; }
 
         [Option("leavers-type")]
         public string LeaversType { get; set; }
+        
+        [Option("core-dev-calculatuon-type")]
+        public string CoreDeveloperCalculationType { get; set; }
+        
+
+        [Option("file-risk-ownership-threshold")]
+        public double FilesAtRiksOwnershipThreshold { get; set; }
+        
+        [Option("file-risk-owners-threshold")]
+        public int FilesAtRiksOwnersThreshold { get; set; }
+        
+        [Option("leavers-extention")]
+        public int LeaversOfPeriodExtendedAbsence { get; internal set; }
+        
+        [Option("mega-devs")]
+        public IEnumerable<string> MegaDevelopers { get; set; }
     }
 }

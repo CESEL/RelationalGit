@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class RandomKnowledgeShareStrategy : RecommendingReviewersKnowledgeShareStrategy
+    public class RandomKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         private Random random=new Random();
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)

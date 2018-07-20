@@ -10,9 +10,12 @@ namespace RelationalGit
         public long Id { get; set; }
         public string KnowledgeShareStrategyType { get; set; }
         public int MegaPullRequestSize { get; set; }
-        public double FileAbondonedThreshold { get; set; }
+        public double FileAbandoningThreshold { get; set; }
         public DateTime StartDateTime { get; set; }
         public string LeaversType { get; set; }
-        public DateTime EndDateTime { get; internal set; }
+        public DateTime EndDateTime { get; set; }
+        public double FilesAtRiksOwnershipThreshold { get; internal set; }
+        public int FilesAtRiksOwnersThreshold { get; internal set; }
+        public int LeaversOfPeriodExtendedAbsence { get; internal set; }
     }
 }

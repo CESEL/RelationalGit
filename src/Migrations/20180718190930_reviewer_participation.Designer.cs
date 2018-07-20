@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RelationalGit;
 
 namespace RelationalGit.Migrations
 {
     [DbContext(typeof(GitRepositoryDbContext))]
-    partial class GitRepositoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20180718190930_reviewer_participation")]
+    partial class reviewer_participation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -381,13 +383,9 @@ namespace RelationalGit.Migrations
 
                     b.Property<double>("FileAbandoningThreshold");
 
-                    b.Property<int>("FilesAtRiksOwnersThreshold");
-
-                    b.Property<double>("FilesAtRiksOwnershipThreshold");
+                    b.Property<int>("FileHoardingThreshold");
 
                     b.Property<string>("KnowledgeShareStrategyType");
-
-                    b.Property<int>("LeaversOfPeriodExtendedAbsence");
 
                     b.Property<string>("LeaversType");
 
@@ -571,8 +569,6 @@ namespace RelationalGit.Migrations
 
                     b.Property<long>("PeriodId");
 
-                    b.Property<string>("RiskType");
-
                     b.Property<int>("SavedLinesInPeriod");
 
                     b.Property<int>("TotalLinesInPeriod");
@@ -587,8 +583,6 @@ namespace RelationalGit.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("LeavingType");
 
                     b.Property<long>("LossSimulationId");
 

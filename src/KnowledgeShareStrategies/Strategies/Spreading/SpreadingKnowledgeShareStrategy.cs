@@ -14,10 +14,13 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class CommitBasedSpreadingKnowledgeShareStrategy  : ExpertiseBasedKnowledgeShareStrategy
+    public class SpreadingKnowledgeShareStrategy  : BaseKnowledgeShareStrategy
     {
         protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
         {
+
+            return developerKnowledges.OrderBy(q=>q.NumberOfTouchedFiles);
+
             var maxTouchedFiles=developerKnowledges.Max(q=>q.NumberOfTouchedFiles);
 
             var presentDevs  = developerKnowledges

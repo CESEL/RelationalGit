@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class ExpertiseCommitBasedKnowledgeShareStrategy : ExpertiseBasedKnowledgeShareStrategy
+    public class FileBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
         protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
         {
@@ -23,8 +23,9 @@ namespace RelationalGit
             .availableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
 
             return presentDevs
-            .OrderBy(q => q.NumberOfCommits)
-            .ThenBy(q=>q.NumberOfTouchedFiles);
+            .OrderBy(q => q.NumberOfAuthoredLines)
+            .ThenBy(q => q.NumberOfCommits)
+            .ThenBy(q=>q.NumberOfReviews);
         }
     }
 }

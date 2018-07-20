@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public abstract class ExpertiseBasedKnowledgeShareStrategy : RecommendingReviewersKnowledgeShareStrategy
+    public abstract class BaseKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
         {
@@ -159,7 +159,7 @@ namespace RelationalGit
             developersKnowledge[developerName].NumberOfReviewedFiles++;
         }
 
-        private bool IsPersonHasCommittedThisFile(string normalizedName, string canonicalPath, KnowledgeMap knowledgeMap)
+        private bool IsPersonHasCommittedThisFile(string normalizedName, string canonicalPath, KnowledgeDistributionMap knowledgeMap)
         {
             var developersFileCommitsDetails = knowledgeMap.CommitBasedKnowledgeMap[canonicalPath];
             return developersFileCommitsDetails.Any(q=>q.Value.Developer.NormalizedName==normalizedName);
@@ -182,17 +182,6 @@ namespace RelationalGit
             developersKnowledge[developerName].NumberOfTouchedFiles++;
             developersKnowledge[developerName].NumberOfCommittedFiles++;
             developersKnowledge[developerName].NumberOfAuthoredLines+=totalAuditedLines;
-        }
-
-        public class DeveloperKnowledge
-        {
-            public int NumberOfTouchedFiles { get; set; }
-            public int NumberOfReviewedFiles { get; set; }
-            public int NumberOfCommittedFiles { get; set; }
-            public int NumberOfCommits { get; set; }
-            public int NumberOfReviews { get; set; }
-            public string DeveloperName { get; set; }
-            public int NumberOfAuthoredLines { get; internal set; }
         }
     }
 }

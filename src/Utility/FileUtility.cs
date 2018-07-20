@@ -11,7 +11,7 @@ namespace RelationalGit
 
         private static string[] _buildExtensions=new [] {".ps1",".sh",".make",".cmake",".cmd"};
         private static string[] _configExtensions=new [] {".yml",".conf",".config",".json",".txt"};
-        private static string[] _implementationExtensions=new [] {".cs",".php",".java",".c",".cpp",".h",".py",".js",".ts",".r",".vb",".il",};
+        private static string[] _implementationExtensions=new [] {".cs",".php",".java",".c",".cpp",".h",".py",".js",".ts",".r",".vb",".il",".go",".rb"};
         private static string[] _interfaceExtensions=new [] {".css",".html",".jsx"};
         
         internal static string GetExtension(string path)
