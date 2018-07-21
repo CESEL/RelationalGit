@@ -33,6 +33,14 @@ You need to get the lastes version of [PowerShell Core](https://github.com/Power
 # RelationalGit :cupid: Open Source
 RelationalGit has been built on top of the most popular Git Libraries. It uses [libgit2Sharp](https://github.com/libgit2/libgit2sharp), [Octokit.Net](https://github.com/octokit/octokit.net), and [Octokit.Extensions](https://github.com/mirsaeedi/octokit.net.extensions) in order to extract data from git data structure and Github respectively.
 
+# :star: Install (dotnet Global Tool)
+
+RelationalGit is a [dotnet Global tool](https://www.nuget.org/packages/RelationalGit). You can use it seamlessly with your favorite command-line application.
+
+```PowerShell
+dotnet tool install --global RelationalGit
+```
+
 # :star: Configuration File
 
 You need to create a configuration file with the following format. The configuration file at least needs to have _ConnectionStrings:RelationalGit_ and _Mining_ (empty) sections.
