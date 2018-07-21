@@ -111,63 +111,25 @@ Fills the _NormalizedAuthorName_ of -Commits_ table and _NormalizedDeveloperIden
 ### map-git-github-names
 ### compute-loss
 
-# :star: Git Exctraction
+# Complete Data Gathering Sample
 
-RelationalGit extract Commits and Blames from the git structure (the .git folder). In Addition, RelationalGit shows you detailed information about changes that happend in each commit.
+for a complete data gathering one can run a following script, assuming the setting file is located at the default location (User Directory \ relationalgit.json) and all the required setting values are set.
 
-Before going with the commands, let's assume that we have cloned the repository we want to examine to a folder with `{repo_path}` path. `{repo_path}` can be a reference to any cloned folder on your system.
-
-
-
-### Commit
-
+```PowerShell
+rgit --cmd get-git-commits
+rgit --cmd get-git-commits-changes
+rgit --cmd ignore-mega-commits
+rgit --cmd periodize-git-commits
+rgit --cmd get-git-commit-blames-for-periods
+rgit --cmd ignore-mega-commits
+rgit --cmd alias-git-names
+rgit --cmd apply-git-aliased
+rgit --cmd extract-dev-info
+rgit --cmd get-github-pullrequests
+rgit --cmd get-github-pullrequest-reviewers
+rgit --cmd get-github-pullrequest-reviewer-comments
+rgit --cmd get-github-pullrequests-files
+rgit --cmd get-merge-events
+rgit --cmd map-git-github-names
+rgit --cmd compute-loss
 ```
-dotnet .\RelationalGit.dll -get-commits {repo_path} {branch_name}
-```
-
-This command saves the extracted data in `Commits` and `CommitRelationship` tables.
-
-### Committed Changes
-
-```
-dotnet .\RelationalGit.dll -get-commitsChanges {repo_path} {branch_name}
-```
-
-This command saves the extracted data in `CommitChanges` table.
-
-### Blames
-
-```
-dotnet .\RelationalGit.dll -get-blobsblames {repo_path} {branch_name} {commit_sha} {file_extensions_seperated_by_comma}
-```
-
-This command saves the extracted data in `CommittedBlob` and `CommitBlobBlames` tables.
-
-# :star: Github Pull Requests Exctraction
-
-RelationalGit wants to help us to have a better insight about code review practices in our project. So if you have hosted your project on Github, It can fetche and save `Pull Requests`, `Reviewers`, `Reviewer Comments`, and also `Pull Request's Files`. To use Github APIs you need to generate a token. Bear in mind that each token is allowed to sent 5000 requests per hour to Github's servers. So, for larger projects you need to wait a bit more.
-
-### Pull Requests
-
-```
-dotnet .\RelationalGit.dll -get-pullrequests {github_token} {owner_name} {repo_name} {branch_name}
-```
-
-### Reviewers
-
-```
-dotnet .\RelationalGit.dll -get-pullrequest-reviewers {github_token} {owner_name} {repo_name} {branch_name}
-```
-
-### Reviewers' Comments
-
-```
-dotnet .\RelationalGit.dll -get-pullrequest-reviewer-comments {github_token} {owner_name} {repo_name} {branch_name}
-```
-
-### Pull Requests' Files
-
-```
-dotnet .\RelationalGit.dll get-pullrequests-files {github_token} {owner_name} {repo_name} {branch_name}
-```
-
