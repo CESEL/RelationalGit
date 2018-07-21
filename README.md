@@ -69,7 +69,9 @@ You need to tell relational git where's your config file. If you don't, it assum
 
 # :star: Commands
 
-RelationalGit has several built-in commands for extracting git information and computing various knowledge loss scenarios. You can override the values you set in the configuration file by passing explicit arguments for each command. For example, the following lines execute the _get-github-pullrequest-reviewer-comments_ command to gather all the PR's comments of the GitHub repository which is defined via *_GitHubOwner_* and *_GitHubRepo_* values of the setting file.
+RelationalGit has several built-in commands for extracting git information and computing various knowledge loss scenarios. You can override the values you set in the configuration file by passing explicit arguments for each command. 
+
+For example, the following lines execute the _get-github-pullrequest-reviewer-comments_ command to gather all the PR's comments of the GitHub repository which is defined via *_GitHubOwner_* and *_GitHubRepo_* values of the setting file.
 
 ```PowerShell
 
