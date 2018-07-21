@@ -80,6 +80,23 @@ rgit --cmd get-github-pullrequest-reviewer-comments // it gets the setting file 
 
 ```
 
+  * get-git-commits
+  * get-git-commits-changes
+  * alias-git-names
+  * apply-git-aliased
+  * ignore-mega-commits
+  * periodize-git-commits
+  * extract-dev-info
+  * get-git-commit-blames-for-periods
+  * get-git-commit-blames
+  * get-github-pullrequests
+  * get-github-pullrequest-reviewers
+  * get-merge-events
+  * get-github-pullrequest-reviewer-comments
+  * get-github-pullrequests-files
+  * map-git-github-names
+  * compute-loss
+
 # :star: Git Exctraction
 
 RelationalGit extract Commits and Blames from the git structure (the .git folder). In Addition, RelationalGit shows you detailed information about changes that happend in each commit.
