@@ -65,14 +65,26 @@ You need to create a configuration file with the following format. The configura
 }
 ```
 
-You need to tell relational git where's your config file. If you don't anything, it assumes there is a configuration file in the user directory names _relationalgit.json_.
+You need to tell relational git where's your config file. If you don't, it assumes there is a configuration file in the user directory names _relationalgit.json_.
 
+# :star: Commands
+
+RelationalGit has several built-in commands for extracting git information and computing various knowledge loss scenarios. You can override the values you set in the configuration file by passing explicit arguments for each command. For example, the following lines execute the _get-github-pullrequest-reviewer-comments_ command to gather all the PR's comments of the GitHub repository which is defined via *_GitHubOwner_* and *_GitHubRepo_* values of the setting file.
+
+```PowerShell
+
+rgit --conf-path "C:\Users\Ehsan Mirsaeedi\Documents\relationalgit.json"  --cmd get-github-pullrequest-reviewer-comments 
+rgit --cmd get-github-pullrequest-reviewer-comments // it gets the setting file from the default location
+
+```
 
 # :star: Git Exctraction
 
 RelationalGit extract Commits and Blames from the git structure (the .git folder). In Addition, RelationalGit shows you detailed information about changes that happend in each commit.
 
 Before going with the commands, let's assume that we have cloned the repository we want to examine to a folder with `{repo_path}` path. `{repo_path}` can be a reference to any cloned folder on your system.
+
+
 
 ### Commit
 
