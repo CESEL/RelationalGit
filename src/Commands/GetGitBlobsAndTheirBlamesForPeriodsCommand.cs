@@ -20,43 +20,44 @@ namespace RelationalGit.Commands
         {
             var dbContext = new GitRepositoryDbContext();
             
-            var extractedCommits=dbContext.CommitBlobBlames.Select(m=>m.CommitSha).Distinct()
-            .ToArray();
+            var extractedCommits=await dbContext.CommitBlobBlames.Select(m=>m.CommitSha).Distinct().ToArrayAsync();
 
-            var periods = await dbContext.Periods.OrderBy(q => q.ToDateTime)
-            .ToArrayAsync();
+            var periods = await dbContext.Periods.OrderBy(q => q.ToDateTime).ToArrayAsync();
 
-            periods=periods
-                .Where(m=>!extractedCommits.Any(c=>c==m.LastCommitSha))
-                .ToArray();
+            periods=periods.Where(m=>!extractedCommits.Any(c=>c==m.LastCommitSha)).ToArray();
 
             var canonicalDic = dbContext.GetCanonicalPaths();
 
-            var gitRepository = new GitRepository(repoPath);
+            var gitRepository = new GitRepository(repoPath,_logger);
             var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName).ToDictionary(q => q.Sha);
 
             dbContext.Dispose();
 
-            foreach(var period in periods)
+            _logger.LogInformation("{datetime}: extracting blames for {count} periods.", DateTime.Now, periods.Count());
+            
+            foreach (var period in periods)
+            {
                 await ExtractBlamesofCommit(orderedCommits[period.LastCommitSha], canonicalDic, validExtensions, gitRepository);
+            }
+            
                   
         }
         private async Task ExtractBlamesofCommit(Commit commit, Dictionary<string, string> canonicalDic, string[] validExtensions, GitRepository gitRepository)
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                _logger.LogInformation("{datetime}: extracting blames of {Commitsha}", DateTime.Now, commit.Sha);
+                _logger.LogInformation("{datetime}: extracting blames out of commit {Commitsha}", DateTime.Now, commit.Sha);
 
                 gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions, canonicalDic);
 
                 dbContext.CommittedBlob.AddRange(commit.Blobs);
                 dbContext.CommitBlobBlames.AddRange(commit.Blobs.SelectMany(m => m.CommitBlobBlames));
         
-                _logger.LogInformation("{datetime}: finished extracting blames of {Commitsha}", DateTime.Now, commit.Sha);
+                _logger.LogInformation("{datetime}: saving {count} blames of commit {Commitsha} into database.", DateTime.Now,commit.Blobs.Count(), commit.Sha);
 
                 await dbContext.SaveChangesAsync();
 
-                _logger.LogInformation("{datetime}: blames of {Commitsha} saved.", DateTime.Now, commit.Sha);
+                _logger.LogInformation("{datetime}: blames of {Commitsha} have been saved.", DateTime.Now, commit.Sha);
 
             }
         }

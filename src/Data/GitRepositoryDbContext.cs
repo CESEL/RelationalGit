@@ -11,6 +11,7 @@ namespace RelationalGit
 {
     public class GitRepositoryDbContext:DbContext
     {
+        internal static string AppSettingsPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "relationalgit.json");
         public GitRepositoryDbContext()
         {
 
@@ -24,14 +25,13 @@ namespace RelationalGit
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json");
+            .AddJsonFile(AppSettingsPath);
 
             var Configuration = builder.Build();
 
             optionsBuilder.EnableSensitiveDataLogging(true);
 
-            optionsBuilder.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+            optionsBuilder.UseSqlServer(Configuration.GetConnectionString("RelationalGit"));
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -102,12 +102,12 @@ namespace RelationalGit
             INNER JOIN ( 
                 SELECT distinct PullRequestNumber,PullRequestReviewers.UserLogin FROM PullRequestReviewers
                 INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewers.PullRequestNumber
-                where PullRequestReviewers.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewers.UserLogin and Merged=1
+                where PullRequestReviewers.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewers.UserLogin and Merged=1 and State!='DISMISSED'
                     UNION 
                 SELECT distinct PullRequestNumber,PullRequestReviewerComments.UserLogin FROM PullRequestReviewerComments
                 INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewerComments.PullRequestNumber
                 where PullRequestReviewerComments.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewerComments.UserLogin 
-                AND PullRequestReviewerComments.CreatedAtDateTime> PullRequests.MergedAtDateTime and Merged=1) as reviewers
+                AND PullRequestReviewerComments.CreatedAtDateTime> PullRequests.MergedAtDateTime and Merged=1  and State!='DISMISSED') as reviewers
             on reviewers.PullRequestNumber=PullRequests.Number
             group by Commits.PeriodId,reviewers.UserLogin";
 

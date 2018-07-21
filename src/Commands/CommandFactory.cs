@@ -20,37 +20,37 @@ namespace RelationalGit.Commands
             
             if (options.Command.ToLower() == CommandType.GetPullRequests)
             {
-                var cmd = new GetPullRequestsCommand();
+                var cmd = new GetPullRequestsCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName:"mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
             else if (options.Command.ToLower() ==CommandType.GetPullRequestReviewes)
             {
-                var cmd = new GetPullRequestReviewersCommand();
+                var cmd = new GetPullRequestReviewersCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
             else if (options.Command.ToLower() == CommandType.GetPullRequestRevieweComments)
             {
-                var cmd = new GetPullRequestReviewerCommentsCommand();
+                var cmd = new GetPullRequestReviewerCommentsCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
             else if (options.Command.ToLower() == CommandType.GetPullRequestMergeEvents)
             {
-                var cmd = new GetPullRequestMergeEventsCommand();
+                var cmd = new GetPullRequestMergeEventsCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
             else if (options.Command.ToLower() == "-get-users")
             {
-                var cmd = new GetUsersCommand();
+                var cmd = new GetUsersCommand(logger);
                 await cmd.Execute(options.GitHubToken, agentName: "mirsaeedi");
             }
             else if (options.Command.ToLower() == CommandType.GetPullRequestFiles)
             {
-                var cmd = new GetPullRequestFilesCommand();
+                var cmd = new GetPullRequestFilesCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
             else if (options.Command.ToLower() == "-get-issues")
             {
-                var cmd = new GetIssuesCommand();
+                var cmd = new GetIssuesCommand(logger);
 
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", owner: options.GitHubOwner, repo: options.GitHubRepo, 
                     labels:options.IssueLabels.ToArray(), 
@@ -58,18 +58,18 @@ namespace RelationalGit.Commands
             }
             else if (options.Command.ToLower() == "-get-issuesevents")
             {
-                var cmd = new GetIssuesEventsCommand();
+                var cmd = new GetIssuesEventsCommand(logger);
 
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi",owner: options.GitHubOwner,repo: options.GitHubRepo);
             }
             else if (options.Command.ToLower() == CommandType.GetGitCommits)
             {
-                var cmd = new GetGitCommitsCommand();
+                var cmd = new GetGitCommitsCommand(logger);
                 await cmd.Execute(options.RepositoryPath, options.GitBranch);
             }
             else if (options.Command.ToLower() == CommandType.GetGitCommitsChanges)
             {
-                var cmd = new GetGitCommitsChangesCommand();
+                var cmd = new GetGitCommitsChangesCommand(logger);
                 await cmd.Execute(options.RepositoryPath, options.GitBranch);
             }
             else if (options.Command.ToLower() == CommandType.ExtractBlameFromCommit)
@@ -84,46 +84,46 @@ namespace RelationalGit.Commands
             }
             else if (options.Command.ToLower() == CommandType.Periodize)
             {
-                var cmd = new PeriodizeGitCommits();
-                await cmd.Execute(options.RepositoryPath, options.GitBranch,options.PeriodType,options.PeriodLength);
+                var cmd = new PeriodizeGitCommits(logger);
+                await cmd.Execute(options.RepositoryPath, options.GitBranch,options.PeriodType,options.PeriodLength.Value);
             }
             else if (options.Command.ToLower() == CommandType.DoNameAliasing)
             {
-                var cmd = new AliasGitNamesCommand();
+                var cmd = new AliasGitNamesCommand(logger);
                 await cmd.Execute();
             }
             else if (options.Command.ToLower() == CommandType.ApplyNameAliasing)
             {
-                var cmd = new ApplyNameAliasingCommand();
+                var cmd = new ApplyNameAliasingCommand(logger);
                 await cmd.Execute();
             }
             else if (options.Command.ToLower() == CommandType.ExtractDeveloperInformation)
             {
-                var cmd = new ExtractDeveloperInformationCommand();
-                await cmd.Execute(options.CoreDeveloperThreshold,options.CoreDeveloperCalculationType);
+                var cmd = new ExtractDeveloperInformationCommand(logger);
+                await cmd.Execute(options.CoreDeveloperThreshold.Value,options.CoreDeveloperCalculationType);
             }
             else if (options.Command.ToLower() == CommandType.IgnoreMegaCommitsAndDevelopers)
             {
-                var cmd = new IgnoreMegaCommitsCommand();
-                await cmd.Execute(options.MegaCommitSize,options.MegaDevelopers);
+                var cmd = new IgnoreMegaCommitsCommand(logger);
+                await cmd.Execute(options.MegaCommitSize.Value,options.MegaDevelopers);
             }  
             else if (options.Command.ToLower() == CommandType.MapGitHubGitNames)
             {
-                var cmd = new MapGitHubGitNamesCommand();
+                var cmd = new MapGitHubGitNamesCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName:"mirsaeedi", options.GitHubOwner, options.GitHubRepo);
             }
             else if (options.Command.ToLower() == CommandType.ComputeKnowledgeLoss)
             {
-                var cmd = new ShareKnowledgeCommand();
+                var cmd = new ShareKnowledgeCommand(logger);
 
                 var lossSimulationOption = new LossSimulationOption()
                 {
                     KnowledgeShareStrategyType=options.KnowledgeSaveStrategyType,
-                    MegaPullRequestSize=options.MegaPullRequestSize,
+                    MegaPullRequestSize=options.MegaPullRequestSize.Value,
                     LeaversType=options.LeaversType,
-                    FilesAtRiksOwnershipThreshold = options.FilesAtRiksOwnershipThreshold,
-                    FilesAtRiksOwnersThreshold = options.FilesAtRiksOwnersThreshold,
-                    LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence
+                    FilesAtRiksOwnershipThreshold = options.FilesAtRiksOwnershipThreshold.Value,
+                    FilesAtRiksOwnersThreshold = options.FilesAtRiksOwnersThreshold.Value,
+                    LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence.Value
                 };
 
                 await cmd.Execute(lossSimulationOption);

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Diacritics.Extensions;
 using F23.StringSimilarity;
+using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands
 {
@@ -25,6 +26,12 @@ namespace RelationalGit.Commands
         private Dictionary<string, string> _canononicalPathMapper;
         private GitHubGitUser[] _GitHubGitUsernameMapper;
         private Period[] _periods;
+        private ILogger _logger;
+
+        public ShareKnowledgeCommand(ILogger logger)
+        {
+            _logger = logger;
+        }
 
         #endregion
         internal async Task Execute(LossSimulationOption lossSimulationOption)

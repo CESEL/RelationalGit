@@ -25,14 +25,11 @@ namespace RelationalGit
 
         #endregion
 
-        public GitRepository(string localRepositoryPath)
+        public GitRepository(string localRepositoryPath, ILogger logger)
         {
             _gitRepo = new Repository(localRepositoryPath);
             _localClonePath = localRepositoryPath;
-
-            var loggerFactory = new LoggerFactory();
-            loggerFactory.AddConsole().AddDebug();
-            _logger = loggerFactory.CreateLogger("Github.Octokit");
+            _logger = logger;
         }
 
         #region Public Interface
@@ -56,6 +53,8 @@ namespace RelationalGit
                 IncludeReachableFrom = branch
             };
 
+            _logger.LogInformation("{datetime}: getting commits from git.", DateTime.Now);
+
             var commits = _gitRepo
                 .Commits
                 .QueryBy(filter)
@@ -70,10 +69,12 @@ namespace RelationalGit
         {
             _fileOidHolder.Clear();
 
+            _logger.LogInformation("{datetime}: trying to get committed changes from all the {count} commits.", DateTime.Now,orderedCommits.Count());
+
             for (int i = 0; i < orderedCommits.Length; i++)
             {
                 if(i%500==0)
-                    _logger.LogInformation("{dateTime}: {index}",DateTime.Now,i);
+                    _logger.LogInformation("{dateTime}: more than {count} commits has been processed",DateTime.Now,i);
 
                 LoadChangesOfCommit(orderedCommits[i]);
             }

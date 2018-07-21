@@ -9,6 +9,6 @@ namespace RelationalGit
     {
         public static readonly string AuthorshipQuantile="ownership-quantile";
         public static readonly string AuthoredLinesPercentage="ownership-percentage";
-        public static string AuthoredLines { get; internal set; }
+        public static string AuthoredLines ="ownership-lines";
     }
 }

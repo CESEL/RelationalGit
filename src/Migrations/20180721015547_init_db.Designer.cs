@@ -10,8 +10,8 @@ using RelationalGit;
 namespace RelationalGit.Migrations
 {
     [DbContext(typeof(GitRepositoryDbContext))]
-    [Migration("20180720034356_hoarded")]
-    partial class hoarded
+    [Migration("20180721015547_init_db")]
+    partial class init_db
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

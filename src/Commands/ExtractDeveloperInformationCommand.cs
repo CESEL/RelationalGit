@@ -7,19 +7,32 @@ using System.Text;
 using System.Threading.Tasks;
 using Diacritics.Extensions;
 using F23.StringSimilarity;
+using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands
 {
     public class ExtractDeveloperInformationCommand
     {
+        private ILogger _logger;
+
+        public ExtractDeveloperInformationCommand(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task Execute(double coreDeveloperThreshold,string coreDeveloperCalculationType)
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                var reviewersDic=dbContext.GetPeriodReviewerCounts();
+                _logger.LogInformation("{datetime}: extracting developer statistics for each period.", DateTime.Now);
+
+                var reviewersDic =dbContext.GetPeriodReviewerCounts();
                 await ExtractDevelopersInformation(reviewersDic,dbContext);
                 await ExctractContributionsPerPeriod(coreDeveloperThreshold,coreDeveloperCalculationType,reviewersDic, dbContext);
                 await dbContext.SaveChangesAsync();
+
+                _logger.LogInformation("{datetime}: developer information has been extracted and saved.", DateTime.Now);
+
             }
         }
 

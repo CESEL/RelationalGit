@@ -7,11 +7,19 @@ using System.Text;
 using System.Threading.Tasks;
 using Diacritics.Extensions;
 using F23.StringSimilarity;
+using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands
 {
     public class IgnoreMegaCommitsCommand
     {
+        private ILogger _logger;
+
+        public IgnoreMegaCommitsCommand(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task Execute(int megaCommitSize,IEnumerable<string> developerNames)
         {
 
@@ -21,7 +29,7 @@ namespace RelationalGit.Commands
 
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                var query = $@"
+                await dbContext.Database.ExecuteSqlCommandAsync($@"
                 UPDATE Commits set Ignore=0;
                 UPDATE Commits set Ignore=1
                 WHERE NormalizedAuthorName in {developerNamesSet}
@@ -32,9 +40,7 @@ namespace RelationalGit.Commands
                 UPDATE CommitBlobBlames set Ignore=1
                 FROM CommitBlobBlames
                 INNER JOIN (select CommitSha from CommittedChanges group by CommitSha having count(*)>={megaCommitSize}) as t
-                On AuthorCommitSha=t.CommitSha";
-
-                await dbContext.Database.ExecuteSqlCommandAsync(query);  
+                On AuthorCommitSha=t.CommitSha");  
             }
         }
     }

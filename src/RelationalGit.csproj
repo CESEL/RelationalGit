@@ -4,13 +4,19 @@
     <LangVersion>7.3</LangVersion>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dotnet-rgit</ToolCommandName>
+    <Authors>Ehsan Mirsaeedi, Peter Rigby</Authors>
+    <Company />
+    <Title>RelationalGit</Title>
+    <PackageLicenseUrl>https://github.com/mirsaeedi/RelationalGit</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/mirsaeedi/RelationalGit</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mirsaeedi/RelationalGit</RepositoryUrl>
+    <PackageTags>git;</PackageTags>
+    <Description>RelationalGit extracts valuable information about commits, blames, changes, devs, and pull requests out of git's data structure and imports them to a relational database such as Microsoft SQL Server. These data can be a ground for further source code mining analysis.</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Version>1.0.2</Version>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Migrations\20180111064306_SetIdentityInsertOff.cs" />
-    <Compile Remove="Migrations\20180123014016_Collation.cs" />
-    <Compile Remove="Migrations\20180123021825_Init.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="7.0.1" />
@@ -29,12 +35,6 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.1.1" />
     <PackageReference Include="Octokit.Extensions" Version="1.0.3" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

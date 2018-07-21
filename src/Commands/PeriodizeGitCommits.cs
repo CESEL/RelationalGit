@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,15 +11,23 @@ namespace RelationalGit.Commands
 {
     public class PeriodizeGitCommits
     {
+        private ILogger _logger;
+
+        public PeriodizeGitCommits(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task Execute(string repoPath, string branchName, string periodType, int periodLength)
         {
             var commitPeriods = new List<CommitPeriod>();
 
             using (var dbContext = new GitRepositoryDbContext())
             {
-                var commits = dbContext.Commits
-                .OrderBy(m => m.AuthorDateTime)
-                .ToArray();
+                var commits = dbContext.Commits.OrderBy(m => m.AuthorDateTime).ToArray();
+
+                _logger.LogInformation("{datetime}: trying to periodize all the {count} commits. Period Type: {type}, Period Length: {length}"
+                    , DateTime.Now, commits.Count(),periodType,periodLength);
 
                 var beginDatetime = commits.Min(m => m.AuthorDateTime);
                 var qaurterMonth = GetQaurterMonth(beginDatetime);
@@ -49,8 +58,11 @@ namespace RelationalGit.Commands
 
                 periods[currentPeriodIndex].LastCommitSha = commits[commits.Length - 1].Sha;
 
+
+                _logger.LogInformation("{datetime}: trying to save {count} periods.", DateTime.Now, periods.Count());
                 dbContext.Periods.AddRange(periods);
                 await dbContext.SaveChangesAsync();
+                _logger.LogInformation("{datetime}: periods has been saved successfully.", DateTime.Now);
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +10,18 @@ namespace RelationalGit.Commands
 {
     public class GetGitCommitsChangesCommand
     {
+        private ILogger _logger;
+
+        public GetGitCommitsChangesCommand(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task Execute(string repoPath,string branchName)
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                var gitRepository = new GitRepository(repoPath);
+                var gitRepository = new GitRepository(repoPath,_logger);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
                 gitRepository.LoadChangesOfCommits(orderedCommits);
 

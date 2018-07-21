@@ -23,9 +23,10 @@ namespace RelationalGit
     {
         private readonly GitHubClient _client;
         private readonly string _agentName;
+        private readonly ILogger _logger;
         private readonly string _token;
 
-        public GithubDataFetcher(string token, string agentName)
+        public GithubDataFetcher(string token, string agentName, ILogger logger)
         {
             Ensure.ArgumentNotNullOrEmptyString(token, nameof(token));
             Ensure.ArgumentNotNullOrEmptyString(token, nameof(agentName));
@@ -33,24 +34,30 @@ namespace RelationalGit
             _token = token;
             _agentName = agentName;
 
-            var loggerFactory = new LoggerFactory();
-            loggerFactory.AddConsole().AddDebug();
-            var logger = loggerFactory.CreateLogger("Github.Octokit");
+            _logger = logger;
 
-            _client = new ResilientGitHubClientFactory(logger)
+            _client = new ResilientGitHubClientFactory(_logger)
                 .Create(new ProductHeaderValue(agentName), new Octokit.Credentials(token),new InMemoryCacheProvider());
         }
 
-        internal async Task<GitHubCommit> GetCommit(string owner, string repo, string commitSha)
+        public async Task<GitHubCommit> GetCommit(string owner, string repo, string commitSha)
         {
-            return await _client
-                    .Repository
-                    .Commit
-                    .Get(owner,repo, commitSha);       
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(commitSha));
+
+            var commit = await _client.Repository.Commit.Get(owner,repo, commitSha);
+            _logger.LogInformation("{datetime}: commit {commit} has been fetched successfully.", DateTime.Now, commitSha);
+            return commit;
+
         }
 
-        internal async Task<IssueEvent[]> GetIssueEvents(string owner, string repo, Issue[] loadedIssues)
+        public async Task<IssueEvent[]> GetIssueEvents(string owner, string repo, Issue[] loadedIssues)
         {
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+            Ensure.ArgumentNotNull(loadedIssues, nameof(loadedIssues));
+
             var githubEvents = new List<IssueEvent>();
 
             for(int i = 0; i < loadedIssues.Length; i++)
@@ -74,9 +81,12 @@ namespace RelationalGit
 
         public async Task<PullRequest[]> FetchAllPullRequests(string owner, string repo,string branch = "master")
         {
+
             Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
             Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
             Ensure.ArgumentNotNullOrEmptyString(branch, nameof(branch));
+
+            _logger.LogInformation("{datetime}: fetching pull reuqests from {owner}/{repo}.", DateTime.Now, owner,repo);
 
             var requestFilter = new PullRequestRequest()
             {
@@ -86,20 +96,27 @@ namespace RelationalGit
                 Base = branch,
             };
 
-            var gitHubPullRequests = (await _client
-                .PullRequest
-                .GetAllForRepository(owner, repo, requestFilter, new ApiOptions()
-                {
-                    PageSize=1000
-                }))
-                .ToArray();
+            var gitHubPullRequests = (await _client.PullRequest.GetAllForRepository(owner, repo, requestFilter, new ApiOptions()
+            {
+                PageSize=1000
+            }))
+            .ToArray();
 
             var pullRequests = Mapper.Map<PullRequest[]>(gitHubPullRequests);
+
+            _logger.LogInformation("{datetime}: {count} pull requests have been fetched.", DateTime.Now, pullRequests.Length);
+
             return pullRequests;
         }
 
-        internal async Task<PullRequestReviewer[]> FetchReviewersOfPullRequests(string owner, string repo,PullRequest[] pullRequests)
+        public async Task<PullRequestReviewer[]> FetchReviewersOfPullRequests(string owner, string repo,PullRequest[] pullRequests)
         {
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+            Ensure.ArgumentNotNull(pullRequests,nameof(pullRequests));
+
+            _logger.LogInformation("{datetime}: fetching all the pull reuqest reviewers from {owner}/{repo}.", DateTime.Now, owner, repo);
+
             var allReviewers = new List<PullRequestReviewer>();
 
             for (int i = 0; i < pullRequests.Length; i++)
@@ -107,27 +124,16 @@ namespace RelationalGit
                 allReviewers.AddRange(await GetReviewsOfPullRequest(owner, repo, pullRequests[i]));
             }
 
+            _logger.LogInformation("{datetime}: {count} reviewers have been fetched.", DateTime.Now, allReviewers.Count);
+
             return allReviewers.ToArray();
-        }
-
-        private async Task<PullRequestReviewer[]> GetReviewsOfPullRequest(string owner, string repo,PullRequest pullRequest)
-        {
-            var githubReviews = (await _client
-                    .PullRequest
-                    .Review
-                    .GetAll(owner, repo, pullRequest.Number, new ApiOptions(){PageSize = 1000}))
-                    .ToArray();
-
-            var reviews = Mapper.Map<PullRequestReviewer[]>(githubReviews);
-
-            foreach (var review in reviews)
-                review.PullRequestNumber = pullRequest.Number;
-
-            return reviews;
         }
 
         public async Task<Issue[]> GetIssues(string owner, string repo,string[] labels,string state)
         {
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+
             var repositoryIssueRequest = new RepositoryIssueRequest()
             {
                 State= (ItemStateFilter)Enum.Parse(typeof(ItemStateFilter), state),
@@ -138,25 +144,29 @@ namespace RelationalGit
                 repositoryIssueRequest.Labels.Add(label);
             }
             
-            var githubIssues = (await _client
-                    .Issue
-                    .GetAllForRepository(owner, repo, repositoryIssueRequest,new ApiOptions()
-                    {
-                        PageSize=500
-                    }));
+            var githubIssues = (await _client.Issue.GetAllForRepository(owner, repo, repositoryIssueRequest,new ApiOptions()
+            {
+                PageSize=500
+            }));
 
             var issues = Mapper.Map<Issue[]>(githubIssues);
 
             return issues;
         }
 
-        internal async Task<PullRequestReviewerComment[]> FetchReviewerCommentsFromRepository(string owner, string repo)
+        public async Task<PullRequestReviewerComment[]> FetchReviewerCommentsFromRepository(string owner, string repo)
         {
+
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+
             var requestFilter = new PullRequestReviewCommentRequest()
             {
                 Sort = PullRequestReviewCommentSort.Updated,
                 Direction= SortDirection.Ascending
             };
+
+            _logger.LogInformation("{datetime}: fetching review comment of all the pull reuqests from {owner}/{repo}.", DateTime.Now, owner, repo);
 
             var reviewComments= await _client
                     .PullRequest
@@ -167,12 +177,21 @@ namespace RelationalGit
                     });
 
             var reviewerComments = Mapper.Map<PullRequestReviewerComment[]>(reviewComments.ToArray());
+
+            _logger.LogInformation("{datetime}: {count} review comments have been fetched.", DateTime.Now, reviewerComments.Length);
+
             return reviewerComments;
 
         }
-        internal async Task MergeEvents(string owner, string repo, PullRequest[] pullRequests)
+        public async Task MergeEvents(string owner, string repo, PullRequest[] pullRequests)
         {
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+            Ensure.ArgumentNotNull(pullRequests, nameof(pullRequests));
+
             var reviewerComments = new List<PullRequestReviewerComment>();
+
+            _logger.LogInformation("{datetime}: fetching merged events of {count} pull reuqests of {owner}/{repo}.", DateTime.Now, pullRequests.Length, owner, repo);
 
             for (int i = 0; i < pullRequests.Length; i++)
             {
@@ -190,10 +209,15 @@ namespace RelationalGit
                     pullRequests[i].MergeCommitSha = mergeEvent.CommitId;
                 else
                     pullRequests[i].MergeCommitSha = null;
+
+                if(i%500==0)
+                    _logger.LogInformation("{datetime}: more than {count} pull requests has been processed.", DateTime.Now, i);
             }
         }
-        internal async Task GetUsers(User[] users)
+        public async Task GetUsers(User[] users)
         {
+            Ensure.ArgumentNotNull(users, nameof(users));
+
             for (int i = 0; i < users.Length; i++)
             {
                 var user = await _client
@@ -204,8 +228,14 @@ namespace RelationalGit
                 users[i].Name = user.Name;
             }
         }
-        internal async Task<PullRequestFile[]> FetchFilesOfPullRequests(string owner, string repo,PullRequest[] pullRequests)
+        public async Task<PullRequestFile[]> FetchFilesOfPullRequests(string owner, string repo,PullRequest[] pullRequests)
         {
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+            Ensure.ArgumentNotNull(pullRequests, nameof(pullRequests));
+
+            _logger.LogInformation("{datetime}: fetching files of all the {count} pull reuqests of {owner}/{repo}.", DateTime.Now, pullRequests.Length, owner, repo);
+
             var result = new List<PullRequestFile>();
 
             for (int i = 0; i < pullRequests.Length; i++)
@@ -220,10 +250,11 @@ namespace RelationalGit
                 result.AddRange(mappedFiles);
             }
 
+            _logger.LogInformation("{datetime}: {count} pull request files haved been fetched.", DateTime.Now, result.Count);
+
             return result.ToArray();
         }
-
-        internal async Task<PullRequestFile[]> GetCommitsOfPullRequests(string owner, string repo, PullRequest[] pullRequests)
+        public async Task<PullRequestFile[]> GetCommitsOfPullRequests(string owner, string repo, PullRequest[] pullRequests)
         {
             var result = new List<PullRequestFile>();
 
@@ -265,6 +296,22 @@ namespace RelationalGit
             return await (_client
                     .PullRequest
                     .Commits(owner, repo, pullRequest.Number));
+        }
+
+        private async Task<PullRequestReviewer[]> GetReviewsOfPullRequest(string owner, string repo, PullRequest pullRequest)
+        {
+            var githubReviews = (await _client
+                    .PullRequest
+                    .Review
+                    .GetAll(owner, repo, pullRequest.Number, new ApiOptions() { PageSize = 1000 }))
+                    .ToArray();
+
+            var reviews = Mapper.Map<PullRequestReviewer[]>(githubReviews);
+
+            foreach (var review in reviews)
+                review.PullRequestNumber = pullRequest.Number;
+
+            return reviews;
         }
     }
 }

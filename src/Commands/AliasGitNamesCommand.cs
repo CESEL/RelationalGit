@@ -8,14 +8,22 @@ using System.Threading.Tasks;
 using Diacritics.Extensions;
 using F23.StringSimilarity;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands
 {
     public class AliasGitNamesCommand
     {
+        private ILogger _logger;
+
+        public AliasGitNamesCommand(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task Execute()
         {
-            using (var dbContext = new GitRepositoryDbContext())
+            using (var dbContext = new GitRepositoryDbContext(false))
             {
                 var normalizedDevelopers=new List<AliasedDeveloperName>();
 
@@ -25,6 +33,8 @@ namespace RelationalGit.Commands
                     .Select(m => new { m.AuthorEmail, m.AuthorName })
                     .Distinct()
                     .ToArray();
+
+                _logger.LogInformation("{datetime}: there are {count} authors submitted all the commits.", DateTime.Now, authors.Count());
 
                 foreach (var author in authors)
                 {
@@ -93,8 +103,14 @@ namespace RelationalGit.Commands
                     }
                 }
 
+                _logger.LogInformation("{datetime}: after normalization, there are {count} unique authors have been found.", 
+                    DateTime.Now, normalizedDevelopers.Select(q=>q.NormalizedName).Distinct().Count());
+
+
                 dbContext.AddRange(normalizedDevelopers);
                 await dbContext.SaveChangesAsync();
+
+                _logger.LogInformation("{datetime}: aliased results have been saves successfully.",DateTime.Now);
             }
         }
     }

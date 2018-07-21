@@ -20,12 +20,11 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                _logger.LogInformation("{datetime}: Extract Blames of {Commitsha}"
-                ,DateTime.Now,commitSha);
+                _logger.LogInformation("{datetime}: Extracting Blames of {Commitsha}",DateTime.Now,commitSha);
 
                 var canonicalDic = dbContext.GetCanonicalPaths();
 
-                var gitRepository = new GitRepository(repoPath);
+                var gitRepository = new GitRepository(repoPath,_logger);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
 
                 var commit = orderedCommits.Single(q => q.Sha == commitSha);

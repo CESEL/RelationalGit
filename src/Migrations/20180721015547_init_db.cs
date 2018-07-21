@@ -128,7 +128,8 @@ namespace RelationalGit.Migrations
                     TotalCommits = table.Column<int>(nullable: false),
                     IsCore = table.Column<bool>(nullable: false),
                     TotalLines = table.Column<int>(nullable: false),
-                    LinesPercentage = table.Column<double>(nullable: false)
+                    LinesPercentage = table.Column<double>(nullable: false),
+                    TotalReviews = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -142,10 +143,14 @@ namespace RelationalGit.Migrations
                     Id = table.Column<long>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     NormalizedName = table.Column<string>(nullable: true),
-                    FirstPeriodId = table.Column<long>(nullable: true),
-                    LastPeriodId = table.Column<long>(nullable: true),
-                    AllPeriods = table.Column<string>(nullable: true),
-                    TotalCommits = table.Column<int>(nullable: false)
+                    FirstCommitPeriodId = table.Column<long>(nullable: true),
+                    LastCommitPeriodId = table.Column<long>(nullable: true),
+                    AllCommitPeriods = table.Column<string>(nullable: true),
+                    FirstReviewPeriodId = table.Column<long>(nullable: true),
+                    LastReviewPeriodId = table.Column<long>(nullable: true),
+                    AllReviewPeriods = table.Column<string>(nullable: true),
+                    TotalCommits = table.Column<int>(nullable: false),
+                    TotalReviews = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -234,10 +239,13 @@ namespace RelationalGit.Migrations
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     KnowledgeShareStrategyType = table.Column<string>(nullable: true),
                     MegaPullRequestSize = table.Column<int>(nullable: false),
-                    FileAbondonedThreshold = table.Column<double>(nullable: false),
+                    FileAbandoningThreshold = table.Column<double>(nullable: false),
                     StartDateTime = table.Column<DateTime>(nullable: false),
                     LeaversType = table.Column<string>(nullable: true),
-                    EndDateTime = table.Column<DateTime>(nullable: false)
+                    EndDateTime = table.Column<DateTime>(nullable: false),
+                    FilesAtRiksOwnershipThreshold = table.Column<double>(nullable: false),
+                    FilesAtRiksOwnersThreshold = table.Column<int>(nullable: false),
+                    LeaversOfPeriodExtendedAbsence = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -251,7 +259,7 @@ namespace RelationalGit.Migrations
                     Id = table.Column<long>(nullable: false),
                     FromDateTime = table.Column<DateTime>(nullable: false),
                     ToDateTime = table.Column<DateTime>(nullable: false),
-                    FirstCommit = table.Column<string>(nullable: true),
+                    FirstCommitSha = table.Column<string>(nullable: true),
                     LastCommitSha = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
@@ -281,8 +289,7 @@ namespace RelationalGit.Migrations
                 name: "PullRequestReviewerComments",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<int>(nullable: false),
                     UserLogin = table.Column<string>(nullable: true),
                     CommitId = table.Column<string>(nullable: true),
                     InReplyTo = table.Column<int>(nullable: true),
@@ -303,8 +310,7 @@ namespace RelationalGit.Migrations
                 name: "PullRequestReviewers",
                 columns: table => new
                 {
-                    Id = table.Column<long>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<long>(nullable: false),
                     UserLogin = table.Column<string>(nullable: true),
                     CommitId = table.Column<string>(nullable: true),
                     State = table.Column<string>(nullable: true),
@@ -319,8 +325,7 @@ namespace RelationalGit.Migrations
                 name: "PullRequests",
                 columns: table => new
                 {
-                    Id = table.Column<long>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<long>(nullable: false),
                     UserLogin = table.Column<string>(nullable: true),
                     CreatedAtDateTime = table.Column<DateTime>(nullable: true),
                     ClosedAtDateTime = table.Column<DateTime>(nullable: true),
@@ -364,7 +369,8 @@ namespace RelationalGit.Migrations
                     PeriodId = table.Column<long>(nullable: false),
                     TotalLinesInPeriod = table.Column<int>(nullable: false),
                     AbandonedLinesInPeriod = table.Column<int>(nullable: false),
-                    SavedLinesInPeriod = table.Column<int>(nullable: false)
+                    SavedLinesInPeriod = table.Column<int>(nullable: false),
+                    RiskType = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -379,7 +385,8 @@ namespace RelationalGit.Migrations
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     LossSimulationId = table.Column<long>(nullable: false),
                     PeriodId = table.Column<long>(nullable: false),
-                    NormalizedName = table.Column<string>(nullable: true)
+                    NormalizedName = table.Column<string>(nullable: true),
+                    LeavingType = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {

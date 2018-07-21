@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,13 @@ namespace RelationalGit.Commands
 {
     public class GetUsersCommand
     {
+        private ILogger _logger;
+
+        public GetUsersCommand(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task Execute(string token, string agentName)
         {
             using (var dbContext = new GitRepositoryDbContext())
@@ -23,7 +31,7 @@ namespace RelationalGit.Commands
                             select distinct(UserLogin) from PullRequestReviewerComments WHERE UserLogin IS NOT null) AS Temp")
                             .ToArray();
 
-                var githubExtractor = new GithubDataFetcher(token, agentName);
+                var githubExtractor = new GithubDataFetcher(token, agentName,_logger);
                 await githubExtractor.GetUsers(unknownUsers);
 
                 dbContext.AddRange(unknownUsers);
