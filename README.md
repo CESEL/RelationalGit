@@ -33,15 +33,40 @@ You need to get the lastes version of [PowerShell Core](https://github.com/Power
 # RelationalGit :cupid: Open Source
 RelationalGit has been built on top of the most popular Git Libraries. It uses [libgit2Sharp](https://github.com/libgit2/libgit2sharp), [Octokit.Net](https://github.com/octokit/octokit.net), and [Octokit.Extensions](https://github.com/mirsaeedi/octokit.net.extensions) in order to extract data from git data structure and Github respectively.
 
-# :star: Setup
+# :star: Configuration File
 
-To be able to use RelationalGit you need to go through some preliminary steps.
+You need to create a configuration file with the following format. The configuration file at least needs to have _ConnectionStrings:RelationalGit_ and _Mining_ (empty) sections.
 
-0. Install free and awesome [dotnet core](https://www.microsoft.com/net/download/windows) 2
-1. Extract [RelationalGit](https://github.com/mirsaeedi/RelationalGit/releases) on a folder on your system
-2. Create a database on your favorite RDBMS
-3. The Collation of your database should enforce case sensitivity. For example in SQL Server it could be Latin1_General_CS_AS.
-4. Introduce the connection string of your database to RelationGit. You can do that by editing the appsettings.json file.
+```JSON
+{
+  "ConnectionStrings": {
+    "RelationalGit": "Server=IP;User Id=user;Password=123;Database=db"
+  },
+  "Mining": {
+    "Extensions": [ ".cs", ".vb", ".ts", ".js", ".jsx", ".sh", ".yml", ".tsx", ".css", ".json", ".py", ".c", ".h", ".cpp", ".il", ".make", ".cmake", ".ps1", ".r", ".cmd", ".html", ".conf" ],
+    "GitBranch": "master",
+    "RepositoryPath": "",
+    "GitHubRepo": "corefx",
+    "GitHubOwner": "dotnet",
+    "GitHubToken": "",
+    "PeriodLength": 3,
+    "PeriodType": "month",
+    "MegaDevelopers": [ "dotnet-bot" ],
+    "MegaCommitSize": 200,
+    "FilesAtRiksOwnersThreshold": 1,
+    "FilesAtRiksOwnershipThreshold": 0.90,
+    "LeaversOfPeriodExtendedAbsence": 4,
+    "MegaPullRequestSize": 100,
+    "CoreDeveloperThreshold": 0.1,
+    "CoreDeveloperCalculationType": "ownership-percentage",
+    "KnowledgeSaveStrategyType": "nothing",
+    "LeaversType": "all"
+  }
+}
+```
+
+You need to tell relational git where's your config file. If you don't anything, it assumes there is a configuration file in the user directory names _relationalgit.json_.
+
 
 # :star: Git Exctraction
 
