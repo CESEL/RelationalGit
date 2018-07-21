@@ -75,8 +75,8 @@ For example, the following lines execute the _get-github-pullrequest-reviewer-co
 
 ```PowerShell
 
-rgit --conf-path "C:\Users\Ehsan Mirsaeedi\Documents\relationalgit.json"  --cmd get-github-pullrequest-reviewer-comments 
-rgit --cmd get-github-pullrequest-reviewer-comments // it gets the setting file from the default location
+dotnet-rgit --conf-path "C:\Users\Ehsan Mirsaeedi\Documents\relationalgit.json"  --cmd get-github-pullrequest-reviewer-comments 
+dotnet-rgit --cmd get-github-pullrequest-reviewer-comments // it gets the setting file from the default location
 
 ```
 
@@ -116,20 +116,20 @@ Fills the _NormalizedAuthorName_ of -Commits_ table and _NormalizedDeveloperIden
 for a complete data gathering one can run a following script, assuming the setting file is located at the default location (User Directory \ relationalgit.json) and all the required setting values are set.
 
 ```PowerShell
-rgit --cmd get-git-commits
-rgit --cmd get-git-commits-changes
-rgit --cmd ignore-mega-commits
-rgit --cmd periodize-git-commits
-rgit --cmd get-git-commit-blames-for-periods
-rgit --cmd ignore-mega-commits
-rgit --cmd alias-git-names
-rgit --cmd apply-git-aliased
-rgit --cmd extract-dev-info
-rgit --cmd get-github-pullrequests
-rgit --cmd get-github-pullrequest-reviewers
-rgit --cmd get-github-pullrequest-reviewer-comments
-rgit --cmd get-github-pullrequests-files
-rgit --cmd get-merge-events
-rgit --cmd map-git-github-names
-rgit --cmd compute-loss
+dotnet-rgit --cmd get-git-commits
+dotnet-rgit --cmd get-git-commits-changes
+dotnet-rgit --cmd ignore-mega-commits
+dotnet-rgit --cmd periodize-git-commits
+dotnet-rgit --cmd get-git-commit-blames-for-periods
+dotnet-rgit --cmd ignore-mega-commits
+dotnet-rgit --cmd alias-git-names
+dotnet-rgit --cmd apply-git-aliased
+dotnet-rgit --cmd extract-dev-info
+dotnet-rgit --cmd get-github-pullrequests
+dotnet-rgit --cmd get-github-pullrequest-reviewers
+dotnet-rgit --cmd get-github-pullrequest-reviewer-comments
+dotnet-rgit --cmd get-github-pullrequests-files
+dotnet-rgit --cmd get-merge-events
+dotnet-rgit --cmd map-git-github-names
+dotnet-rgit --cmd compute-loss
 ```
