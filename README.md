@@ -80,22 +80,36 @@ rgit --cmd get-github-pullrequest-reviewer-comments // it gets the setting file 
 
 ```
 
-  * get-git-commits
-  * get-git-commits-changes
-  * alias-git-names
-  * apply-git-aliased
-  * ignore-mega-commits
-  * periodize-git-commits
-  * extract-dev-info
-  * get-git-commit-blames-for-periods
-  * get-git-commit-blames
-  * get-github-pullrequests
-  * get-github-pullrequest-reviewers
-  * get-merge-events
-  * get-github-pullrequest-reviewer-comments
-  * get-github-pullrequests-files
-  * map-git-github-names
-  * compute-loss
+Below is the complete list of commands.
+
+### get-git-commits
+  
+Extract the commits from the repository refrenced by _RepositoryPath_ parameter. And Fill the _Commits_ table.
+  
+### get-git-commits-changes
+
+Extract the introduced changes of each commit from the repository refrenced by _RepositoryPath_ parameter. And Fill the _CommittedChanges_ and _CommitRelationship_ tables. It detects rename operations and assign a canonical path to the files to make it possible to track renames.
+
+### alias-git-names
+
+Try to resolve multiple developer names confusion by finding unique users from the repository refrenced by _RepositoryPath_ parameter. It fills the _AliasedDeveloperNames_ table. You can manually edit this table' data to do the final touches.
+
+### apply-git-aliased
+
+Fills the _NormalizedAuthorName_ of -Commits_ table and _NormalizedDeveloperIdentity_ of _CommittedChanges_ table with normalized name computed by _alias-git-names_ command.
+
+### ignore-mega-commits
+### periodize-git-commits
+### extract-dev-info
+### get-git-commit-blames-for-periods
+### get-git-commit-blames
+### get-github-pullrequests
+### get-github-pullrequest-reviewers
+### get-merge-events
+### get-github-pullrequest-reviewer-comments
+### get-github-pullrequests-files
+### map-git-github-names
+### compute-loss
 
 # :star: Git Exctraction
 
