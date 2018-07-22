@@ -17,7 +17,7 @@ namespace RelationalGit
     public class GitRepository
     {
         #region Fields
-        private static readonly Regex _blameRegex = new Regex(@"\w{40}\t\(<(?<email>.*)>\t",RegexOptions.Compiled);
+        //private static readonly Regex _blameRegex = new Regex(@"\w{40}\t\(<(?<email>.*)>\t",RegexOptions.Compiled);
         private Repository _gitRepo;
         private string _localClonePath;
         private Dictionary<string, string> _fileOidHolder = new Dictionary<string, string>();
@@ -82,6 +82,8 @@ namespace RelationalGit
 
         public void LoadBlobsAndTheirBlamesOfCommit(Commit commit, string[] validExtensions, Dictionary<string, string> canonicalPathDic, string branchName = "master")
         {
+            var commitsDic = ExtractCommitsFromBranch(branchName).ToDictionary(q=>q.Sha);
+
             var blobsPath = GetBlobsPathFromCommitTree(commit.GitCommit.Tree, validExtensions); 
             
             var committedBlobs = new ConcurrentBag<CommittedBlob>();
@@ -95,7 +97,7 @@ namespace RelationalGit
                 },
                 (blobPath, i, powerShellInstance) =>
                 {
-                    var blobBlames = GetBlobBlamesOfCommit(powerShellInstance, commit.Sha, blobPath, canonicalPathDic);
+                    var blobBlames = GetBlobBlamesOfCommit(powerShellInstance, commit.Sha, blobPath, canonicalPathDic, commitsDic);
 
                     committedBlobs.Add(new CommittedBlob()
                     {
@@ -124,12 +126,15 @@ namespace RelationalGit
 
         #endregion
 
-        private ICollection<CommitBlobBlame> GetBlobBlamesOfCommit(PowerShell powerShellInstance,string commitSha, string blobPath, Dictionary<string, string> canonicalPathDic)
+        private ICollection<CommitBlobBlame> GetBlobBlamesOfCommit(PowerShell powerShellInstance,
+            string commitSha, 
+            string blobPath, 
+            Dictionary<string, string> canonicalPathDic,
+            Dictionary<string, Commit> commitsDic)
         {
-
             var rawBlameLines = GetBlameFromPowerShell(powerShellInstance, commitSha, blobPath);
 
-            var blobBlames = ExtraxtBlames(rawBlameLines,blobPath,commitSha,canonicalPathDic);
+            var blobBlames = ExtraxtBlames(rawBlameLines,blobPath,commitSha,canonicalPathDic,commitsDic);
 
             return blobBlames;
         }
@@ -174,7 +179,11 @@ namespace RelationalGit
             return result;
         }
 
-        private ICollection<CommitBlobBlame> ExtraxtBlames(string[] blameLines,string blobPath,string commitSha,Dictionary<string, string> canonicalPathDic)
+        private ICollection<CommitBlobBlame> ExtraxtBlames(string[] blameLines,
+            string blobPath,
+            string commitSha
+            ,Dictionary<string, string> canonicalPathDic,
+            Dictionary<string, Commit> commitsDic)
         {
 
             var blobBlames = new List<CommitBlobBlame>();
@@ -183,13 +192,19 @@ namespace RelationalGit
 
             foreach (var blameLine in blameLines)
             {
-                var mc = _blameRegex.Matches(blameLine);
-                if (mc.Count == 0)
+                var sha = blameLine.Substring(0, 40);
+                var commit = commitsDic.GetValueOrDefault(sha);
+
+                if (commit is null)
                     continue;
 
-                var email = mc[0].Groups["email"].Value;
+                /*var mc = _blameRegex.Matches(blameLine);
+                if (mc.Count == 0)
+                    continue;*/
 
-                var sha=blameLine.Substring(0,40);
+                //var email = mc[0].Groups["email"].Value;
+                var email = commit.AuthorEmail;
+
                 var key=sha+email;
 
                 if (!developerLineOwnershipDictionary.ContainsKey(key))
