@@ -29,8 +29,13 @@ namespace RelationalGit.Commands
                 {
                     dbContext.CommittedChanges.AddRange(commit.CommittedChanges);
                 }
-                
+
+                _logger.LogInformation("{dateTime}: saving committed changes", DateTime.Now);
+
                 await dbContext.SaveChangesAsync();
+
+                _logger.LogInformation("{dateTime}: committed changes have been saved successfully", DateTime.Now);
+
             }
         }
     }

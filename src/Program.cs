@@ -56,8 +56,11 @@ namespace RelationalGit
             };*/
 
             //var arguments = Parser.Default.FormatCommandLine(userInput);
-            logger.LogInformation("{datetime} operation {command} has finished", DateTime.Now, configurationOption.Command);
+            
             await new CommandFactory().Execute(configurationOption, logger);
+
+            logger.LogInformation("{datetime} operation {command} has finished", DateTime.Now, configurationOption.Command);
+
         }
 
         private static InputOption GetConfiguration(string[] args)

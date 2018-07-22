@@ -74,7 +74,7 @@ namespace RelationalGit
             for (int i = 0; i < orderedCommits.Length; i++)
             {
                 if(i%500==0)
-                    _logger.LogInformation("{dateTime}: more than {count} commits has been processed",DateTime.Now,i);
+                    _logger.LogInformation("{dateTime}: more than {count} commits have been processed",DateTime.Now,i);
 
                 LoadChangesOfCommit(orderedCommits[i]);
             }

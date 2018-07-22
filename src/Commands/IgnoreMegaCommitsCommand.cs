@@ -29,7 +29,7 @@ namespace RelationalGit.Commands
 
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                await dbContext.Database.ExecuteSqlCommandAsync($@"
+                var query = $@"
                 UPDATE Commits set Ignore=0;
                 UPDATE Commits set Ignore=1
                 WHERE NormalizedAuthorName in {developerNamesSet}
@@ -40,7 +40,9 @@ namespace RelationalGit.Commands
                 UPDATE CommitBlobBlames set Ignore=1
                 FROM CommitBlobBlames
                 INNER JOIN (select CommitSha from CommittedChanges group by CommitSha having count(*)>={megaCommitSize}) as t
-                On AuthorCommitSha=t.CommitSha");  
+                On AuthorCommitSha=t.CommitSha";
+
+                await dbContext.Database.ExecuteSqlCommandAsync(query);  
             }
         }
     }
