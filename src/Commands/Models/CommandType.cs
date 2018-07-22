@@ -21,6 +21,6 @@ namespace RelationalGit.Commands
         public static string IgnoreMegaCommitsAndDevelopers => "ignore-mega-commits";
         public static string MapGitHubGitNames => "map-git-github-names";
         public static string ComputeKnowledgeLoss => "compute-loss";
-        public static string GetPullRequestMergeEvents =>"-get-merge-events";
+        public static string GetPullRequestMergeEvents =>"get-merge-events";
     }
 }

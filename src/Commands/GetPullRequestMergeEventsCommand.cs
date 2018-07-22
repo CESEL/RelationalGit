@@ -21,7 +21,7 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext(true))
             {
-                var loadedPullRequests = await dbContext.PullRequests.FromSql(@"select * from PullRequests WHERE MergeCommitSha not in (select Sha from Commits)")
+                var loadedPullRequests = await dbContext.PullRequests.FromSql(@"select * from PullRequests WHERE Merged=1 and MergeCommitSha not in (select Sha from Commits)")
                     .ToArrayAsync();
 
                 _logger.LogInformation("{datetime}: there are {count} pull requests with no corresponding merged commit", DateTime.Now, loadedPullRequests.Length);
