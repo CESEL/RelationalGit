@@ -109,7 +109,7 @@ namespace RelationalGit
                     });
 
                     if(committedBlobs.Count()%500==0)
-                        _logger.LogInformation("{datetime} : Extracted Blames {currentCount} out of {total}"
+                        _logger.LogInformation("{datetime} : Blames extraction from {currentCount} files out of {total} completed."
                         ,DateTime.Now,committedBlobs.Count(),blobsPath.Count);
 
 
@@ -192,6 +192,9 @@ namespace RelationalGit
 
             foreach (var blameLine in blameLines)
             {
+                if (blameLine.Length < 40)
+                    continue;
+
                 var sha = blameLine.Substring(0, 40);
                 var commit = commitsDic.GetValueOrDefault(sha);
 

@@ -51,9 +51,10 @@ namespace RelationalGit.Commands
                 gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions, canonicalDic);
 
                 dbContext.CommittedBlob.AddRange(commit.Blobs);
-                dbContext.CommitBlobBlames.AddRange(commit.Blobs.SelectMany(m => m.CommitBlobBlames));
+                var blames = commit.Blobs.SelectMany(m => m.CommitBlobBlames);
+                dbContext.CommitBlobBlames.AddRange(blames);
         
-                _logger.LogInformation("{datetime}: saving {count} blames of commit {Commitsha} into database.", DateTime.Now,commit.Blobs.Count(), commit.Sha);
+                _logger.LogInformation("{datetime}: saving {count} blames of commit {Commitsha} into database.", DateTime.Now,blames.Count(), commit.Sha);
 
                 await dbContext.SaveChangesAsync();
 
