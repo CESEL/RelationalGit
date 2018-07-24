@@ -68,7 +68,10 @@ You need to create a configuration file with the following format. The configura
     "CoreDeveloperThreshold": 0.1,
     "CoreDeveloperCalculationType": "ownership-percentage",
     "KnowledgeSaveStrategyType": "nothing",
-    "LeaversType": "all"
+    "LeaversType": "all",
+    "BlamePeriods": [1],
+    "BlamePeriodsRange":[10,20],
+    "ExcludedBlamePaths": ["*\\lib\\*"]
   }
 }
 ```
