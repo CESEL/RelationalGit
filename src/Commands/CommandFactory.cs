@@ -80,7 +80,32 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.ExtractBlameForEachPeriod)
             {
                 var cmd = new GetGitBlobsAndTheirBlamesForPeriodsCommand(logger);
-                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.Extensions.ToArray());
+
+                var periods = new int[0];
+
+                if(options.BlamePeriods!=null)
+                    periods = options.BlamePeriods?.ToArray();
+
+                if (options.BlamePeriodsRange?.Count() > 0)
+                {
+                    var count = options.BlamePeriodsRange.ElementAt(1) - options.BlamePeriodsRange.ElementAt(0) + 1;
+                    var range = Enumerable.Range(options.BlamePeriodsRange.ElementAt(0), count);
+
+                    periods = periods != null
+                        ? periods.Concat(range).ToArray()
+                        : range.ToArray();
+                }
+
+                var extractBlameForEachPeriodOption = new ExtractBlameForEachPeriodOption()
+                {
+                    RepositoryPath = options.RepositoryPath,
+                    Extensions = options.Extensions.ToArray(),
+                    GitBranch = options.GitBranch,
+                    PeriodIds = periods,
+                    ExcludeBlamePath = options.ExcludeBlamePath.ToArray()
+                };
+
+                await cmd.Execute(extractBlameForEachPeriodOption);
             }
             else if (options.Command.ToLower() == CommandType.Periodize)
             {

@@ -16,39 +16,48 @@ namespace RelationalGit.Commands
         {
             _logger = logger;
         }
-        public async Task Execute(string repoPath, string branchName, string[] validExtensions)
+        public async Task Execute(ExtractBlameForEachPeriodOption options)
         {
             var dbContext = new GitRepositoryDbContext();
-            
-            var extractedCommits=await dbContext.CommitBlobBlames.Select(m=>m.CommitSha).Distinct().ToArrayAsync();
 
-            var periods = await dbContext.Periods.OrderBy(q => q.ToDateTime).ToArrayAsync();
-
-            periods=periods.Where(m=>!extractedCommits.Any(c=>c==m.LastCommitSha)).ToArray();
+            var extractedCommits = await dbContext.CommitBlobBlames.Select(m => m.CommitSha).Distinct().ToArrayAsync();
+            var periods = await GetPeriods(options, dbContext, extractedCommits);
 
             var canonicalDic = dbContext.GetCanonicalPaths();
 
-            var gitRepository = new GitRepository(repoPath,_logger);
-            var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName).ToDictionary(q => q.Sha);
+            var gitRepository = new GitRepository(options.RepositoryPath, _logger);
+            var orderedCommits = gitRepository.ExtractCommitsFromBranch(options.GitBranch).ToDictionary(q => q.Sha);
 
             dbContext.Dispose();
 
             _logger.LogInformation("{datetime}: extracting blames for {count} periods.", DateTime.Now, periods.Count());
-            
+
             foreach (var period in periods)
             {
-                await ExtractBlamesofCommit(orderedCommits[period.LastCommitSha], canonicalDic, validExtensions, gitRepository);
+                await ExtractBlamesofCommit(orderedCommits[period.LastCommitSha], canonicalDic, options.Extensions, gitRepository);
             }
-            
-                  
+
+
         }
-        private async Task ExtractBlamesofCommit(Commit commit, Dictionary<string, string> canonicalDic, string[] validExtensions, GitRepository gitRepository)
+
+        private static async Task<Period[]> GetPeriods(ExtractBlameForEachPeriodOption options, GitRepositoryDbContext dbContext, string[] extractedCommits)
+        {
+            var periods = await dbContext.Periods.OrderBy(q => q.ToDateTime).ToArrayAsync();
+
+            periods = periods.Where(m => !extractedCommits.Any(c => c == m.LastCommitSha)).ToArray();
+
+            if (options.PeriodIds != null)
+                periods = periods.Where(q => options.PeriodIds.Any(p => p == q.Id)).ToArray();
+            return periods;
+        }
+
+        private async Task ExtractBlamesofCommit(Commit commit, Dictionary<string, string> canonicalDic, string[] validExtensions,string[] excludePath, GitRepository gitRepository)
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
                 _logger.LogInformation("{datetime}: extracting blames out of commit {Commitsha}", DateTime.Now, commit.Sha);
 
-                gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions, canonicalDic);
+                gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions,excludePath, canonicalDic);
 
                 dbContext.CommittedBlob.AddRange(commit.Blobs);
                 var blames = commit.Blobs.SelectMany(m => m.CommitBlobBlames);
@@ -62,5 +71,6 @@ namespace RelationalGit.Commands
 
             }
         }
+       
     }
 }

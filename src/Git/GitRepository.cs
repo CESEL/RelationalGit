@@ -80,11 +80,15 @@ namespace RelationalGit
             }
         }
 
-        public void LoadBlobsAndTheirBlamesOfCommit(Commit commit, string[] validExtensions, Dictionary<string, string> canonicalPathDic, string branchName = "master")
+        public void LoadBlobsAndTheirBlamesOfCommit(Commit commit,
+            string[] validExtensions,
+            string[] excludedPaths, 
+            Dictionary<string, string> canonicalPathDic, 
+            string branchName = "master")
         {
             var commitsDic = ExtractCommitsFromBranch(branchName).ToDictionary(q=>q.Sha);
 
-            var blobsPath = GetBlobsPathFromCommitTree(commit.GitCommit.Tree, validExtensions); 
+            var blobsPath = GetBlobsPathFromCommitTree(commit.GitCommit.Tree, validExtensions,excludedPaths); 
             
             var committedBlobs = new ConcurrentBag<CommittedBlob>();
 
@@ -254,18 +258,17 @@ namespace RelationalGit
             return powerShellInstance;
         }
 
-        private List<string> GetBlobsPathFromCommitTree(Tree tree,string[] validExtensions)
+        private List<string> GetBlobsPathFromCommitTree(Tree tree,string[] validExtensions, string[] excludedPaths)
         {
             var result = new List<string>();
 
-            var blobs = tree.Where(m => m.TargetType == TreeEntryTargetType.Blob
-            && validExtensions.Any(f=> m.Name.EndsWith(f)));
+            var blobs = tree.Where(m => m.TargetType == TreeEntryTargetType.Blob && validExtensions.Any(f=> m.Name.EndsWith(f)) &&  excludedPaths.All(e=>!Regex.IsMatch(m.Path,e)));
 
             result.AddRange(blobs.Select(m => m.Path).ToArray());
 
             foreach (var treeEntry in tree.Where(m => m.TargetType == TreeEntryTargetType.Tree))
             {
-                result.AddRange(GetBlobsPathFromCommitTree((Tree)treeEntry.Target,validExtensions));
+                result.AddRange(GetBlobsPathFromCommitTree((Tree)treeEntry.Target,validExtensions, excludedPaths));
             }
 
             return result;

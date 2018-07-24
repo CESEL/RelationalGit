@@ -76,6 +76,15 @@ namespace RelationalGit.CommandLine
         [Option("mega-devs")]
         public IEnumerable<string> MegaDevelopers { get; set; }
 
+        [Option("blame-periods")]
+        public IEnumerable<int> BlamePeriods { get; set; }
+
+        [Option("blame-periods-range")]
+        public IEnumerable<int> BlamePeriodsRange{ get; set; }
+
+        [Option("exclude-blame-path")]
+        public IEnumerable<string> ExcludeBlamePath { get; set; }
+
 
         internal InputOption Override(InputOption fileConfigurationOption)
         {
@@ -106,6 +115,9 @@ namespace RelationalGit.CommandLine
             overridedInputOption.RepositoryPath = Override(RepositoryPath, fileConfigurationOption.RepositoryPath);
             overridedInputOption.IssueLabels = Override(IssueLabels, fileConfigurationOption.IssueLabels);
             overridedInputOption.IssueState = Override(IssueState, fileConfigurationOption.IssueState);
+            overridedInputOption.ExcludeBlamePath = Override(ExcludeBlamePath, fileConfigurationOption.ExcludeBlamePath);
+            overridedInputOption.BlamePeriodsRange= Override(BlamePeriodsRange, fileConfigurationOption.BlamePeriodsRange);
+            overridedInputOption.BlamePeriods = Override(BlamePeriods, fileConfigurationOption.BlamePeriods);
 
             return overridedInputOption;
         }
@@ -116,7 +128,7 @@ namespace RelationalGit.CommandLine
             return original != null ? original : replace;
         }
 
-        private IEnumerable<string> Override(IEnumerable<string> original, IEnumerable<string> replace)
+        private IEnumerable<T> Override<T>(IEnumerable<T> original, IEnumerable<T> replace)
         {
             return original != null && original.Count()>0 ? original : replace;
         }
