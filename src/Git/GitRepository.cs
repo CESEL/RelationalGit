@@ -94,7 +94,7 @@ namespace RelationalGit
 
             Parallel.ForEach(
                 blobsPath,
-                new ParallelOptions() {MaxDegreeOfParallelism=6},
+                new ParallelOptions() {MaxDegreeOfParallelism=5},
                 () =>
                 {
                     return  GetPowerShellInstance();
@@ -242,7 +242,7 @@ namespace RelationalGit
         private string[] GetBlameFromPowerShell(PowerShell powerShellInstance, string commitSha, string blobPath)
         {
             powerShellInstance.Commands.Clear();
-            powerShellInstance.AddScript($@"git blame -l -w -e -c {commitSha} -- '{blobPath}'");
+            powerShellInstance.AddScript($@"git blame -l -w {commitSha} -- '{blobPath}'");
             var blameLines = powerShellInstance.Invoke().Select(m => m.ToString()).ToArray();
             return blameLines;
         }

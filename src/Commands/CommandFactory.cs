@@ -75,7 +75,7 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.ExtractBlameFromCommit)
             {
                 var cmd = new GetGitBlobsAndTheirBlamesOfCommitCommand(logger);
-                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.CommitSha,options.Extensions.ToArray());
+                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.CommitSha,options.Extensions.ToArray(), options.ExcludeBlamePath?.ToArray() ?? new string[0]);
             }
             else if (options.Command.ToLower() == CommandType.ExtractBlameForEachPeriod)
             {
@@ -102,7 +102,7 @@ namespace RelationalGit.Commands
                     Extensions = options.Extensions.ToArray(),
                     GitBranch = options.GitBranch,
                     PeriodIds = periods,
-                    ExcludeBlamePath = options.ExcludeBlamePath.ToArray()
+                    ExcludedBlamePaths = options.ExcludeBlamePath?.ToArray() ?? new string[0]
                 };
 
                 await cmd.Execute(extractBlameForEachPeriodOption);

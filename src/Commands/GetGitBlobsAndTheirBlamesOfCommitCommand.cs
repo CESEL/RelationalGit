@@ -16,7 +16,7 @@ namespace RelationalGit.Commands
         {
             _logger=logger;
         }
-        public async Task Execute(string repoPath,string branchName,string commitSha,string[] validExtensions)
+        public async Task Execute(string repoPath,string branchName,string commitSha,string[] validExtensions, string[] excludedBlamePaths)
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
@@ -28,7 +28,7 @@ namespace RelationalGit.Commands
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
 
                 var commit = orderedCommits.Single(q => q.Sha == commitSha);
-                gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions, canonicalDic);
+                gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions, excludedBlamePaths, canonicalDic);
 
                 dbContext.CommittedBlob.AddRange(commit.Blobs);
                 dbContext.CommitBlobBlames.AddRange(commit.Blobs.SelectMany(m => m.CommitBlobBlames));

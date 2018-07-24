@@ -34,7 +34,7 @@ namespace RelationalGit.Commands
 
             foreach (var period in periods)
             {
-                await ExtractBlamesofCommit(orderedCommits[period.LastCommitSha], canonicalDic, options.Extensions, gitRepository);
+                await ExtractBlamesofCommit(orderedCommits[period.LastCommitSha], canonicalDic, options.Extensions,options.ExcludedBlamePaths, gitRepository);
             }
 
 
