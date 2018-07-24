@@ -30,6 +30,10 @@ namespace RelationalGit
             {
                 return new IdealKnowledgeShareStrategy();
             }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RealisticIdeal)
+            {
+                return new RealisticIdealKnowledgeShareStrategy();
+            }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedExpertiseReviewers)
             {
                 return new CommitBasedKnowledgeShareStrategy();

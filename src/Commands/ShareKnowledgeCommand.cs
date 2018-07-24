@@ -50,8 +50,10 @@ namespace RelationalGit.Commands
 
             lossSimulation.EndDateTime = DateTime.Now;
             _dbContext.Entry(lossSimulation).State=EntityState.Modified;
-            
+
+            _logger.LogInformation("{datetime}: trying to save results into database", DateTime.Now);
             _dbContext.SaveChanges();
+            _logger.LogInformation("{datetime}: results have been saved", DateTime.Now);
             _dbContext.Dispose();
         }
 
@@ -61,6 +63,8 @@ namespace RelationalGit.Commands
 
             foreach (var period in _periods)
             {
+                _logger.LogInformation("{datetime}: computing knowledge loss for period {pid}.", DateTime.Now,period.Id);
+
                 var availableDevelopers = _developers.Where(q=>q.LastCommitPeriodId>=period.Id && q.FirstCommitPeriodId<=period.Id);
 
                 var leavers = GetLeavers(period, availableDevelopers, _developersContributions, lossSimulation);
@@ -72,7 +76,11 @@ namespace RelationalGit.Commands
 
                 foreach(var abandonedFile in abandonedFiles)
                     hashsetAbandonedFiles.Add(abandonedFile.FilePath);
+
+                _logger.LogInformation("{datetime}: computing knowledge loss for period {pid} is done.", DateTime.Now, period.Id);
             }
+
+            
         }
 
         private void SaveKnowledgeSharingStatus(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
@@ -155,19 +163,25 @@ namespace RelationalGit.Commands
 
         private TimeMachine CreateTimeMachine(string knowledgeShareStrategyType, int megaPullRequestSize)
         {
+            _logger.LogInformation("{datetime}: initializing the Time Machine.",DateTime.Now);
+
             var knowledgeShareStrategy = KnowledgeShareStrategy.Create(knowledgeShareStrategyType);
 
-            var timeMachine = new TimeMachine(knowledgeShareStrategy.RecommendReviewers);
+            var timeMachine = new TimeMachine(knowledgeShareStrategy.RecommendReviewers,_logger);
 
             _commits = _dbContext
             .Commits
             .Where(q => !q.Ignore)
             .ToArray();
 
+            _logger.LogInformation("{datetime}: Commits are loaded.", DateTime.Now);
+
             _commitBlobBlames = _dbContext
             .CommitBlobBlames
             .Where(q=>!q.Ignore)
             .ToArray();
+
+            _logger.LogInformation("{datetime}: Blames are loaded.", DateTime.Now);
 
             var latestCommitDate = _commits.Max(q => q.AuthorDateTime);
 
@@ -214,6 +228,8 @@ namespace RelationalGit.Commands
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
+
+            _logger.LogInformation("{datetime}: Reviewers are loaded.", DateTime.Now);
 
             _developers = _dbContext
             .Developers

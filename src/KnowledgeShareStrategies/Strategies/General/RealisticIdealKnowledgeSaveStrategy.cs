@@ -14,10 +14,13 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class IdealKnowledgeShareStrategy : KnowledgeShareStrategy
+    public class RealisticIdealKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
         {
+            if (pullRequestContext.ActualReviewers.Count() == 0)
+                return new string[0];
+                
             var oldestDevelopers = pullRequestContext.Developers
             .Values
             .Where(q=>q.FirstCommitPeriodId<=pullRequestContext.Period.Id);

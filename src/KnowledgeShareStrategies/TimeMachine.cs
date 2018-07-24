@@ -33,12 +33,14 @@ namespace RelationalGit
         private Dictionary<long, Period> PeriodsDic { get; set; }
         private Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> CommitBasedKnowledgeMap = new Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>>();
         private Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> ReviewBasedKnowledgeMap = new Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>>();
+        private ILogger _logger;
         private Func<PullRequestContext, string[]> ChangeThePastByRecommendingReviewersFunc;
 
         #endregion
 
-        public TimeMachine(Func<PullRequestContext, string[]> changeThePastByRecommendingReviewersFunc = null)
+        public TimeMachine(Func<PullRequestContext, string[]> changeThePastByRecommendingReviewersFunc,ILogger logger)
         {
+            _logger = logger;
             ChangeThePastByRecommendingReviewersFunc = changeThePastByRecommendingReviewersFunc;
         }
         public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
@@ -71,6 +73,7 @@ namespace RelationalGit
 
         public KnowledgeDistributionMap FlyInTime()
         {
+            _logger.LogInformation("{datetime}: flying in time has started.", DateTime.Now);
 
             var knowledgeMap = new KnowledgeDistributionMap()
             {
@@ -85,6 +88,8 @@ namespace RelationalGit
                 UpdateCommitBasedKnowledgeMap(commit);
                 UpdateReviewBasedKnowledgeMap(knowledgeMap, commit, commit.MergedPullRequest);
             }
+
+            _logger.LogInformation("{datetime}: flying in time has finished.", DateTime.Now);
 
             return knowledgeMap;
         }

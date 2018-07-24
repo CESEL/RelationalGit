@@ -17,5 +17,7 @@ namespace RelationalGit
         public static string Ideal =>"reviewers-ideal";
 
         public static string CommitBasedSpreadingReviewers => "reviewers-spreading";
+
+        public static string RealisticIdeal => "reviewers-realistic-ideal";
     }
 }
