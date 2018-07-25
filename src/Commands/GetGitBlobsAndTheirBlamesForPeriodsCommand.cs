@@ -46,7 +46,7 @@ namespace RelationalGit.Commands
 
             periods = periods.Where(m => !extractedCommits.Any(c => c == m.LastCommitSha)).ToArray();
 
-            if (options.PeriodIds != null)
+            if (options.PeriodIds != null || options.PeriodIds.Count()>0)
                 periods = periods.Where(q => options.PeriodIds.Any(p => p == q.Id)).ToArray();
             return periods;
         }
