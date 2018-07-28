@@ -23,7 +23,7 @@ namespace RelationalGit.Commands
             {
                 dbContext.Database.ExecuteSqlCommand($"TRUNCATE TABLE PullRequestReviewerComments");
                 var githubExtractor = new GithubDataFetcher(token, agenName,_logger);
-                var pullRequestReviewerComments = await githubExtractor.FetchReviewerCommentsFromRepository(owner, repo);
+                var pullRequestReviewerComments = await githubExtractor.FetchPullRequestReviewerCommentsFromRepository(owner, repo);
 
                 _logger.LogInformation("{datetime}: saving {count} review comments  into database.", DateTime.Now, pullRequestReviewerComments.Length);
 

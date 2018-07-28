@@ -49,8 +49,10 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new PullRequestEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new PullRequestFileEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new PullRequestReviewerCommentEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new IssueCommentEntityTypeConfiguration());
         }
 
+        public DbSet<IssueComment> IssueComments { get; set; }
         public DbSet<IssueEvent> IssueEvents { get; set; }
         public DbSet<Issue> Issue { get; set; }
         public DbSet<PullRequestFile> PullRequestFiles { get; set; }
@@ -160,6 +162,19 @@ namespace RelationalGit
                 .HasIndex(b => b.TouchType);
         }
     }
+
+    class IssueCommentEntityTypeConfiguration : IEntityTypeConfiguration<IssueComment>
+    {
+        public void Configure(EntityTypeBuilder<IssueComment> configuration)
+        {
+            configuration
+                .HasIndex(b => b.IssueNumber);
+
+            configuration
+                .HasIndex(b => b.UserLogin);
+        }
+    }
+
 
     class RecommendedPullRequestReviewerEntityTypeConfiguration : IEntityTypeConfiguration<RecommendedPullRequestReviewer>
     {

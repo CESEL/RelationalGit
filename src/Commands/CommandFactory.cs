@@ -33,6 +33,11 @@ namespace RelationalGit.Commands
                 var cmd = new GetPullRequestReviewerCommentsCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
+            else if (options.Command.ToLower() == CommandType.GetPullRequestIssueComments)
+            {
+                var cmd = new GetPullRequestIssueCommentsCommand(logger);
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
+            }
             else if (options.Command.ToLower() == CommandType.GetPullRequestMergeEvents)
             {
                 var cmd = new GetPullRequestMergeEventsCommand(logger);

@@ -17,8 +17,14 @@ namespace RelationalGit.Mapping
                 .ForMember(d => d.Event, opt => opt.MapFrom(s => s.Event.ToString()));
 
                 cfg.CreateMap<Octokit.PullRequest, PullRequest>()
-                .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.Value.DateTime))
+                .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.Value.ToUniversalTime()))
                 .ForMember(d => d.MergedAtDateTime, opt => opt.MapFrom(s => s.MergedAt.HasValue? s.MergedAt.Value.DateTime:default(DateTime?)));
+
+                cfg.CreateMap<Octokit.IssueComment, IssueComment>()
+                .ForMember(d => d.CreatedAtDateTime, opt => opt.MapFrom(s => s.CreatedAt.ToUniversalTime()))
+                .ForMember(d => d.IssueNumber,
+                opt =>
+                opt.MapFrom(s => int.Parse(new Regex(@".*/(?<issue_number>\d+)#").Match(s.HtmlUrl).Groups["issue_number"].Value)));
 
                 cfg.CreateMap<Octokit.Issue, Issue>()
                 .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.HasValue ? s.ClosedAt.Value.DateTime : default(DateTime?)))

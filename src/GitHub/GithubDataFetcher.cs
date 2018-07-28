@@ -40,6 +40,33 @@ namespace RelationalGit
                 .Create(new ProductHeaderValue(agentName), new Octokit.Credentials(token),new InMemoryCacheProvider());
         }
 
+        internal async Task<IEnumerable<IssueComment>> FetchPullRequestIssueCommentsFromRepository(string owner, string repo,PullRequest[] pullRequests)
+        {
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+
+            _logger.LogInformation("{datetime}: fetching all the issue comments from {owner}/{repo}.", DateTime.Now, owner, repo);
+
+            var requestFilter = new IssueCommentRequest()
+            {
+                Sort = IssueCommentSort.Updated,
+                Direction = SortDirection.Ascending
+            };
+
+            var allComments = new List<IssueComment>();
+
+            foreach (var pullRequest in pullRequests)
+            {
+                var issueComments = await _client.Issue.Comment.GetAllForIssue(owner, repo,pullRequest.Number, new ApiOptions() { PageSize = 1000 });
+                allComments.AddRange(Mapper.Map<IssueComment[]>(issueComments.ToArray()));
+            }
+
+            _logger.LogInformation("{datetime}: {count} issue comments have been fetched.", DateTime.Now, allComments.Count);
+
+            return allComments;
+
+        }
+
         public async Task<GitHubCommit> GetCommit(string owner, string repo, string commitSha)
         {
             Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
@@ -154,7 +181,7 @@ namespace RelationalGit
             return issues;
         }
 
-        public async Task<PullRequestReviewerComment[]> FetchReviewerCommentsFromRepository(string owner, string repo)
+        public async Task<PullRequestReviewerComment[]> FetchPullRequestReviewerCommentsFromRepository(string owner, string repo)
         {
 
             Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
