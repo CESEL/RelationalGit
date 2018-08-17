@@ -119,6 +119,7 @@ Fills the _NormalizedAuthorName_ of -Commits_ table and _NormalizedDeveloperIden
 ### get-merge-events
 ### get-github-pullrequest-reviewer-comments
 ### get-github-pullrequests-files
+### get-pullrequest-issue-comments
 ### map-git-github-names
 ### compute-loss
 
@@ -133,14 +134,15 @@ dotnet-rgit --cmd ignore-mega-commits
 dotnet-rgit --cmd periodize-git-commits
 dotnet-rgit --cmd get-git-commit-blames-for-periods
 dotnet-rgit --cmd ignore-mega-commits
-dotnet-rgit --cmd alias-git-names
-dotnet-rgit --cmd apply-git-aliased
-dotnet-rgit --cmd extract-dev-info
 dotnet-rgit --cmd get-github-pullrequests
 dotnet-rgit --cmd get-github-pullrequest-reviewers
 dotnet-rgit --cmd get-github-pullrequest-reviewer-comments
 dotnet-rgit --cmd get-github-pullrequests-files
 dotnet-rgit --cmd get-merge-events
+dotnet-rgit --cmd get-pullrequest-issue-comments
+dotnet-rgit --cmd alias-git-names
+dotnet-rgit --cmd apply-git-aliased
+dotnet-rgit --cmd extract-dev-info
 dotnet-rgit --cmd map-git-github-names
 dotnet-rgit --cmd compute-loss
 ```
