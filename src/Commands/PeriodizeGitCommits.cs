@@ -42,9 +42,12 @@ namespace RelationalGit.Commands
                 {
                     if (periods[currentPeriodIndex].ToDateTime < commits[i].AuthorDateTime)
                     {
-                        periods[currentPeriodIndex].LastCommitSha = commits
-                        .Last(q => !q.Ignore && q.AuthorDateTime <= commits[i - 1].AuthorDateTime)
-                        .Sha;
+                        var candidateCommits = commits.Where(q => !q.Ignore && q.AuthorDateTime <= commits[i - 1].AuthorDateTime);
+
+                        if (candidateCommits.Count() > 0) // the problem happens (rarely) in the first period.
+                            periods[currentPeriodIndex].LastCommitSha = candidateCommits.Last().Sha;
+                        else
+                            periods[currentPeriodIndex].LastCommitSha = periods[currentPeriodIndex].FirstCommitSha;
 
                         currentPeriodIndex++;
 

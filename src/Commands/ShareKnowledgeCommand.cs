@@ -55,6 +55,7 @@ namespace RelationalGit.Commands
             _dbContext.SaveChanges();
             _logger.LogInformation("{datetime}: results have been saved", DateTime.Now);
             _dbContext.Dispose();
+
         }
 
         private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap)
@@ -65,7 +66,7 @@ namespace RelationalGit.Commands
             {
                 _logger.LogInformation("{datetime}: computing knowledge loss for period {pid}.", DateTime.Now,period.Id);
 
-                var availableDevelopers = _developers.Where(q=>q.LastCommitPeriodId>=period.Id && q.FirstCommitPeriodId<=period.Id);
+                var availableDevelopers = _developers.Where(q=>q.LastParticipationPeriodId >= period.Id && q.FirstParticipationPeriodId<=period.Id);
 
                 var leavers = GetLeavers(period, availableDevelopers, _developersContributions, lossSimulation);
                 _dbContext.AddRange(leavers);
@@ -303,10 +304,10 @@ namespace RelationalGit.Commands
         {
             var extendedAbsence = lossSimulation.LeaversOfPeriodExtendedAbsence;
             
-            var leaversOfPeriod = potentialLeavers.Where(q => q.LastCommitPeriodId == period.Id);
+            var leaversOfPeriod = potentialLeavers.Where(q => q.LastParticipationPeriodId == period.Id);
             
             var extendedLeaversOfPeriod = lossSimulation.LeaversOfPeriodExtendedAbsence>0
-            ? potentialLeavers.Where(q => q.LastCommitPeriodId > period.Id).ToList()
+            ? potentialLeavers.Where(q => q.LastParticipationPeriodId > period.Id).ToList()
             :new List<Developer>();
 
             for(var j=extendedLeaversOfPeriod.Count()-1;j>=0;j--)
@@ -316,8 +317,8 @@ namespace RelationalGit.Commands
                 for (var i = 1; i <= extendedAbsence && !hasPariticipatedInExtendedPeriods; i++)
                 {
                     var extendedPeriodId = period.Id + i;
-                    hasPariticipatedInExtendedPeriods = developersContributions.Any(q => q.PeriodId == extendedPeriodId
-                        && q.NormalizedName == extendedLeaversOfPeriod[j].NormalizedName && q.TotalCommits > 0);
+                    hasPariticipatedInExtendedPeriods = developersContributions
+                        .Any(q => q.PeriodId == extendedPeriodId && q.NormalizedName == extendedLeaversOfPeriod[j].NormalizedName && (q.TotalCommits > 0 || q.TotalReviews>0 ));
                 }
 
                 if (hasPariticipatedInExtendedPeriods)
@@ -359,50 +360,59 @@ namespace RelationalGit.Commands
 
             foreach(var filePath in authorsFileBlames.Keys)
             {
-                var allFileBlamesOfPeriod = authorsFileBlames[filePath].Values
-                    .Where(q=>availableDevelopersDic.ContainsKey(q.NormalizedDeveloperName))
-                    .OrderByDescending(q=>q.TotalAuditedLines)
+                var isFileSavedByReview = IsFileSavedByReview(filePath, knowledgeMap.ReviewBasedKnowledgeMap, period);
+                if (isFileSavedByReview)
+                    continue;
+
+                var fileTotalLines = (double) authorsFileBlames[filePath].Sum(q=>q.Value.TotalAuditedLines);
+
+                var remainingBlames = authorsFileBlames[filePath].Values.Where(q => availableDevelopersDic.ContainsKey(q.NormalizedDeveloperName))
+                    .OrderByDescending(q => q.TotalAuditedLines)
                     .ToArray();
+                
+                var abandonedBlames = remainingBlames.Where(q => leaversDic.ContainsKey(q.NormalizedDeveloperName)).ToArray();
 
-                var remainingFileBlamesOfPeriod = allFileBlamesOfPeriod
-                .Where(q=> !leaversDic.ContainsKey(q.NormalizedDeveloperName))
-                .ToArray();
+                var remainingTotalLines = remainingBlames.Sum(q => q.TotalAuditedLines);
+                var abandonedTotalLines = abandonedBlames.Sum(q => q.TotalAuditedLines);
 
-                var totalLinesOfAllAuthors = allFileBlamesOfPeriod.Sum(q=>q.TotalAuditedLines);
-                var totalLinesOfRemainingAuthors  = remainingFileBlamesOfPeriod.Sum(q=>q.TotalAuditedLines);
-                var leftKnowledge = 1 - totalLinesOfRemainingAuthors/(double)totalLinesOfAllAuthors;
-                var isFileSavedByReviewe = IsFileSavedByReview(filePath,knowledgeMap.ReviewBasedKnowledgeMap,period);
+                var remainingPercentage = remainingTotalLines / fileTotalLines;
+                var abandonedPercentage = abandonedTotalLines / fileTotalLines;
 
-                if(leftKnowledge>=lossSimulation.FilesAtRiksOwnershipThreshold && !isFileSavedByReviewe )
+                var leftKnowledgePercentage = 1 - (remainingPercentage - abandonedPercentage);
+
+                if(leftKnowledgePercentage>=lossSimulation.FilesAtRiksOwnershipThreshold)
                 {
                     yield return new SimulatedAbondonedFile()
                     {
                         FilePath=filePath,
                         PeriodId=period.Id,
-                        TotalLinesInPeriod=totalLinesOfAllAuthors,
+                        TotalLinesInPeriod= remainingTotalLines,
                         LossSimulationId=lossSimulation.Id,
-                        AbandonedLinesInPeriod = totalLinesOfAllAuthors - totalLinesOfRemainingAuthors,
-                        SavedLinesInPeriod = totalLinesOfRemainingAuthors,
+                        AbandonedLinesInPeriod = abandonedTotalLines,
+                        SavedLinesInPeriod = remainingTotalLines - abandonedTotalLines,
                         RiskType = "abandoned"
                     };
                 }
 
+                var nonAbandonedBlames = remainingBlames.Where(q => !leaversDic.ContainsKey(q.NormalizedDeveloperName)).ToArray();
+                var totalNonAbandonedLines = (double) nonAbandonedBlames.Sum(q=>q.TotalAuditedLines);
+
                 var topOwnedPortion = 0.0;
-                for(var i=0;i<remainingFileBlamesOfPeriod.Count() && i<lossSimulation.FilesAtRiksOwnersThreshold;i++)
+                for(var i=0;i< nonAbandonedBlames.Count() && i<lossSimulation.FilesAtRiksOwnersThreshold;i++)
                 {
-                    topOwnedPortion+=remainingFileBlamesOfPeriod[i].TotalAuditedLines/(double)totalLinesOfRemainingAuthors;
+                    topOwnedPortion+= nonAbandonedBlames[i].TotalAuditedLines/totalNonAbandonedLines;
                 }
 
-                if(topOwnedPortion>=lossSimulation.FilesAtRiksOwnershipThreshold && !isFileSavedByReviewe)
+                if(topOwnedPortion>=lossSimulation.FilesAtRiksOwnershipThreshold)
                 {
                     yield return new SimulatedAbondonedFile()
                     {
                         FilePath=filePath,
                         PeriodId=period.Id,
-                        TotalLinesInPeriod=totalLinesOfAllAuthors,
+                        TotalLinesInPeriod= remainingTotalLines,
                         LossSimulationId=lossSimulation.Id,
-                        AbandonedLinesInPeriod = totalLinesOfAllAuthors - totalLinesOfRemainingAuthors,
-                        SavedLinesInPeriod = totalLinesOfRemainingAuthors,
+                        AbandonedLinesInPeriod = abandonedTotalLines,
+                        SavedLinesInPeriod = remainingTotalLines - abandonedTotalLines,
                         RiskType = "hoarded"
                     };
                 }
@@ -410,10 +420,8 @@ namespace RelationalGit.Commands
         }
 
         private bool IsFileSavedByReview(string filePath, 
-        Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> reviewBasedKnowledgeMap,
-         Period period)
+        Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> reviewBasedKnowledgeMap,Period period)
         {
-
             var reviewers = reviewBasedKnowledgeMap.GetValueOrDefault(filePath);
             
             if(reviewers==null)
@@ -423,7 +431,7 @@ namespace RelationalGit.Commands
 
             foreach(var reviewDetail in reviewsDetails)
             {
-                if(reviewDetail.Periods.Min(q=>q.Id)<=period.Id && reviewDetail.Developer.LastCommitPeriodId>period.Id)
+                if(reviewDetail.Periods.Min(q=>q.Id)<=period.Id && reviewDetail.Developer.LastParticipationPeriodId>period.Id)
                     return true;
             }
 

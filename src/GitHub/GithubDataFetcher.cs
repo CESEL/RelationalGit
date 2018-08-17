@@ -106,12 +106,12 @@ namespace RelationalGit
             return githubEvents.ToArray();
         }
 
-        public async Task<PullRequest[]> FetchAllPullRequests(string owner, string repo,string branch = "master")
+        public async Task<PullRequest[]> FetchAllPullRequests(string owner, string repo,string branch)
         {
 
             Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
             Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
-            Ensure.ArgumentNotNullOrEmptyString(branch, nameof(branch));
+            
 
             _logger.LogInformation("{datetime}: fetching pull reuqests from {owner}/{repo}.", DateTime.Now, owner,repo);
 

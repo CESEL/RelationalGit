@@ -109,7 +109,7 @@ namespace RelationalGit
                 SELECT distinct PullRequestNumber,PullRequestReviewerComments.UserLogin FROM PullRequestReviewerComments
                 INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewerComments.PullRequestNumber
                 where PullRequestReviewerComments.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewerComments.UserLogin 
-                AND PullRequestReviewerComments.CreatedAtDateTime> PullRequests.MergedAtDateTime and Merged=1) as reviewers
+                AND PullRequestReviewerComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1) as reviewers
             on reviewers.PullRequestNumber=PullRequests.Number
             group by Commits.PeriodId,reviewers.UserLogin";
 
