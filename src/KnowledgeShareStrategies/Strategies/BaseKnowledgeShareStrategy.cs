@@ -51,8 +51,9 @@ namespace RelationalGit
             {
                 var isReviewer = actualReviewers.Any(q => q == sortedDevelopersKnowledge[i].DeveloperName);
                 var isPrSubmitter = sortedDevelopersKnowledge[i].DeveloperName==pullRequestContext.PRSubmitterNormalizedName;
-                
-                if (!isReviewer && !isPrSubmitter)
+                var isAvailable = pullRequestContext.availableDevelopers.Any(q=>q.NormalizedName==sortedDevelopersKnowledge[i].DeveloperName);
+
+                if (!isReviewer && !isPrSubmitter && isAvailable)
                     return sortedDevelopersKnowledge[i].DeveloperName;
             }
 
@@ -90,58 +91,53 @@ namespace RelationalGit
         }
 
         protected abstract IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext);
-        private void AddFileOwnership(PullRequestContext pullRequestContext,
-        Dictionary<string, DeveloperKnowledge> developersKnowledge,
-        PullRequestFile file)
+        private void AddFileOwnership(PullRequestContext pullRequestContext,Dictionary<string, DeveloperKnowledge> developersKnowledge,PullRequestFile file)
         {
-            var canonicalPath = pullRequestContext
-                .CanononicalPathMapper[file.FileName];
+            var canonicalPath = pullRequestContext.CanononicalPathMapper[file.FileName];
 
-            var developersFileCommitsDetails = pullRequestContext
-                .KnowledgeMap
-                .CommitBasedKnowledgeMap
-                .GetValueOrDefault(canonicalPath);
-            
-            if(developersFileCommitsDetails==null)
-                return;
+            CalculateModificationExpertise();
+            CalculateReviewExpertise();
 
-            foreach (var developerFileCommitsDetail in developersFileCommitsDetails.Values)
+            void CalculateModificationExpertise()
             {
+                var fileCommitsDetail = pullRequestContext.KnowledgeMap.CommitBasedKnowledgeMap.GetValueOrDefault(canonicalPath);
 
-                var devName = developerFileCommitsDetail.Developer.NormalizedName;
-                
-                var fileBlame  = pullRequestContext.Blames
-                .GetValueOrDefault(canonicalPath,null)
-                ?.GetValueOrDefault(devName,null);
+                if (fileCommitsDetail == null)
+                    return;
 
-                var totalAuditedLines = fileBlame!=null? fileBlame.TotalAuditedLines : 0;
+                foreach (var devCommitDetail in fileCommitsDetail.Values)
+                {
+                    var devName = devCommitDetail.Developer.NormalizedName;
 
-                AddOwnershipDetail(developersKnowledge, developerFileCommitsDetail,totalAuditedLines);
+                    var fileBlame = pullRequestContext.Blames.GetValueOrDefault(canonicalPath, null)?.GetValueOrDefault(devName, null);
+
+                    var totalAuditedLines = fileBlame != null ? fileBlame.TotalAuditedLines : 0;
+
+                    AddModificationOwnershipDetail(developersKnowledge, devCommitDetail, totalAuditedLines);
+                }
             }
 
-            var developerFileReviewDetails = pullRequestContext
-            .KnowledgeMap
-            .ReviewBasedKnowledgeMap
-            .GetValueOrDefault(canonicalPath);
-
-            if (developerFileReviewDetails == null)
-                return;
-
-            foreach (var developerFileReviewDetail in developerFileReviewDetails.Values)
+            void CalculateReviewExpertise()
             {
-                var hasCommittedThisFileBefore=IsPersonHasCommittedThisFile(
-                developerFileReviewDetail.Developer.NormalizedName
-                ,canonicalPath
-                ,pullRequestContext.KnowledgeMap);
+                var fileReviewDetails = pullRequestContext.KnowledgeMap.ReviewBasedKnowledgeMap.GetValueOrDefault(canonicalPath);
 
-                AddOwnershipDetail(developersKnowledge, developerFileReviewDetail,hasCommittedThisFileBefore);
+                if (fileReviewDetails == null)
+                    return;
+
+                foreach (var devReviewDetail in fileReviewDetails.Values)
+                {
+                    var devName = devReviewDetail.Developer.NormalizedName;
+
+                    var hasCommittedThisFileBefore = IsPersonHasCommittedThisFile(devName, canonicalPath, pullRequestContext.KnowledgeMap);
+
+                    AddReviewOwnershipDetail(developersKnowledge, devReviewDetail, hasCommittedThisFileBefore);
+                }
             }
-
         }
 
-        private void AddOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileReveiewDetail developerFileReveiewDetail, bool hasCommittedThisFileBefore)
+        private void AddReviewOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileReveiewDetail developerFileReveiewDetail, bool hasCommittedThisFileBefore)
         {
-             var developerName = developerFileReveiewDetail.Developer.NormalizedName;
+            var developerName = developerFileReveiewDetail.Developer.NormalizedName;
 
             if (!developersKnowledge.ContainsKey(developerName))
             {
@@ -165,8 +161,7 @@ namespace RelationalGit
             return developersFileCommitsDetails.Any(q=>q.Value.Developer.NormalizedName==normalizedName);
         }
 
-        private void AddOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileCommitDetail developerFileCommitsDetail
-        ,int totalAuditedLines)
+        private void AddModificationOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileCommitDetail developerFileCommitsDetail,int totalAuditedLines)
         {
             var developerName = developerFileCommitsDetail.Developer.NormalizedName;
 

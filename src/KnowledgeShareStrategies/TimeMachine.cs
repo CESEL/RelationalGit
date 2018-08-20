@@ -127,12 +127,12 @@ namespace RelationalGit
             .GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>())
             .ToArray();
 
-            var availableDevelopers = GetAvailableDevelopersForPullRequest(pullRequest)
+            var period = GetPeriodOfPullRequest(pullRequest);
+
+            var availableDevelopers = GetAvailableDevelopersOfPeriod(period)
             .ToArray();
 
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
-
-            var period = GetPeriodOfPullRequest(pullRequest);
 
             return new PullRequestContext()
             {
@@ -149,17 +149,10 @@ namespace RelationalGit
             };
 
         }
-        private IEnumerable<Developer> GetAvailableDevelopersForPullRequest(PullRequest pullRequest)
+        private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period)
         {
-            Period period = GetPeriodOfPullRequest(pullRequest);
-
-            foreach (var developer in DevelopersDic.Values)
-            {
-                if (developer.FirstCommitPeriodId <= period.Id && developer.LastCommitPeriodId >= period.Id)
-                    yield return developer;
-            }
+            return DevelopersDic.Values.Where(dev => dev.FirstParticipationPeriodId <= period.Id && dev.LastParticipationPeriodId >= period.Id);
         }
-
         private Period GetPeriodOfPullRequest(PullRequest pullRequest)
         {
             var mergeCommitd = CommitsDic[pullRequest.MergeCommitSha];
@@ -294,39 +287,61 @@ namespace RelationalGit
         {
             var commitBlobBlamesDic = new Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>>();
 
-            foreach (var commitBlobBlame in commitBlobBlames)
-            {
-                var commit = CommitsDic.GetValueOrDefault(commitBlobBlame.CommitSha);
-                var periodId = commit.PeriodId.Value;
-                var period = PeriodsDic[periodId];
-                var filePath = commitBlobBlame.CanonicalPath;
-                var devName = commitBlobBlame.NormalizedDeveloperIdentity;
-
-                if (!commitBlobBlamesDic.ContainsKey(periodId))
-                {
-                    commitBlobBlamesDic[periodId] = new Dictionary<string, Dictionary<string, FileBlame>>();
-                }
-
-                if (!commitBlobBlamesDic[periodId].ContainsKey(filePath))
-                {
-                    commitBlobBlamesDic[periodId][filePath] = new Dictionary<string, FileBlame>();
-                }
-
-                if (!commitBlobBlamesDic[periodId][filePath].ContainsKey(devName))
-                {
-                    commitBlobBlamesDic[periodId][filePath][devName] = new FileBlame()
-                    {
-                        FileName = filePath,
-                        Period = period,
-                        NormalizedDeveloperName = devName
-                    };
-                }
-
-                commitBlobBlamesDic[periodId][filePath][devName].TotalAuditedLines += commitBlobBlame.AuditedLines;
-            }
+            UnifyBlames();
+            ComputeOwnershipPercentage();
 
             return commitBlobBlamesDic;
 
+
+            void UnifyBlames()
+            {
+                foreach (var commitBlobBlame in commitBlobBlames)
+                {
+                    var commit = CommitsDic.GetValueOrDefault(commitBlobBlame.CommitSha);
+                    var periodId = commit.PeriodId.Value;
+                    var period = PeriodsDic[periodId];
+                    var filePath = commitBlobBlame.CanonicalPath;
+                    var devName = commitBlobBlame.NormalizedDeveloperIdentity;
+
+                    if (!commitBlobBlamesDic.ContainsKey(periodId))
+                    {
+                        commitBlobBlamesDic[periodId] = new Dictionary<string, Dictionary<string, FileBlame>>();
+                    }
+
+                    if (!commitBlobBlamesDic[periodId].ContainsKey(filePath))
+                    {
+                        commitBlobBlamesDic[periodId][filePath] = new Dictionary<string, FileBlame>();
+                    }
+
+                    if (!commitBlobBlamesDic[periodId][filePath].ContainsKey(devName))
+                    {
+                        commitBlobBlamesDic[periodId][filePath][devName] = new FileBlame()
+                        {
+                            FileName = filePath,
+                            Period = period,
+                            NormalizedDeveloperName = devName
+                        };
+                    }
+
+                    commitBlobBlamesDic[periodId][filePath][devName].TotalAuditedLines += commitBlobBlame.AuditedLines;
+                }
+            }
+
+            void ComputeOwnershipPercentage()
+            {
+                foreach (var periodId in commitBlobBlamesDic.Keys)
+                {
+                    foreach (var filePath in commitBlobBlamesDic[periodId].Keys)
+                    {
+                        var totalLines = (double)commitBlobBlamesDic[periodId][filePath].Values.Sum(q => q.TotalAuditedLines);
+
+                        foreach (var developer in commitBlobBlamesDic[periodId][filePath].Keys)
+                        {
+                            commitBlobBlamesDic[periodId][filePath][developer].OwnedPercentage = commitBlobBlamesDic[periodId][filePath][developer].TotalAuditedLines / totalLines;
+                        }
+                    }
+                }
+            }
         }
 
         private void GetCommitsPullRequests(Commit[] commits, PullRequest[] pullRequests)
@@ -376,9 +391,7 @@ namespace RelationalGit
             return result;
         }
 
-        private Dictionary<long, List<string>> GetPullRequestReviewersDictionary(
-            PullRequestReviewer[] pullRequestReviewers,
-            PullRequestReviewerComment[] pullRequestReviewComments)
+        private Dictionary<long, List<string>> GetPullRequestReviewersDictionary(PullRequestReviewer[] pullRequestReviewers,PullRequestReviewerComment[] pullRequestReviewComments)
         {
             var result = new Dictionary<long, List<string>>();
 
@@ -421,7 +434,7 @@ namespace RelationalGit
             if (!prReviewers.ContainsKey(prNumber))
                 prReviewers[prNumber] = new List<string>();
 
-            var reviewerNormalizedName = UsernameRepository.GetByGitHubLogin(reviewerName)?.NormalizedName;
+            var reviewerNormalizedName = UsernameRepository.GetByGitHubLogin(reviewerName)?.NormalizedName ?? "UnmatchedGithubLogin-" + reviewerName;
 
             // Pull Request Reviewers and Comments contains duplicated items, So we need to check for it
             // https://api.github.com/repos/dotnet/coreclr/pulls/7886/reviews

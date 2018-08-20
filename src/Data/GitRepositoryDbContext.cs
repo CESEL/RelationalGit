@@ -120,8 +120,9 @@ namespace RelationalGit
 
             foreach(var reviewerInPeriod in reviewersInPeriods)
             {
+                // we don't drop a reviewer if we couldn't find the corresponding normalized name. Instead we use the GitHub Login directly.
                 var normalizedName = githubGitMapper.FirstOrDefault(q=>q.GitHubUsername==reviewerInPeriod.GitHubUserLogin)
-                ?.GitNormalizedUsername;
+                ?.GitNormalizedUsername ?? "UnmatchedGithubLogin-" + reviewerInPeriod.GitHubUserLogin;
 
                 if(normalizedName==null)
                     continue;
