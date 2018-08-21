@@ -46,6 +46,14 @@ namespace RelationalGit
             {
                 return new SpreadingKnowledgeShareStrategy();
             }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedSpreadingReviewers)
+            {
+                return new BlameBasedKnowledgeShareStrategy();
+            }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ReviewBasedSpreadingReviewers)
+            {
+                return new ReviewBasedKnowledgeShareStrategy();
+            }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RendomReviewers)
             {
                 return new RandomKnowledgeShareStrategy();

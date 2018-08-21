@@ -14,14 +14,14 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class FileBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
+    public class ReviewBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
         protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
         {
             return developerKnowledges
-            .OrderBy(q => q.NumberOfTouchedFiles)
-            .ThenBy(q => q.NumberOfCommittedFiles)
-            .ThenBy(q=>q.NumberOfAuthoredLines);
+            .OrderBy(q => q.NumberOfReviews)
+            .ThenBy(q => q.NumberOfReviewedFiles)
+            .ThenBy(q=>q.NumberOfCommits);
         }
     }
 }

@@ -19,14 +19,10 @@ namespace RelationalGit
 
         internal Developer GetByGitHubLogin(string userLogin)
         {
-            var normalizedName = _githubGitUsers
-            .FirstOrDefault(q=>q.GitHubUsername==userLogin)?.GitNormalizedUsername;
-
-            if(normalizedName==null)
-                return null;
+            var normalizedName = _githubGitUsers.FirstOrDefault(q=>q.GitHubUsername==userLogin)?.GitNormalizedUsername;
 
             // we have ignored some of the mega developers
-            return _developers.SingleOrDefault(q=>q.NormalizedName==normalizedName);
+            return _developers.SingleOrDefault(q=>q.NormalizedName==normalizedName || q.NormalizedName== "UnmatchedGithubLogin-" + userLogin);
         }
     }
 }

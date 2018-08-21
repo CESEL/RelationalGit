@@ -18,13 +18,10 @@ namespace RelationalGit
     {
         protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
         {
-            var presentDevs  = developerKnowledges
-            .Where(q=>pullRequestContext
-            .availableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
-
-            return presentDevs
+            return developerKnowledges
             .OrderBy(q => q.NumberOfCommits)
-            .ThenBy(q=>q.NumberOfTouchedFiles);
+            .ThenBy(q => q.NumberOfCommittedFiles)
+            .ThenBy(q => q.NumberOfAuthoredLines);
         }
     }
 }

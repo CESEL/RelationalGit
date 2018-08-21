@@ -58,7 +58,10 @@ namespace RelationalGit
 
             CommitsDic = commits.ToDictionary(q => q.Sha);
             PeriodsDic = periods.ToDictionary(q => q.Id);
+
+            GetDevelopersContributions(developers, developersContributions);
             DevelopersDic = developers.ToDictionary(q => q.NormalizedName);
+
             PullRequestsDic = pullRequests.ToDictionary(q => q.Number);
 
             CommitBlobBlamesDic = GetCommitBlobBlamesDictionary(commitBlobBlames);
@@ -68,7 +71,6 @@ namespace RelationalGit
 
 
             GetCommitsPullRequests(SortedCommits, pullRequests);
-            GetDevelopersContributions(developers, developersContributions);
         }
 
         public KnowledgeDistributionMap FlyInTime()
@@ -434,7 +436,7 @@ namespace RelationalGit
             if (!prReviewers.ContainsKey(prNumber))
                 prReviewers[prNumber] = new List<string>();
 
-            var reviewerNormalizedName = UsernameRepository.GetByGitHubLogin(reviewerName)?.NormalizedName ?? "UnmatchedGithubLogin-" + reviewerName;
+            var reviewerNormalizedName = UsernameRepository.GetByGitHubLogin(reviewerName)?.NormalizedName;
 
             // Pull Request Reviewers and Comments contains duplicated items, So we need to check for it
             // https://api.github.com/repos/dotnet/coreclr/pulls/7886/reviews

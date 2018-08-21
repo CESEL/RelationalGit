@@ -36,10 +36,7 @@ namespace RelationalGit.Commands
             }
         }
 
-        private  async Task ExctractContributionsPerPeriod(double coreDeveloperThreshold,
-        string coreDeveloperCalculationType,
-        Dictionary<string,Dictionary<long,int>> reviewersInPeriods, 
-        GitRepositoryDbContext dbContext)
+        private  async Task ExctractContributionsPerPeriod(double coreDeveloperThreshold, string coreDeveloperCalculationType, Dictionary<string,Dictionary<long,int>> reviewersInPeriods, GitRepositoryDbContext dbContext)
         {
             var commits = await dbContext.Commits
             .Where(q => !q.Ignore)
@@ -91,10 +88,27 @@ namespace RelationalGit.Commands
                         TotalLines = dev.DeveloperKnowledge,
                         PeriodId = period.Id,
                         LinesPercentage = ownershipPercentage,
-                        TotalCommits = commits
-                            .SingleOrDefault(q => q.PeriodId == period.Id && q.DeveloperName == dev.DeveloperName)
-                            ?.TotalCommits ?? 0,
+                        TotalCommits = commits.SingleOrDefault(q => q.PeriodId == period.Id && q.DeveloperName == dev.DeveloperName)?.TotalCommits ?? 0,
                         TotalReviews=totalReviews
+                    });
+                }
+                
+                var reviewersOfPeriod = reviewersInPeriods.Keys.Where(q => reviewersInPeriods[q].ContainsKey(period.Id));
+                var soleReviewers = reviewersOfPeriod.Where(q => !blames.Any(d => d.DeveloperName == q));
+
+                foreach (var soleReviewer in soleReviewers)
+                {
+                    var totalReviews = reviewersInPeriods[soleReviewer][period.Id];
+
+                    dbContext.Add(new DeveloperContribution()
+                    {
+                        IsCore = false,
+                        NormalizedName = soleReviewer,
+                        TotalLines = 0,
+                        PeriodId = period.Id,
+                        LinesPercentage = 0,
+                        TotalCommits = 0,
+                        TotalReviews = totalReviews
                     });
                 }
             }
@@ -117,8 +131,7 @@ namespace RelationalGit.Commands
             throw new ArgumentException($"Undefined {nameof(coreDeveloperCalculationType)}");
         }
 
-        private  async Task ExtractDevelopersInformation(Dictionary<string,Dictionary<long,int>> reviewersInPeriods, 
-        GitRepositoryDbContext dbContext)
+        private  async Task ExtractDevelopersInformation(Dictionary<string,Dictionary<long,int>> reviewersInPeriods, GitRepositoryDbContext dbContext)
         {
             var commitsGroupByNormalizedName = await dbContext
             .Commits
@@ -129,7 +142,6 @@ namespace RelationalGit.Commands
 
             foreach (var group in commitsGroupByNormalizedName)
             {
-
                 var totalReviews = 0;
                 var firstReviewPeriodId = 0L;
                 var lastReviewPeriodId = 0L;
@@ -141,8 +153,7 @@ namespace RelationalGit.Commands
                     totalReviews = allReviews.Sum(q=>q.Value);
                     firstReviewPeriodId = allReviews.Min(q=>q.Key);
                     lastReviewPeriodId = allReviews.Max(q=>q.Key);
-                    allReviewPeriods = allReviews.Keys.Select(q=>q.ToString())
-                    .Aggregate((a, b) => (a + "," + b)).ToString();
+                    allReviewPeriods = allReviews.Keys.Select(q=>q.ToString()).Aggregate((a, b) => (a + "," + b)).ToString();
                 }
 
                 dbContext.Add(new Developer()
@@ -159,6 +170,31 @@ namespace RelationalGit.Commands
                     TotalReviews = totalReviews,
                     FirstReviewPeriodId=firstReviewPeriodId,
                     LastReviewPeriodId=lastReviewPeriodId,
+                    AllReviewPeriods = allReviewPeriods
+                });
+            }
+
+            var soleReviewers = reviewersInPeriods.Keys.Where(q => !commitsGroupByNormalizedName.Any(d => d.Key == q));
+
+            foreach (var soleReviewer in soleReviewers)
+            {
+                var allReviews = reviewersInPeriods.GetValueOrDefault(soleReviewer);
+
+                var totalReviews = allReviews.Sum(q => q.Value);
+                var firstReviewPeriodId = allReviews.Min(q => q.Key);
+                var lastReviewPeriodId = allReviews.Max(q => q.Key);
+                var allReviewPeriods = allReviews.Keys.Select(q => q.ToString()).Aggregate((a, b) => (a + "," + b)).ToString();
+
+                dbContext.Add(new Developer()
+                {
+                    NormalizedName = soleReviewer,
+                    TotalCommits = 0,
+                    AllCommitPeriods = null,
+                    LastCommitPeriodId = null,
+                    FirstCommitPeriodId = null,
+                    TotalReviews = totalReviews,
+                    FirstReviewPeriodId = firstReviewPeriodId,
+                    LastReviewPeriodId = lastReviewPeriodId,
                     AllReviewPeriods = allReviewPeriods
                 });
             }

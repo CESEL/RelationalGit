@@ -15,9 +15,9 @@ namespace RelationalGit
         public static string KnowledgeSharingReviewers=>"reviewers-knowledge-sharing";
         public static string Expertise => "reviewers-expertise";
         public static string Ideal =>"reviewers-ideal";
-
         public static string CommitBasedSpreadingReviewers => "reviewers-spreading";
-
         public static string RealisticIdeal => "reviewers-realistic-ideal";
+        public static string BlameBasedSpreadingReviewers => "reviewers-expertise-blame";
+        public static string ReviewBasedSpreadingReviewers => "reviewers-expertise-review";
     }
 }
