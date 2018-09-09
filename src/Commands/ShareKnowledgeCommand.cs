@@ -44,9 +44,11 @@ namespace RelationalGit.Commands
 
             var knowledgeDistributioneMap = timeMachine.FlyInTime();
 
-            SaveLeaversAndFilesAtRisk(lossSimulation, knowledgeDistributioneMap);
+            var leavers = GetLeavers(lossSimulation);
+            SaveLeaversAndFilesAtRisk(lossSimulation, knowledgeDistributioneMap, leavers);
             SavePullRequestReviewes(knowledgeDistributioneMap, lossSimulation);
             SaveFileTouches(knowledgeDistributioneMap, lossSimulation);
+            SaveOwnershipDistribution(knowledgeDistributioneMap,lossSimulation,leavers);
 
             lossSimulation.EndDateTime = DateTime.Now;
             _dbContext.Entry(lossSimulation).State=EntityState.Modified;
@@ -59,24 +61,97 @@ namespace RelationalGit.Commands
             return Task.CompletedTask;
         }
 
-        private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap)
+        private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap
+            , LossSimulation lossSimulation
+            , Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
+        {
+            var distribution = new Dictionary<string, HashSet<string>>();
+
+            foreach (var period in _periods)
+            {
+                var availableDevelopersOfPeriod = GetAvailableDevelopersOfPeriod(period);
+                var leaversOfPeriod = leavers[period.Id];
+
+                var commitDetailsOfPeriod = knowledgeDistributioneMap.CommitBasedKnowledgeMap.GetCommittersOfPeriod(period.Id);
+
+                foreach (var commitDetail in commitDetailsOfPeriod)
+                {
+                    if (!distribution.ContainsKey(commitDetail.FilePath))
+                        distribution[commitDetail.FilePath] = new HashSet<string>();
+
+                    if (!distribution[commitDetail.FilePath].Contains(commitDetail.Developer.NormalizedName))
+                        distribution[commitDetail.FilePath].Add(commitDetail.Developer.NormalizedName);
+                }
+
+                var reviewDetailsOfPeriod = knowledgeDistributioneMap.ReviewBasedKnowledgeMap.GetReviewersOfPeriod(period.Id);
+
+                foreach (var reviewDetail in reviewDetailsOfPeriod)
+                {
+                    if (!distribution.ContainsKey(reviewDetail.FilePath))
+                        distribution[reviewDetail.FilePath] = new HashSet<string>();
+
+                    if (!distribution[reviewDetail.FilePath].Contains(reviewDetail.Developer.NormalizedName))
+                        distribution[reviewDetail.FilePath].Add(reviewDetail.Developer.NormalizedName);
+                }
+
+                foreach (var filePath in distribution.Keys)
+                {
+                    var knowledgeables = distribution[filePath]
+                        .Where(q=> availableDevelopersOfPeriod.Any(a=>a.NormalizedName==q) && leaversOfPeriod.All(l=>l.NormalizedName!=q));
+
+                    _dbContext.Add(new FileKnowledgeable()
+                    {
+                        CanonicalPath=filePath,
+                        PeriodId=period.Id,
+                        TotalKnowledgeables= knowledgeables.Count(),
+                        Knowledgeables= knowledgeables.Aggregate((a, b) => a + "," + b),
+                        LossSimulationId= lossSimulation.Id
+                    });
+                }
+            }
+        }
+
+        private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap, 
+            Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
         {
 
             foreach (var period in _periods)
             {
-                _logger.LogInformation("{datetime}: computing knowledge loss for period {pid}.", DateTime.Now,period.Id);
+                _logger.LogInformation("{datetime}: computing knowledge loss for period {pid}.", DateTime.Now, period.Id);
 
-                var availableDevelopers = _developers.Where(q=>q.LastParticipationPeriodId >= period.Id && q.FirstParticipationPeriodId<=period.Id);
+                var availableDevelopers = GetAvailableDevelopersOfPeriod(period);
 
-                var leavers = GetLeavers(period, availableDevelopers, _developersContributions, lossSimulation);
-                _dbContext.AddRange(leavers);
+                _dbContext.AddRange(leavers[period.Id]);
 
-                var abandonedFiles = GetAbandonedFiles(period,leavers,availableDevelopers,knowledgeDistributioneMap,lossSimulation);
+                var abandonedFiles = GetAbandonedFiles(period, leavers[period.Id], availableDevelopers, knowledgeDistributioneMap, lossSimulation);
                 _dbContext.AddRange(abandonedFiles);
 
                 _logger.LogInformation("{datetime}: computing knowledge loss for period {pid} is done.", DateTime.Now, period.Id);
             }
 
+        }
+        private Dictionary<long,IEnumerable<SimulatedLeaver>> GetLeavers(LossSimulation lossSimulation)
+        {
+            var result = new Dictionary<long, IEnumerable<SimulatedLeaver>>();
+
+            foreach (var period in _periods)
+            {
+                var availableDevelopers = GetAvailableDevelopersOfPeriod(period);
+                var leavers = GetLeaversOfPeriod(lossSimulation, period, availableDevelopers);
+                result[period.Id] = leavers;
+            }
+
+            return result;
+        }
+
+        private IEnumerable<SimulatedLeaver> GetLeaversOfPeriod(LossSimulation lossSimulation, Period period, IEnumerable<Developer> availableDevelopers)
+        {
+            return GetLeavers(period, availableDevelopers, _developersContributions, lossSimulation);
+        }
+
+        private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period)
+        {
+            return _developers.Where(q => q.LastParticipationPeriodId >= period.Id && q.FirstParticipationPeriodId <= period.Id);
         }
 
         private void SaveFileTouches(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)

@@ -50,6 +50,7 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new PullRequestFileEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new PullRequestReviewerCommentEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new IssueCommentEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
         }
 
         public DbSet<IssueComment> IssueComments { get; set; }
@@ -71,6 +72,7 @@ namespace RelationalGit
         public DbSet<GitHubGitUser> GitHubGitUsers { get; set; }
         public DbSet<LossSimulation> LossSimulations { get; set; }
         public DbSet<FileTouch> FileTouches { get; set; }
+        public DbSet<FileKnowledgeable> FileKnowledgeables { get; set; }
         public DbSet<RecommendedPullRequestReviewer> RecommendedPullRequestReviewers { get; set; }
         public DbSet<SimulatedAbondonedFile> SimulatedAbondonedFiles { get; set; }
         public DbSet<SimulatedLeaver> SimulatedLeavers { get; set; }
@@ -134,6 +136,16 @@ namespace RelationalGit
             }
 
             return dic;
+        }
+    }
+    class FileKnowledgeableEntityTypeConfiguration : IEntityTypeConfiguration<FileKnowledgeable>
+    {
+        public void Configure(EntityTypeBuilder<FileKnowledgeable> configuration)
+        {
+            configuration.HasIndex(b => b.PeriodId);
+            configuration.HasIndex(b => b.CanonicalPath);
+            configuration.HasIndex(b => b.LossSimulationId);
+            configuration.HasIndex(b => b.TotalKnowledgeables);
         }
     }
 

@@ -27,6 +27,10 @@ namespace RelationalGit
         }
 
         public IEnumerable<DeveloperFileCommitDetail> Details => _map.Values.SelectMany(q=>q.Values);
+        internal IEnumerable<DeveloperFileCommitDetail> GetCommittersOfPeriod(long periodId)
+        {
+            return _map.Values.SelectMany(q => q.Values.Where(c => c.Periods.Any(p => p.Id == periodId)));
+        }
 
         public void Add(string filePath, Developer developer, Commit commit,Period period)
         {
@@ -86,6 +90,11 @@ namespace RelationalGit
             {
                 AssignKnowledgeToReviewer(pullRequest, reviewer, period, filePath);
             }
+        }
+
+        internal IEnumerable<DeveloperFileReveiewDetail> GetReviewersOfPeriod(long periodId)
+        {
+            return _map.Values.SelectMany(q => q.Values.Where(c => c.Periods.Any(p => p.Id == periodId)));
         }
 
         private void AssignKnowledgeToReviewer(PullRequest pullRequest, Developer reviewer, Period period, string filePath)
