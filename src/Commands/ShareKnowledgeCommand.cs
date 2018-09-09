@@ -34,7 +34,7 @@ namespace RelationalGit.Commands
         }
 
         #endregion
-        internal async Task Execute(LossSimulationOption lossSimulationOption)
+        internal Task Execute(LossSimulationOption lossSimulationOption)
         {
             _dbContext = new GitRepositoryDbContext(false);
 
@@ -46,7 +46,7 @@ namespace RelationalGit.Commands
 
             SaveLeaversAndFilesAtRisk(lossSimulation, knowledgeDistributioneMap);
             SavePullRequestReviewes(knowledgeDistributioneMap, lossSimulation);
-            SaveKnowledgeSharingStatus(knowledgeDistributioneMap, lossSimulation);
+            SaveFileTouches(knowledgeDistributioneMap, lossSimulation);
 
             lossSimulation.EndDateTime = DateTime.Now;
             _dbContext.Entry(lossSimulation).State=EntityState.Modified;
@@ -56,11 +56,11 @@ namespace RelationalGit.Commands
             _logger.LogInformation("{datetime}: results have been saved", DateTime.Now);
             _dbContext.Dispose();
 
+            return Task.CompletedTask;
         }
 
         private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap)
         {
-            var hashsetAbandonedFiles = new HashSet<string>();
 
             foreach (var period in _periods)
             {
@@ -72,24 +72,16 @@ namespace RelationalGit.Commands
                 _dbContext.AddRange(leavers);
 
                 var abandonedFiles = GetAbandonedFiles(period,leavers,availableDevelopers,knowledgeDistributioneMap,lossSimulation);
-                var uniqueAbandonedFiles = abandonedFiles.Where(q=>!hashsetAbandonedFiles.Contains(q.FilePath));
-                _dbContext.AddRange(uniqueAbandonedFiles);
-
-                foreach(var abandonedFile in abandonedFiles)
-                    hashsetAbandonedFiles.Add(abandonedFile.FilePath);
+                _dbContext.AddRange(abandonedFiles);
 
                 _logger.LogInformation("{datetime}: computing knowledge loss for period {pid} is done.", DateTime.Now, period.Id);
             }
 
-            
         }
 
-        private void SaveKnowledgeSharingStatus(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
+        private void SaveFileTouches(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
         {
-            var developerFileCommitDetails = knowledgeMap
-            .CommitBasedKnowledgeMap
-            .Values
-            .SelectMany(q=>q.Values);
+            var developerFileCommitDetails = knowledgeMap.CommitBasedKnowledgeMap.Details;
 
             foreach(var detail in developerFileCommitDetails)
             {
@@ -106,10 +98,7 @@ namespace RelationalGit.Commands
                 }
             }
 
-            var developerFileReviewDetails = knowledgeMap
-            .ReviewBasedKnowledgeMap
-            .Values
-            .SelectMany(q=>q.Values);
+            var developerFileReviewDetails = knowledgeMap.ReviewBasedKnowledgeMap.Details;
 
             foreach(var detail in developerFileReviewDetails)
             {
@@ -345,9 +334,7 @@ namespace RelationalGit.Commands
             return allLeavers;
         }
 
-        private IEnumerable<SimulatedAbondonedFile> GetAbandonedFiles(
-        Period period,
-        IEnumerable<SimulatedLeaver> leavers, 
+        private IEnumerable<SimulatedAbondonedFile> GetAbandonedFiles(Period period,IEnumerable<SimulatedLeaver> leavers, 
         IEnumerable<Developer> availableDevelopers, 
         KnowledgeDistributionMap knowledgeMap, 
         LossSimulation lossSimulation)
@@ -356,9 +343,9 @@ namespace RelationalGit.Commands
             var leaversDic = leavers.ToDictionary(q=>q.Developer.NormalizedName);
             var availableDevelopersDic = availableDevelopers.ToDictionary(q=>q.NormalizedName);
 
-            var authorsFileBlames = knowledgeMap.BlameDistribution[period.Id];
+            var authorsFileBlames = knowledgeMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id);
 
-            foreach(var filePath in authorsFileBlames.Keys)
+            foreach(var filePath in authorsFileBlames.FilePaths)
             {
                 var isFileSavedByReview = IsFileSavedByReview(filePath, knowledgeMap.ReviewBasedKnowledgeMap, period);
                 if (isFileSavedByReview)
@@ -419,10 +406,9 @@ namespace RelationalGit.Commands
             }
         }
 
-        private bool IsFileSavedByReview(string filePath, 
-        Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> reviewBasedKnowledgeMap,Period period)
+        private bool IsFileSavedByReview(string filePath,ReviewBasedKnowledgeMap reviewBasedKnowledgeMap,Period period)
         {
-            var reviewers = reviewBasedKnowledgeMap.GetValueOrDefault(filePath);
+            var reviewers = reviewBasedKnowledgeMap.GetReviewsOfFile(filePath);
             
             if(reviewers==null)
                 return false;

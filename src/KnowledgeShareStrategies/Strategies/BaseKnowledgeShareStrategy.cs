@@ -100,7 +100,7 @@ namespace RelationalGit
 
             void CalculateModificationExpertise()
             {
-                var fileCommitsDetail = pullRequestContext.KnowledgeMap.CommitBasedKnowledgeMap.GetValueOrDefault(canonicalPath);
+                var fileCommitsDetail = pullRequestContext.KnowledgeMap.CommitBasedKnowledgeMap[canonicalPath];
 
                 if (fileCommitsDetail == null)
                     return;
@@ -109,7 +109,7 @@ namespace RelationalGit
                 {
                     var devName = devCommitDetail.Developer.NormalizedName;
 
-                    var fileBlame = pullRequestContext.Blames.GetValueOrDefault(canonicalPath, null)?.GetValueOrDefault(devName, null);
+                    var fileBlame = pullRequestContext.Blames[canonicalPath]?.GetValueOrDefault(devName, null);
 
                     var totalAuditedLines = fileBlame != null ? fileBlame.TotalAuditedLines : 0;
 
@@ -119,7 +119,7 @@ namespace RelationalGit
 
             void CalculateReviewExpertise()
             {
-                var fileReviewDetails = pullRequestContext.KnowledgeMap.ReviewBasedKnowledgeMap.GetValueOrDefault(canonicalPath);
+                var fileReviewDetails = pullRequestContext.KnowledgeMap.ReviewBasedKnowledgeMap[canonicalPath];
 
                 if (fileReviewDetails == null)
                     return;
@@ -128,7 +128,9 @@ namespace RelationalGit
                 {
                     var devName = devReviewDetail.Developer.NormalizedName;
 
-                    var hasCommittedThisFileBefore = IsPersonHasCommittedThisFile(devName, canonicalPath, pullRequestContext.KnowledgeMap);
+                    var hasCommittedThisFileBefore = pullRequestContext
+                        .KnowledgeMap
+                        .CommitBasedKnowledgeMap.IsPersonHasCommittedThisFile(devName, canonicalPath);
 
                     AddReviewOwnershipDetail(developersKnowledge, devReviewDetail, hasCommittedThisFileBefore);
                 }
@@ -153,12 +155,6 @@ namespace RelationalGit
                 developersKnowledge[developerName].NumberOfTouchedFiles++;
 
             developersKnowledge[developerName].NumberOfReviewedFiles++;
-        }
-
-        private bool IsPersonHasCommittedThisFile(string normalizedName, string canonicalPath, KnowledgeDistributionMap knowledgeMap)
-        {
-            var developersFileCommitsDetails = knowledgeMap.CommitBasedKnowledgeMap[canonicalPath];
-            return developersFileCommitsDetails.Any(q=>q.Value.Developer.NormalizedName==normalizedName);
         }
 
         private void AddModificationOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileCommitDetail developerFileCommitsDetail,int totalAuditedLines)

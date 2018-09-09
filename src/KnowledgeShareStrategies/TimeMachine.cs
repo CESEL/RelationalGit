@@ -19,7 +19,7 @@ namespace RelationalGit
     {
         #region Fields
         private Commit[] SortedCommits { get; set; }
-        public Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>> CommitBlobBlamesDic { get; private set; }
+        public BlameBasedKnowledgeMap BlameBasedKnowledgeMap { get; private set; }
         private Dictionary<string, Commit> CommitsDic { get; set; }
         private Dictionary<string, Developer> DevelopersDic { get; set; }
         private DeveloperContribution[] DevelopersContributions { get; set; }
@@ -31,9 +31,13 @@ namespace RelationalGit
         private Dictionary<string, string> CanononicalPathMapper { get; set; }
         private UsernameRepository UsernameRepository { get; set; }
         private Dictionary<long, Period> PeriodsDic { get; set; }
-        private Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> CommitBasedKnowledgeMap = new Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>>();
-        private Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> ReviewBasedKnowledgeMap = new Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>>();
+
+        private CommitBasedKnowledgeMap CommitBasedKnowledgeMap = new CommitBasedKnowledgeMap();
+
+        private ReviewBasedKnowledgeMap ReviewBasedKnowledgeMap = new ReviewBasedKnowledgeMap();
+
         private ILogger _logger;
+
         private Func<PullRequestContext, string[]> ChangeThePastByRecommendingReviewersFunc;
 
         #endregion
@@ -64,7 +68,7 @@ namespace RelationalGit
 
             PullRequestsDic = pullRequests.ToDictionary(q => q.Number);
 
-            CommitBlobBlamesDic = GetCommitBlobBlamesDictionary(commitBlobBlames);
+            BlameBasedKnowledgeMap = GetCommitBlobBlamesDictionary(commitBlobBlames);
             CommittedChangesDic = GetCommittedChangesDictionary(committedChanges);
             PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
             PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments);
@@ -79,10 +83,10 @@ namespace RelationalGit
 
             var knowledgeMap = new KnowledgeDistributionMap()
             {
-                CommitBasedKnowledgeMap = this.CommitBasedKnowledgeMap,
+                CommitBasedKnowledgeMap = CommitBasedKnowledgeMap,
                 ReviewBasedKnowledgeMap = this.ReviewBasedKnowledgeMap,
                 PullRequestReviewers = PullRequestReviewersDic,
-                BlameDistribution = CommitBlobBlamesDic
+                BlameBasedKnowledgeMap = BlameBasedKnowledgeMap
             };
 
             foreach (var commit in SortedCommits)
@@ -147,7 +151,7 @@ namespace RelationalGit
                 CanononicalPathMapper = CanononicalPathMapper,
                 Period = period,
                 Developers = new ReadOnlyDictionary<string, Developer>(DevelopersDic),
-                Blames = CommitBlobBlamesDic[period.Id]
+                Blames = BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id)
             };
 
         }
@@ -164,7 +168,7 @@ namespace RelationalGit
 
         private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
         {
-            var reviewersNamesOfPullRequest = PullRequestReviewersDic[pullRequest.Number];
+            var reviewersNamesOfPullRequest = PullRequestReviewersDic[pullRequest.Number].Select(reviewerName => DevelopersDic[reviewerName]);
             var period = GetPeriodOfPullRequest(pullRequest);
 
             // some of the pull requests have no modified files strangely
@@ -174,40 +178,10 @@ namespace RelationalGit
             foreach (var file in filesOfPullRequest)
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                AssignKnowledgeToReviewers(pullRequest, reviewersNamesOfPullRequest, period, canonicalPath);
+                ReviewBasedKnowledgeMap.Add(canonicalPath, reviewersNamesOfPullRequest, pullRequest, period);
             }
         }
 
-        private void AssignKnowledgeToReviewers(PullRequest pullRequest, IEnumerable<string> reviewersNamesOfPullRequest, Period period, string filePath)
-        {
-            if (filePath == null)
-                return;
-
-            if (!ReviewBasedKnowledgeMap.ContainsKey(filePath))
-                ReviewBasedKnowledgeMap[filePath] = new Dictionary<string, DeveloperFileReveiewDetail>();
-
-            foreach (var reviewerName in reviewersNamesOfPullRequest)
-            {
-                AssignKnowledgeToReviewer(pullRequest,reviewerName, period, filePath);
-            }
-        }
-
-        private void AssignKnowledgeToReviewer(PullRequest pullRequest, string reviewerName, Period period, string filePath)
-        {
-            if (!ReviewBasedKnowledgeMap[filePath].ContainsKey(reviewerName))
-            {
-                ReviewBasedKnowledgeMap[filePath][reviewerName] = new DeveloperFileReveiewDetail()
-                {
-                    FilePath = filePath,
-                    Developer = DevelopersDic[reviewerName]
-                };
-            }
-
-            if (!ReviewBasedKnowledgeMap[filePath][reviewerName].Periods.Any(q => q.Id == period.Id))
-                ReviewBasedKnowledgeMap[filePath][reviewerName].Periods.Add(period);
-
-            ReviewBasedKnowledgeMap[filePath][reviewerName].PullRequests.Add(pullRequest);
-        }
 
         private void AddProposedChangesToPrSubmitterKnowledge(PullRequest pullRequest, Commit prMergedCommit)
         {
@@ -246,23 +220,9 @@ namespace RelationalGit
             if (filePath == null || developerName == null)
                 return;
 
-            if (!CommitBasedKnowledgeMap.ContainsKey(filePath))
-                CommitBasedKnowledgeMap[filePath] = new Dictionary<string, DeveloperFileCommitDetail>();
+            var developer = DevelopersDic[developerName];
 
-            if (!CommitBasedKnowledgeMap[filePath].ContainsKey(developerName))
-            {
-                CommitBasedKnowledgeMap[filePath][developerName] = new DeveloperFileCommitDetail()
-                {
-                    FilePath = filePath,
-                    Developer = DevelopersDic[developerName],
-                };
-            }
-
-            if (!CommitBasedKnowledgeMap[filePath][developerName].Commits.Any(q => q.Sha == commit.Sha))
-                CommitBasedKnowledgeMap[filePath][developerName].Commits.Add(commit);
-
-            if (!CommitBasedKnowledgeMap[filePath][developerName].Periods.Any(q => q.Id == period.Id))
-                CommitBasedKnowledgeMap[filePath][developerName].Periods.Add(period);
+            CommitBasedKnowledgeMap.Add(filePath,developer,commit,period);
         }
 
         private void UpdateCommitBasedKnowledgeMap(Commit commit)
@@ -285,14 +245,14 @@ namespace RelationalGit
             return PeriodsDic[commit.PeriodId.Value];
         }
 
-        private Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>> GetCommitBlobBlamesDictionary(CommitBlobBlame[] commitBlobBlames)
+        private BlameBasedKnowledgeMap GetCommitBlobBlamesDictionary(CommitBlobBlame[] commitBlobBlames)
         {
-            var commitBlobBlamesDic = new Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>>();
+            var blameBasedKnowledgeMap = new BlameBasedKnowledgeMap();
 
             UnifyBlames();
-            ComputeOwnershipPercentage();
+            blameBasedKnowledgeMap.ComputeOwnershipPercentage();
 
-            return commitBlobBlamesDic;
+            return blameBasedKnowledgeMap;
 
 
             void UnifyBlames()
@@ -305,43 +265,8 @@ namespace RelationalGit
                     var filePath = commitBlobBlame.CanonicalPath;
                     var devName = commitBlobBlame.NormalizedDeveloperIdentity;
 
-                    if (!commitBlobBlamesDic.ContainsKey(periodId))
-                    {
-                        commitBlobBlamesDic[periodId] = new Dictionary<string, Dictionary<string, FileBlame>>();
-                    }
+                    blameBasedKnowledgeMap.Add(period, filePath, devName, commitBlobBlame);
 
-                    if (!commitBlobBlamesDic[periodId].ContainsKey(filePath))
-                    {
-                        commitBlobBlamesDic[periodId][filePath] = new Dictionary<string, FileBlame>();
-                    }
-
-                    if (!commitBlobBlamesDic[periodId][filePath].ContainsKey(devName))
-                    {
-                        commitBlobBlamesDic[periodId][filePath][devName] = new FileBlame()
-                        {
-                            FileName = filePath,
-                            Period = period,
-                            NormalizedDeveloperName = devName
-                        };
-                    }
-
-                    commitBlobBlamesDic[periodId][filePath][devName].TotalAuditedLines += commitBlobBlame.AuditedLines;
-                }
-            }
-
-            void ComputeOwnershipPercentage()
-            {
-                foreach (var periodId in commitBlobBlamesDic.Keys)
-                {
-                    foreach (var filePath in commitBlobBlamesDic[periodId].Keys)
-                    {
-                        var totalLines = (double)commitBlobBlamesDic[periodId][filePath].Values.Sum(q => q.TotalAuditedLines);
-
-                        foreach (var developer in commitBlobBlamesDic[periodId][filePath].Keys)
-                        {
-                            commitBlobBlamesDic[periodId][filePath][developer].OwnedPercentage = commitBlobBlamesDic[periodId][filePath][developer].TotalAuditedLines / totalLines;
-                        }
-                    }
                 }
             }
         }

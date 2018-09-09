@@ -1,15 +1,194 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace RelationalGit
 {
     public class KnowledgeDistributionMap
     {
-        public Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> CommitBasedKnowledgeMap;
-        public Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> ReviewBasedKnowledgeMap;
+        public CommitBasedKnowledgeMap CommitBasedKnowledgeMap;
+
+        public ReviewBasedKnowledgeMap ReviewBasedKnowledgeMap;
         public Dictionary<long, List<string>> PullRequestReviewers { get;  set; }
-        public Dictionary<long, Dictionary<string, Dictionary<string, FileBlame>>> BlameDistribution { get; internal set; }
+        public BlameBasedKnowledgeMap BlameBasedKnowledgeMap { get; internal set; }
+    }
+
+    public class CommitBasedKnowledgeMap
+    {
+        private Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> _map = new Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>>();
+
+        public Dictionary<string, DeveloperFileCommitDetail> this[string filePath]
+        {
+            get
+            {
+                return _map[filePath];
+            }
+        }
+
+        public IEnumerable<DeveloperFileCommitDetail> Details => _map.Values.SelectMany(q=>q.Values);
+
+        public void Add(string filePath, Developer developer, Commit commit,Period period)
+        {
+            var developerName = developer?.NormalizedName;
+
+            if (filePath == null || developerName == null)
+                return;
+
+            if (!_map.ContainsKey(filePath))
+                _map[filePath] = new Dictionary<string, DeveloperFileCommitDetail>();
+
+            if (!_map[filePath].ContainsKey(developerName))
+            {
+                _map[filePath][developerName] = new DeveloperFileCommitDetail()
+                {
+                    FilePath = filePath,
+                    Developer = developer,
+                };
+            }
+
+            if (!_map[filePath][developerName].Commits.Any(q => q.Sha == commit.Sha))
+                _map[filePath][developerName].Commits.Add(commit);
+
+            if (!_map[filePath][developerName].Periods.Any(q => q.Id == period.Id))
+                _map[filePath][developerName].Periods.Add(period);
+        }
+
+        internal bool IsPersonHasCommittedThisFile(string normalizedName, string path)
+        {
+            var developersFileCommitsDetails = _map[path];
+            return developersFileCommitsDetails.Any(q => q.Value.Developer.NormalizedName == normalizedName);
+        }
+    }
+    public class ReviewBasedKnowledgeMap
+    {
+        private Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> _map = new Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>>();
+
+        public Dictionary<string, DeveloperFileReveiewDetail> this[string filePath]
+        {
+            get
+            {
+                return _map[filePath];
+            }
+        }
+
+        public IEnumerable<DeveloperFileReveiewDetail> Details => _map.Values.SelectMany(q => q.Values);
+
+        public void Add(string filePath, IEnumerable<Developer> reviewersNamesOfPullRequest, PullRequest pullRequest, Period period)
+        {
+            if (filePath == null)
+                return;
+
+            if (!_map.ContainsKey(filePath))
+                _map[filePath] = new Dictionary<string, DeveloperFileReveiewDetail>();
+
+            foreach (var reviewer in reviewersNamesOfPullRequest)
+            {
+                AssignKnowledgeToReviewer(pullRequest, reviewer, period, filePath);
+            }
+        }
+
+        private void AssignKnowledgeToReviewer(PullRequest pullRequest, Developer reviewer, Period period, string filePath)
+        {
+
+            var reviewerName = reviewer.NormalizedName;
+            
+            if (!_map[filePath].ContainsKey(reviewerName))
+            {
+                _map[filePath][reviewerName] = new DeveloperFileReveiewDetail()
+                {
+                    FilePath = filePath,
+                    Developer = reviewer
+                };
+            }
+
+            if (!_map[filePath][reviewerName].Periods.Any(q => q.Id == period.Id))
+                _map[filePath][reviewerName].Periods.Add(period);
+
+            _map[filePath][reviewerName].PullRequests.Add(pullRequest);
+        }
+
+        internal Dictionary<string, DeveloperFileReveiewDetail> GetReviewsOfFile(string filePath)
+        {
+            return _map.GetValueOrDefault(filePath);
+        }
+    }
+    public class BlameBasedKnowledgeMap
+    {
+        private Dictionary<long, BlameSnapshot> map = new Dictionary<long, BlameSnapshot>();
+        public void Add(Period period,string filePath, string developerName, CommitBlobBlame commitBlobBlame)
+        {
+            var periodId = period.Id;
+
+            if (!map.ContainsKey(periodId))
+            {
+                map[periodId] = new BlameSnapshot();
+            }
+
+            map[periodId].Add(period, filePath, developerName, commitBlobBlame);
+        }
+
+        public void ComputeOwnershipPercentage()
+        {
+            foreach (var periodId in map.Keys)
+            {
+                map[periodId].ComputeOwnershipPercentage();
+            }
+        }
+
+        internal BlameSnapshot GetSnapshopOfPeriod(long periodId)
+        {
+            return map[periodId];
+        }
+    }
+
+    public class BlameSnapshot
+    {
+        private Dictionary<string, Dictionary<string, FileBlame>> _map = new Dictionary<string, Dictionary<string, FileBlame>>();
+        public void Add(Period period, string filePath, string developerName, CommitBlobBlame commitBlobBlame)
+        {
+
+            if (!_map.ContainsKey(filePath))
+            {
+                _map[filePath] = new Dictionary<string, FileBlame>();
+            }
+
+            if (!_map[filePath].ContainsKey(developerName))
+            {
+                _map[filePath][developerName] = new FileBlame()
+                {
+                    FileName = filePath,
+                    Period = period,
+                    NormalizedDeveloperName = developerName
+                };
+            }
+
+            _map[filePath][developerName].TotalAuditedLines += commitBlobBlame.AuditedLines;
+        }
+
+        public void ComputeOwnershipPercentage()
+        {
+            foreach (var filePath in _map.Keys)
+            {
+                var totalLines = (double)_map[filePath].Values.Sum(q => q.TotalAuditedLines);
+
+                foreach (var developer in _map[filePath].Keys)
+                {
+                    _map[filePath][developer].OwnedPercentage = _map[filePath][developer].TotalAuditedLines / totalLines;
+                }
+            }
+        }
+
+        public IEnumerable<string> FilePaths => _map.Keys;
+
+        public Dictionary<string, FileBlame>  this[string filePath]
+        {
+            get
+            {
+                return _map[filePath];
+            }
+        }
+
     }
 }
 

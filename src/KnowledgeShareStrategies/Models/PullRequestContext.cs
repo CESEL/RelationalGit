@@ -16,7 +16,7 @@ namespace RelationalGit
         public Dictionary<string, string> CanononicalPathMapper { get; internal set; }
         public Period Period { get; internal set; }
         public ReadOnlyDictionary<string, Developer> Developers { get; internal set; }
-        public Dictionary<string, Dictionary<string, FileBlame>> Blames { get; internal set; }
+        public BlameSnapshot Blames { get; internal set; }
     }
 }
 
