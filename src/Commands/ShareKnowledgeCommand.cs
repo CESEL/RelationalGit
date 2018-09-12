@@ -2,10 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Diacritics.Extensions;
-using F23.StringSimilarity;
 using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands
@@ -61,16 +58,15 @@ namespace RelationalGit.Commands
             return Task.CompletedTask;
         }
 
-        private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap
-            , LossSimulation lossSimulation
+        private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation
             , Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
         {
             var distribution = new Dictionary<string, HashSet<string>>();
 
             foreach (var period in _periods)
             {
-                var availableDevelopersOfPeriod = GetAvailableDevelopersOfPeriod(period);
-                var leaversOfPeriod = leavers[period.Id];
+                var availableDevelopersOfPeriod = GetAvailableDevelopersOfPeriod(period).ToArray();
+                var leaversOfPeriod = leavers[period.Id].ToArray();
 
                 var commitDetailsOfPeriod = knowledgeDistributioneMap.CommitBasedKnowledgeMap.GetCommittersOfPeriod(period.Id);
 
@@ -97,14 +93,14 @@ namespace RelationalGit.Commands
                 foreach (var filePath in distribution.Keys)
                 {
                     var knowledgeables = distribution[filePath]
-                        .Where(q=> availableDevelopersOfPeriod.Any(a=>a.NormalizedName==q) && leaversOfPeriod.All(l=>l.NormalizedName!=q));
+                        .Where(q=>  availableDevelopersOfPeriod.Any(a=>a.NormalizedName==q) && leaversOfPeriod.All(l=>l.NormalizedName!=q));
 
                     _dbContext.Add(new FileKnowledgeable()
                     {
                         CanonicalPath=filePath,
                         PeriodId=period.Id,
                         TotalKnowledgeables= knowledgeables.Count(),
-                        Knowledgeables= knowledgeables.Aggregate((a, b) => a + "," + b),
+                        Knowledgeables= knowledgeables.Count()>0?knowledgeables.Aggregate((a, b) => a + "," + b):null,
                         LossSimulationId= lossSimulation.Id
                     });
                 }
@@ -216,9 +212,9 @@ namespace RelationalGit.Commands
                 MegaPullRequestSize = lossSimulationOption.MegaPullRequestSize,
                 KnowledgeShareStrategyType = lossSimulationOption.KnowledgeShareStrategyType,
                 LeaversType = lossSimulationOption.LeaversType,
-                FilesAtRiksOwnershipThreshold= lossSimulationOption.FilesAtRiksOwnershipThreshold,
+                FilesAtRiksOwnershipThreshold = lossSimulationOption.FilesAtRiksOwnershipThreshold,
                 FilesAtRiksOwnersThreshold = lossSimulationOption.FilesAtRiksOwnersThreshold,
-                LeaversOfPeriodExtendedAbsence = lossSimulationOption.LeaversOfPeriodExtendedAbsence
+                LeaversOfPeriodExtendedAbsence = lossSimulationOption.LeaversOfPeriodExtendedAbsence,
             };
 
             _dbContext.Add(lossSimulation);
@@ -234,25 +230,19 @@ namespace RelationalGit.Commands
 
             var timeMachine = new TimeMachine(knowledgeShareStrategy.RecommendReviewers,_logger);
 
-            _commits = _dbContext
-            .Commits
-            .Where(q => !q.Ignore)
-            .ToArray();
+            _commits = _dbContext.Commits.Where(q => !q.Ignore).ToArray();
 
             _logger.LogInformation("{datetime}: Commits are loaded.", DateTime.Now);
 
-            _commitBlobBlames = _dbContext
-            .CommitBlobBlames
-            .Where(q=>!q.Ignore)
-            .ToArray();
+            _commitBlobBlames = _dbContext.CommitBlobBlames.Where(q=>!q.Ignore).ToArray();
 
             _logger.LogInformation("{datetime}: Blames are loaded.", DateTime.Now);
 
             var latestCommitDate = _commits.Max(q => q.AuthorDateTime);
 
-            _committedChanges = _dbContext.
-            CommittedChanges.
-            ToArray();
+            _committedChanges = _dbContext.CommittedChanges.ToArray();
+
+            _logger.LogInformation("{datetime}: Committed Changes are loaded.", DateTime.Now);
 
             _pullRequests = _dbContext
             .PullRequests
@@ -263,6 +253,9 @@ namespace RelationalGit.Commands
                     AND MergedAtDateTime<={latestCommitDate}")
             .ToArray();
 
+            _logger.LogInformation("{datetime}: Pull Request are loaded.", DateTime.Now);
+
+
             _pullRequestFiles = _dbContext
             .PullRequestFiles
             .FromSql($@"SELECT * From PullRequestFiles Where PullRequestNumber in
@@ -272,6 +265,8 @@ namespace RelationalGit.Commands
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
+
+            _logger.LogInformation("{datetime}: Pull Request Files are loaded.", DateTime.Now);
 
             _pullRequestReviewers = _dbContext
             .PullRequestReviewers
@@ -284,6 +279,8 @@ namespace RelationalGit.Commands
             .Where(q => q.State != "DISMISSED")
             .ToArray();
 
+            _logger.LogInformation("{datetime}: Pull Request Reviewers are loaded.", DateTime.Now);
+
             _pullRequestReviewComments = _dbContext
             .PullRequestReviewerComments
             .FromSql($@"SELECT * From PullRequestReviewerComments Where PullRequestNumber in
@@ -294,25 +291,23 @@ namespace RelationalGit.Commands
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
 
-            _logger.LogInformation("{datetime}: Reviewers are loaded.", DateTime.Now);
+            _logger.LogInformation("{datetime}: Pull Request Reviewer Comments are loaded.", DateTime.Now);
 
-            _developers = _dbContext
-            .Developers
-            .ToArray();
+            _developers = _dbContext.Developers.ToArray();
 
-            _developersContributions = _dbContext
-            .DeveloperContributions
-            .ToArray();
+            _logger.LogInformation("{datetime}: Committed Changes are loaded.", DateTime.Now);
+
+            _developersContributions = _dbContext.DeveloperContributions.ToArray();
+
+            _logger.LogInformation("{datetime}: Committed Changes are loaded.", DateTime.Now);
 
             _canononicalPathMapper = _dbContext.GetCanonicalPaths();
 
-            _GitHubGitUsernameMapper = _dbContext
-            .GitHubGitUsers.Where(q => q.GitUsername != null)
-            .ToArray();
+            _logger.LogInformation("{datetime}: Canonical Paths are loaded.", DateTime.Now);
 
-            _periods = _dbContext
-            .Periods
-            .ToArray();
+            _GitHubGitUsernameMapper = _dbContext.GitHubGitUsers.Where(q => q.GitUsername != null).ToArray();
+
+            _periods = _dbContext.Periods.ToArray();
 
             timeMachine.Initiate(
             _commits,

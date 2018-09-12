@@ -14,8 +14,8 @@ namespace RelationalGit
         public DateTime StartDateTime { get; set; }
         public string LeaversType { get; set; }
         public DateTime EndDateTime { get; set; }
-        public double FilesAtRiksOwnershipThreshold { get; internal set; }
-        public int FilesAtRiksOwnersThreshold { get; internal set; }
-        public int LeaversOfPeriodExtendedAbsence { get; internal set; }
+        public double FilesAtRiksOwnershipThreshold { get;  set; }
+        public int FilesAtRiksOwnersThreshold { get;  set; }
+        public int LeaversOfPeriodExtendedAbsence { get;  set; }
     }
 }

@@ -51,7 +51,7 @@ namespace RelationalGit
             {
                 var isReviewer = actualReviewers.Any(q => q == sortedDevelopersKnowledge[i].DeveloperName);
                 var isPrSubmitter = sortedDevelopersKnowledge[i].DeveloperName==pullRequestContext.PRSubmitterNormalizedName;
-                var isAvailable = pullRequestContext.availableDevelopers.Any(q=>q.NormalizedName==sortedDevelopersKnowledge[i].DeveloperName);
+                var isAvailable = pullRequestContext.AvailableDevelopers.Any(q=>q.NormalizedName==sortedDevelopersKnowledge[i].DeveloperName);
 
                 if (!isReviewer && !isPrSubmitter && isAvailable)
                     return sortedDevelopersKnowledge[i].DeveloperName;

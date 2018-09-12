@@ -84,7 +84,7 @@ namespace RelationalGit
             var knowledgeMap = new KnowledgeDistributionMap()
             {
                 CommitBasedKnowledgeMap = CommitBasedKnowledgeMap,
-                ReviewBasedKnowledgeMap = this.ReviewBasedKnowledgeMap,
+                ReviewBasedKnowledgeMap = ReviewBasedKnowledgeMap,
                 PullRequestReviewers = PullRequestReviewersDic,
                 BlameBasedKnowledgeMap = BlameBasedKnowledgeMap
             };
@@ -145,7 +145,7 @@ namespace RelationalGit
                 PRSubmitterNormalizedName = prSubmitter?.NormalizedName,
                 ActualReviewers = actualReviewers,
                 PullRequestFiles = pullRequestFiles,
-                availableDevelopers = availableDevelopers,
+                AvailableDevelopers = availableDevelopers,
                 PullRequest = pullRequest,
                 KnowledgeMap = knowledgeMap,
                 CanononicalPathMapper = CanononicalPathMapper,

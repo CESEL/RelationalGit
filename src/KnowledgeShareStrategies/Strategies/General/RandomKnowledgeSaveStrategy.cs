@@ -23,10 +23,10 @@ namespace RelationalGit
                 return new string[0];
 
             var selectedReviewer = random.Next(0,pullRequestContext.ActualReviewers.Count());
-            var selectedDeveloper = random.Next(0,pullRequestContext.availableDevelopers.Count());
+            var selectedDeveloper = random.Next(0,pullRequestContext.AvailableDevelopers.Count());
 
             pullRequestContext.ActualReviewers[selectedReviewer]
-                = pullRequestContext.availableDevelopers[selectedDeveloper].NormalizedName;
+                = pullRequestContext.AvailableDevelopers[selectedDeveloper].NormalizedName;
 
             return pullRequestContext.ActualReviewers;
         }

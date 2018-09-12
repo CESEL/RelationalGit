@@ -58,6 +58,10 @@ namespace RelationalGit
             {
                 return new RandomKnowledgeShareStrategy();
             }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RandomSpreading)
+            {
+                return new RandomSpreadingKnowledgeShareStrategy();
+            }
 
             throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");
         }

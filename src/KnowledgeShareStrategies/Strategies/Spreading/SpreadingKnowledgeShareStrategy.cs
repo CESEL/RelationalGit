@@ -25,7 +25,7 @@ namespace RelationalGit
 
             var presentDevs  = developerKnowledges
             .Where(q=>pullRequestContext
-            .availableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
+            .AvailableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
 
             var lessKnowledgedDevelopers= presentDevs
             .Where(q=>q.NumberOfTouchedFiles<=maxTouchedFiles*(0.66));
