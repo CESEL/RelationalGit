@@ -22,7 +22,7 @@ namespace RelationalGit
         {
             get
             {
-                return _map[filePath];
+                return _map.GetValueOrDefault(filePath);
             }
         }
 
@@ -72,7 +72,7 @@ namespace RelationalGit
         {
             get
             {
-                return _map[filePath];
+                return _map.GetValueOrDefault(filePath);
             }
         }
 
