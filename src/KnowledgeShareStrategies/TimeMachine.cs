@@ -48,7 +48,7 @@ namespace RelationalGit
             ChangeThePastByRecommendingReviewersFunc = changeThePastByRecommendingReviewersFunc;
         }
         public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
-        CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles,
+        CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles,IssueComment[] issueComments,
          PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
          Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods)
         {
@@ -71,7 +71,7 @@ namespace RelationalGit
             BlameBasedKnowledgeMap = GetCommitBlobBlamesDictionary(commitBlobBlames);
             CommittedChangesDic = GetCommittedChangesDictionary(committedChanges);
             PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
-            PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments);
+            PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments,issueComments);
 
 
             GetCommitsPullRequests(SortedCommits, pullRequests);
@@ -318,7 +318,7 @@ namespace RelationalGit
             return result;
         }
 
-        private Dictionary<long, List<string>> GetPullRequestReviewersDictionary(PullRequestReviewer[] pullRequestReviewers,PullRequestReviewerComment[] pullRequestReviewComments)
+        private Dictionary<long, List<string>> GetPullRequestReviewersDictionary(PullRequestReviewer[] pullRequestReviewers,PullRequestReviewerComment[] pullRequestReviewComments,IssueComment[] issueComments)
         {
             var result = new Dictionary<long, List<string>>();
 
@@ -336,16 +336,40 @@ namespace RelationalGit
                     AssignReviewerToPullRequest(pullRequestReviewComments[i].UserLogin,  prNumber,result);
             }
 
+            for (var i = 0; i < issueComments.Length; i++)
+            {
+                var prNumber = (int) issueComments[i].IssueNumber;
+
+                if (ShouldConsiderComment(prNumber, issueComments[i]))
+                    AssignReviewerToPullRequest(issueComments[i].UserLogin, prNumber, result);
+            }
+
             return result;
         }
 
         private bool ShouldConsiderComment(int prNumber, PullRequestReviewerComment pullRequestReviewerComment)
         {
-            var prMergedDateTime = PullRequestsDic[prNumber].MergedAtDateTime;
+            var pr = PullRequestsDic[prNumber];
+
+            var prMergedDateTime = pr.MergedAtDateTime;
 
                 // if a comment has been left after merge, we don't consider the commenter
                 // as a knoledgeable person about the PR
-            if (prMergedDateTime < pullRequestReviewerComment.CreatedAtDateTime)
+            if (prMergedDateTime < pullRequestReviewerComment.CreatedAtDateTime || pullRequestReviewerComment.UserLogin == pr.UserLogin)
+                return false;
+
+            return true;
+        }
+
+        private bool ShouldConsiderComment(int prNumber, IssueComment issueComment)
+        {
+            var pr = PullRequestsDic[prNumber];
+
+            var prMergedDateTime = pr.MergedAtDateTime;
+
+            // if a comment has been left after merge, we don't consider the commenter
+            // as a knoledgeable person about the PR
+            if (prMergedDateTime < issueComment.CreatedAtDateTime || issueComment.UserLogin==pr.UserLogin)
                 return false;
 
             return true;

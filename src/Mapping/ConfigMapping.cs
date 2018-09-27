@@ -25,6 +25,7 @@ namespace RelationalGit.Mapping
                 .ForMember(d => d.IssueNumber,
                 opt =>
                 opt.MapFrom(s => int.Parse(new Regex(@".*/(?<issue_number>\d+)#").Match(s.HtmlUrl).Groups["issue_number"].Value)));
+               //.ForMember(d => d.AuthorAssociation, opt => opt.MapFrom(s => s.AuthorAssociation.ToString())); 
 
                 cfg.CreateMap<Octokit.Issue, Issue>()
                 .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.HasValue ? s.ClosedAt.Value.DateTime : default(DateTime?)))
@@ -39,6 +40,7 @@ namespace RelationalGit.Mapping
 
                 cfg.CreateMap<Octokit.PullRequestReview, PullRequestReviewer>()
                 .ForMember(d => d.State, opt => opt.MapFrom(s => s.State.ToString()));
+                //.ForMember(d => d.AuthorAssociation, opt => opt.MapFrom(s => s.AuthorAssociation.ToString()));
 
                 cfg.CreateMap<Octokit.PullRequestReviewComment, PullRequestReviewerComment>()
                 .ForMember(d => d.PullRequestNumber, opt =>

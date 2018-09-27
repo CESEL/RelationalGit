@@ -35,8 +35,14 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.0.4" />
-    <PackageReference Include="Octokit.Extensions" Version="1.0.4" />
+    <PackageReference Include="Octokit.Extensions" Version="1.0.5" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Octokit">
+      <HintPath>..\..\..\..\source\repos\octokit.net\Octokit\bin\Debug\netstandard1.1\Octokit.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -12,7 +12,8 @@ namespace RelationalGit
         public string UserLogin { get; set; }
         public string CommitId { get; internal set; }
         public string State { get; internal set; }
-
         public long PullRequestNumber { get; set; }
+        //public string AuthorAssociation { get; set; }
+
     }
 }
