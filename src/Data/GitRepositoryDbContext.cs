@@ -62,7 +62,8 @@ namespace RelationalGit
         public DbSet<CommittedChange> CommittedChanges { get; set; }
         public DbSet<CommittedBlob> CommittedBlob { get; set; }
         public DbSet<CommitBlobBlame> CommitBlobBlames { get; set; }
-        public DbSet<Period> Periods { get; set; }        public DbSet<PullRequestReviewer> PullRequestReviewers { get; set; }
+        public DbSet<Period> Periods { get; set; }
+        public DbSet<PullRequestReviewer> PullRequestReviewers { get; set; }
         public DbSet<PullRequestReviewerComment> PullRequestReviewerComments { get; set; }
         public DbSet<PullRequest> PullRequests { get; set; }
         public DbSet<User> Users { get; set; }

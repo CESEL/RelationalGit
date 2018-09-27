@@ -18,6 +18,7 @@ namespace RelationalGit.Commands
         private PullRequestFile[] _pullRequestFiles;
         private PullRequestReviewer[] _pullRequestReviewers;
         private PullRequestReviewerComment[] _pullRequestReviewComments;
+        private IssueComment[] _issueComments;
         private Developer[] _developers;
         private DeveloperContribution[] _developersContributions;
         private Dictionary<string, string> _canononicalPathMapper;
@@ -291,6 +292,16 @@ namespace RelationalGit.Commands
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
 
+            _issueComments = _dbContext
+            .IssueComments
+            .FromSql($@"SELECT * From IssueComments Where IssueNumber in
+            (SELECT Number FROM PullRequests 
+                    WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
+                    MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
+                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
+                    AND MergedAtDateTime<={latestCommitDate})")
+            .ToArray();
+
             _logger.LogInformation("{datetime}: Pull Request Reviewer Comments are loaded.", DateTime.Now);
 
             _developers = _dbContext.Developers.ToArray();
@@ -317,6 +328,7 @@ namespace RelationalGit.Commands
             _committedChanges,
             _pullRequests,
             _pullRequestFiles,
+            _issueComments,
             _pullRequestReviewers,
             _pullRequestReviewComments,
             _canononicalPathMapper,

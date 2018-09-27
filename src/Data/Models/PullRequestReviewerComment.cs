@@ -19,5 +19,6 @@ namespace RelationalGit
         public string PullRequestUrl { get; set; }
         public string Url { get; set; }
         public int PullRequestNumber { get; set; }
+        //public string AuthorAssociation { get; set; }
     }
 }
