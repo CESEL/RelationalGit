@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using LibGit2Sharp;
 
 namespace RelationalGit
 {
@@ -32,7 +33,7 @@ namespace RelationalGit
             return _map.Values.SelectMany(q => q.Values.Where(c => c.Periods.Any(p => p.Id == periodId)));
         }
 
-        public void Add(string filePath, Developer developer, Commit commit,Period period)
+        public void Add(string filePath,ChangeKind changeKind, Developer developer, Commit commit,Period period)
         {
             var developerName = developer?.NormalizedName;
 
@@ -51,6 +52,8 @@ namespace RelationalGit
                 };
             }
 
+            _map[filePath][developerName].CommitDetails.Add(new CommitDetail(commit,period,changeKind));
+
             if (!_map[filePath][developerName].Commits.Any(q => q.Sha == commit.Sha))
                 _map[filePath][developerName].Commits.Add(commit);
 
@@ -60,8 +63,18 @@ namespace RelationalGit
 
         internal bool IsPersonHasCommittedThisFile(string normalizedName, string path)
         {
-            var developersFileCommitsDetails = _map[path];
+            var developersFileCommitsDetails = _map.GetValueOrDefault(path);
+
+            if (developersFileCommitsDetails == null)
+                return false;
+
             return developersFileCommitsDetails.Any(q => q.Value.Developer.NormalizedName == normalizedName);
+        }
+
+        internal void Remove(string filePath)
+        {
+            if (_map.ContainsKey(filePath))
+                _map.Remove(filePath);
         }
     }
     public class ReviewBasedKnowledgeMap

@@ -262,7 +262,7 @@ namespace RelationalGit
         {
             var result = new List<string>();
 
-            var blobs = tree.Where(m => m.TargetType == TreeEntryTargetType.Blob && validExtensions.Any(f=> m.Name.EndsWith(f)) &&  excludedPaths.All(e=>!Regex.IsMatch(m.Path,e)));
+            var blobs = tree.Where(m => validExtensions.Any(f=> m.Name.EndsWith(f)) &&  excludedPaths.All(e=>!Regex.IsMatch(m.Path,e)));
 
             result.AddRange(blobs.Select(m => m.Path).ToArray());
 

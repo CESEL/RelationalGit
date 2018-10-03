@@ -178,7 +178,7 @@ namespace RelationalGit
             foreach (var file in filesOfPullRequest)
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                ReviewBasedKnowledgeMap.Add(canonicalPath, reviewersNamesOfPullRequest, pullRequest, period);
+                ReviewBasedKnowledgeMap.Add(canonicalPath,file.ChangeKind, reviewersNamesOfPullRequest, pullRequest, period);
             }
         }
 
@@ -211,18 +211,25 @@ namespace RelationalGit
             foreach (var file in pullRequestFiles)
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                AssignKnowledgeToDeveloper(prMergedCommit, prSubmitter, period, canonicalPath);
+                AssignKnowledgeToDeveloper(prMergedCommit, file.ChangeKind ,prSubmitter, period, canonicalPath);
             }
         }
 
-        private void AssignKnowledgeToDeveloper(Commit commit, string developerName, Period period, string filePath)
+        private void AssignKnowledgeToDeveloper(Commit commit,ChangeKind changeKind, string developerName, Period period, string filePath)
         {
             if (filePath == null || developerName == null)
                 return;
 
             var developer = DevelopersDic[developerName];
 
-            CommitBasedKnowledgeMap.Add(filePath,developer,commit,period);
+            if (changeKind == ChangeKind.Deleted)
+            {
+                CommitBasedKnowledgeMap.Remove(filePath);
+            }
+            else if (changeKind != ChangeKind.Renamed) // if it's Added or Modified
+            {
+                CommitBasedKnowledgeMap.Add(filePath,changeKind, developer, commit, period);
+            }
         }
 
         private void UpdateCommitBasedKnowledgeMap(Commit commit)
@@ -236,7 +243,7 @@ namespace RelationalGit
             {
                 // should we consider Canonical Path or Path?
                 var canonicalPath = change.CanonicalPath;
-                AssignKnowledgeToDeveloper(commit, developerName, period, canonicalPath);
+                AssignKnowledgeToDeveloper(commit,(ChangeKind)change.Status, developerName, period, canonicalPath);
             }
         }
 
@@ -250,6 +257,23 @@ namespace RelationalGit
             var blameBasedKnowledgeMap = new BlameBasedKnowledgeMap();
 
             UnifyBlames();
+
+            foreach (var commitBlobBlame in commitBlobBlames)
+            {
+
+
+                var commit = CommitsDic.GetValueOrDefault(commitBlobBlame.CommitSha);
+                var periodId = commit.PeriodId.Value;
+                var period = PeriodsDic[periodId];
+                var filePath = commitBlobBlame.CanonicalPath;
+                var devName = commitBlobBlame.NormalizedDeveloperIdentity;
+
+               
+
+                blameBasedKnowledgeMap.Add(period, filePath, devName, commitBlobBlame);
+
+            }
+
             blameBasedKnowledgeMap.ComputeOwnershipPercentage();
 
             return blameBasedKnowledgeMap;
@@ -257,17 +281,7 @@ namespace RelationalGit
 
             void UnifyBlames()
             {
-                foreach (var commitBlobBlame in commitBlobBlames)
-                {
-                    var commit = CommitsDic.GetValueOrDefault(commitBlobBlame.CommitSha);
-                    var periodId = commit.PeriodId.Value;
-                    var period = PeriodsDic[periodId];
-                    var filePath = commitBlobBlame.CanonicalPath;
-                    var devName = commitBlobBlame.NormalizedDeveloperIdentity;
-
-                    blameBasedKnowledgeMap.Add(period, filePath, devName, commitBlobBlame);
-
-                }
+                
             }
         }
 

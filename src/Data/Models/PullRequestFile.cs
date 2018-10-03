@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LibGit2Sharp;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -16,6 +17,20 @@ namespace RelationalGit
         public int? Deletions { get; set; }
         public int? Changes { get; set; }
         public int PullRequestNumber { get; set; }
+        public ChangeKind ChangeKind
+        {
+            get
+            {
+                if (Status == "added")
+                    return ChangeKind.Added;
+                else if (Status == "modified")
+                    return ChangeKind.Modified;
+                else if (Status == "removed")
+                    return ChangeKind.Deleted;
+                else 
+                    return ChangeKind.Renamed;
+            }
+        }
     }
 }
 
