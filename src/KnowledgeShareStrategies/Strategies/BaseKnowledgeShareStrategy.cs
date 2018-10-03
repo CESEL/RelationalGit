@@ -130,7 +130,8 @@ namespace RelationalGit
 
                     var hasCommittedThisFileBefore = pullRequestContext
                         .KnowledgeMap
-                        .CommitBasedKnowledgeMap.IsPersonHasCommittedThisFile(devName, canonicalPath);
+                        .CommitBasedKnowledgeMap.IsPersonHasCommittedThisFile
+                        (devName, canonicalPath);
 
                     AddReviewOwnershipDetail(developersKnowledge, devReviewDetail, hasCommittedThisFileBefore);
                 }

@@ -52,11 +52,12 @@ namespace RelationalGit
                 };
             }
 
-            _map[filePath][developerName].CommitDetails.Add(new CommitDetail(commit,period,changeKind));
-
             if (!_map[filePath][developerName].Commits.Any(q => q.Sha == commit.Sha))
+            {
+                _map[filePath][developerName].CommitDetails.Add(new CommitDetail(commit, period, changeKind));
                 _map[filePath][developerName].Commits.Add(commit);
-
+            }
+            
             if (!_map[filePath][developerName].Periods.Any(q => q.Id == period.Id))
                 _map[filePath][developerName].Periods.Add(period);
         }

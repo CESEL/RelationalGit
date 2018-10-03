@@ -178,7 +178,7 @@ namespace RelationalGit
             foreach (var file in filesOfPullRequest)
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                ReviewBasedKnowledgeMap.Add(canonicalPath,file.ChangeKind, reviewersNamesOfPullRequest, pullRequest, period);
+                ReviewBasedKnowledgeMap.Add(canonicalPath, reviewersNamesOfPullRequest, pullRequest, period);
             }
         }
 

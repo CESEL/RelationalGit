@@ -62,34 +62,37 @@ namespace RelationalGit.Commands
         private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation
             , Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
         {
-            var distribution = new Dictionary<string, HashSet<string>>();
 
             foreach (var period in _periods)
             {
+                var distribution = new Dictionary<string, HashSet<string>>();
+
+                // get the final list of files by the end of period
+                var blameSnapshot = knowledgeDistributioneMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id);
+
+                foreach (var filePath in blameSnapshot.FilePaths)
+                {
+                    var committers = blameSnapshot[filePath];
+
+                    distribution[filePath] = new HashSet<string>();
+
+                    foreach (var committer in committers)
+                    {
+                        // later we can change this threshold!
+                        if(committer.Value.OwnedPercentage>0)
+                            distribution[filePath].Add(committer.Value.NormalizedDeveloperName);
+                    }
+
+                    var reviewers = knowledgeDistributioneMap.ReviewBasedKnowledgeMap[filePath]?.Where(q=>q.Value.Periods.Any(p=>p.Id<= period.Id));
+
+                    foreach (var reviewer in reviewers)
+                    {
+                        distribution[filePath].Add(reviewer.Value.Developer.NormalizedName);
+                    }
+                }
+
                 var availableDevelopersOfPeriod = GetAvailableDevelopersOfPeriod(period).ToArray();
                 var leaversOfPeriod = leavers[period.Id].ToArray();
-
-                var commitDetailsOfPeriod = knowledgeDistributioneMap.CommitBasedKnowledgeMap.GetCommittersOfPeriod(period.Id);
-
-                foreach (var commitDetail in commitDetailsOfPeriod)
-                {
-                    if (!distribution.ContainsKey(commitDetail.FilePath))
-                        distribution[commitDetail.FilePath] = new HashSet<string>();
-
-                    if (!distribution[commitDetail.FilePath].Contains(commitDetail.Developer.NormalizedName))
-                        distribution[commitDetail.FilePath].Add(commitDetail.Developer.NormalizedName);
-                }
-
-                var reviewDetailsOfPeriod = knowledgeDistributioneMap.ReviewBasedKnowledgeMap.GetReviewersOfPeriod(period.Id);
-
-                foreach (var reviewDetail in reviewDetailsOfPeriod)
-                {
-                    if (!distribution.ContainsKey(reviewDetail.FilePath))
-                        distribution[reviewDetail.FilePath] = new HashSet<string>();
-
-                    if (!distribution[reviewDetail.FilePath].Contains(reviewDetail.Developer.NormalizedName))
-                        distribution[reviewDetail.FilePath].Add(reviewDetail.Developer.NormalizedName);
-                }
 
                 foreach (var filePath in distribution.Keys)
                 {
