@@ -40,6 +40,22 @@ namespace RelationalGit
                 .Create(new ProductHeaderValue(agentName), new Octokit.Credentials(token),new InMemoryCacheProvider());
         }
 
+        internal async Task<IEnumerable<Commit>> FetchCommits(string owner, string repo, string authorGitHubLogin)
+        {
+            Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
+            Ensure.ArgumentNotNullOrEmptyString(repo, nameof(authorGitHubLogin));
+
+            _logger.LogInformation("{datetime}: fetching comments of {authorGitHubLogin} from {owner}/{repo}.", DateTime.Now, authorGitHubLogin, owner, repo);
+
+           var result = (await _client.Repository.Commit.GetAll(owner, repo, new CommitRequest {Author= authorGitHubLogin }, new ApiOptions() { PageSize = 1000 })).ToArray();
+
+            _logger.LogInformation("{datetime}: {count} commits have been fetched.", DateTime.Now, result.Length);
+
+            return null;
+
+        }
+
         internal async Task<IEnumerable<IssueComment>> FetchPullRequestIssueCommentsFromRepository(string owner, string repo,PullRequest[] pullRequests)
         {
             Ensure.ArgumentNotNullOrEmptyString(owner, nameof(owner));

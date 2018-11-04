@@ -21,5 +21,9 @@ namespace RelationalGit
         public static string ReviewBasedSpreadingReviewers => "reviewers-expertise-review";
 
         public static string RandomSpreading => "random-spreading";
+
+        public static string RealisticRandomSpreading => "realistic-random-spreading";
+
+        public static string SpreadingKnowledge2 => "spreading-knowledge-2";
     }
 }

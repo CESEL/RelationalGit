@@ -52,6 +52,8 @@ namespace RelationalGit
          PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
          Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods)
         {
+            _logger.LogInformation("{datetime}: Trying to initialize TimeMachine.", DateTime.Now);
+
             UsernameRepository = new UsernameRepository(githubGitUsers, developers);
 
             SortedCommits = commits.OrderBy(q => q.AuthorDateTime).ToArray();
@@ -75,6 +77,9 @@ namespace RelationalGit
 
 
             GetCommitsPullRequests(SortedCommits, pullRequests);
+
+            _logger.LogInformation("{datetime}: TimeMachine is initialized.", DateTime.Now);
+
         }
 
         public KnowledgeDistributionMap FlyInTime()
@@ -85,7 +90,7 @@ namespace RelationalGit
             {
                 CommitBasedKnowledgeMap = CommitBasedKnowledgeMap,
                 ReviewBasedKnowledgeMap = ReviewBasedKnowledgeMap,
-                PullRequestReviewers = PullRequestReviewersDic,
+                PullRequestReviewers = new Dictionary<long, List<RecommendedPullRequestReviewer>>(),
                 BlameBasedKnowledgeMap = BlameBasedKnowledgeMap
             };
 
@@ -118,9 +123,26 @@ namespace RelationalGit
         {
             if (ChangeThePastByRecommendingReviewersFunc != null)
             {
+                var actualReviewers = PullRequestReviewersDic.GetValueOrDefault(pullRequest.Number,new List<string>(0));
                 var pullRequestContext = GetPullRequestContext(pullRequest, knowledgeMap);
                 var recommendedReviewers = ChangeThePastByRecommendingReviewersFunc(pullRequestContext);
+
+                knowledgeMap.PullRequestReviewers[pullRequest.Number] = new List<RecommendedPullRequestReviewer>(); ;
+
+                foreach (var recommendedReviewer in recommendedReviewers)
+                {
+                    if (actualReviewers.Any(q => q == recommendedReviewer))
+                    {
+                        knowledgeMap.PullRequestReviewers[pullRequest.Number].Add(new RecommendedPullRequestReviewer(pullRequest.Number, recommendedReviewer, 0, RecommendedPullRequestReviewerType.Actual));
+                    }
+                    else
+                    {
+                        knowledgeMap.PullRequestReviewers[pullRequest.Number].Add(new RecommendedPullRequestReviewer(pullRequest.Number, recommendedReviewer, 0, RecommendedPullRequestReviewerType.Recommended));
+                    }
+                }
+
                 PullRequestReviewersDic[pullRequest.Number] = recommendedReviewers.ToList();
+
             }
         }
         private PullRequestContext GetPullRequestContext(PullRequest pullRequest, KnowledgeDistributionMap knowledgeMap)
@@ -129,7 +151,7 @@ namespace RelationalGit
             .GetValueOrDefault(pullRequest.Number, defaultValue: new List<string>())
             .ToArray();
 
-            var pullRequestFiles = this.PullRequestFilesDic
+            var pullRequestFiles = PullRequestFilesDic
             .GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>())
             .ToArray();
 
@@ -151,14 +173,116 @@ namespace RelationalGit
                 CanononicalPathMapper = CanononicalPathMapper,
                 Period = period,
                 Developers = new ReadOnlyDictionary<string, Developer>(DevelopersDic),
-                Blames = BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id)
+                Blames = BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id),
+                PRKnowledgeables = GetPullRequestKnowledgeables(pullRequestFiles,knowledgeMap,period)
             };
 
         }
+
+        private DeveloperKnowledge[] GetPullRequestKnowledgeables(PullRequestFile[] pullRequestFiles, KnowledgeDistributionMap knowledgeDistributionMap, Period period)
+        {
+            var developersKnowledge = new Dictionary<string, DeveloperKnowledge>();
+            var blameSnapshot = BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id);
+
+            foreach (var file in pullRequestFiles)
+            {
+                AddFileOwnership(knowledgeDistributionMap,blameSnapshot, developersKnowledge, file);
+            }
+
+            return developersKnowledge.Values.ToArray();
+        }
+
+        private void AddFileOwnership(KnowledgeDistributionMap knowledgeDistributionMap,BlameSnapshot blameSnapshot, Dictionary<string, DeveloperKnowledge> developersKnowledge, PullRequestFile file)
+        {
+            var canonicalPath = CanononicalPathMapper[file.FileName];
+
+            CalculateModificationExpertise();
+            CalculateReviewExpertise();
+
+            void CalculateModificationExpertise()
+            {
+                var fileCommitsDetail = knowledgeDistributionMap.CommitBasedKnowledgeMap[canonicalPath];
+
+                if (fileCommitsDetail == null)
+                    return;
+
+                foreach (var devCommitDetail in fileCommitsDetail.Values)
+                {
+                    var devName = devCommitDetail.Developer.NormalizedName;
+
+                    var fileBlame = blameSnapshot[canonicalPath]?.GetValueOrDefault(devName, null);
+
+                    var totalAuditedLines = fileBlame != null ? fileBlame.TotalAuditedLines : 0;
+
+                    AddModificationOwnershipDetail(developersKnowledge, devCommitDetail, totalAuditedLines);
+                }
+            }
+
+            void CalculateReviewExpertise()
+            {
+                var fileReviewDetails = knowledgeDistributionMap.ReviewBasedKnowledgeMap[canonicalPath];
+
+                if (fileReviewDetails == null)
+                    return;
+
+                foreach (var devReviewDetail in fileReviewDetails.Values)
+                {
+                    var devName = devReviewDetail.Developer.NormalizedName;
+
+                    var hasCommittedThisFileBefore = knowledgeDistributionMap
+                        .CommitBasedKnowledgeMap.IsPersonHasCommittedThisFile
+                        (devName, canonicalPath);
+
+                    AddReviewOwnershipDetail(developersKnowledge, devReviewDetail, hasCommittedThisFileBefore);
+                }
+            }
+        }
+
+        private void AddReviewOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileReveiewDetail developerFileReveiewDetail, bool hasCommittedThisFileBefore)
+        {
+            var developerName = developerFileReveiewDetail.Developer.NormalizedName;
+
+            if (!developersKnowledge.ContainsKey(developerName))
+            {
+                developersKnowledge[developerName] = new DeveloperKnowledge()
+                {
+                    DeveloperName = developerName
+                };
+            }
+
+            developersKnowledge[developerName].NumberOfReviews += developerFileReveiewDetail.PullRequests.Count();
+
+            if (!hasCommittedThisFileBefore)
+                developersKnowledge[developerName].NumberOfTouchedFiles++;
+
+            developersKnowledge[developerName].NumberOfReviewedFiles++;
+        }
+
+        private void AddModificationOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileCommitDetail developerFileCommitsDetail, int totalAuditedLines)
+        {
+            var developerName = developerFileCommitsDetail.Developer.NormalizedName;
+
+            if (!developersKnowledge.ContainsKey(developerName))
+            {
+                developersKnowledge[developerName] = new DeveloperKnowledge()
+                {
+                    DeveloperName = developerName
+                };
+            }
+
+            developersKnowledge[developerName].NumberOfCommits += developerFileCommitsDetail.Commits.Count();
+            developersKnowledge[developerName].NumberOfTouchedFiles++;
+            developersKnowledge[developerName].NumberOfCommittedFiles++;
+            developersKnowledge[developerName].NumberOfAuthoredLines += totalAuditedLines;
+        }
+
+
         private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period)
         {
             return DevelopersDic.Values.Where(dev => dev.FirstParticipationPeriodId <= period.Id && dev.LastParticipationPeriodId >= period.Id);
         }
+
+
         private Period GetPeriodOfPullRequest(PullRequest pullRequest)
         {
             var mergeCommitd = CommitsDic[pullRequest.MergeCommitSha];

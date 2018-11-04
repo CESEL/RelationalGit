@@ -20,7 +20,7 @@ namespace RelationalGit
         //private static readonly Regex _blameRegex = new Regex(@"\w{40}\t\(<(?<email>.*)>\t",RegexOptions.Compiled);
         private Repository _gitRepo;
         private string _localClonePath;
-        private Dictionary<string, string> _fileOidHolder = new Dictionary<string, string>();
+        //private Dictionary<string, string> _fileOidHolder = new Dictionary<string, string>();
         private ILogger _logger;
 
         #endregion
@@ -67,7 +67,8 @@ namespace RelationalGit
 
         public void LoadChangesOfCommits(Commit[] orderedCommits)
         {
-            _fileOidHolder.Clear();
+            var fileOidHolder = new Dictionary<string, string>();
+            var pathFilesDic = new Dictionary<string, List<CommittedChange>>();
 
             _logger.LogInformation("{datetime}: trying to get committed changes from all the {count} commits.", DateTime.Now,orderedCommits.Count());
 
@@ -76,7 +77,16 @@ namespace RelationalGit
                 if(i%500==0)
                     _logger.LogInformation("{dateTime}: more than {count} commits have been processed",DateTime.Now,i);
 
-                LoadChangesOfCommit(orderedCommits[i]);
+                LoadChangesOfCommit(orderedCommits[i], fileOidHolder, pathFilesDic);
+            }
+
+            // assigning canonical paths to changes all at once at the end of the operation.
+            foreach (var kv in pathFilesDic)
+            {
+                foreach (var change in kv.Value)
+                {
+                    change.CanonicalPath = kv.Key;
+                }
             }
         }
 
@@ -143,7 +153,7 @@ namespace RelationalGit
             return blobBlames;
         }
 
-        private void LoadChangesOfCommit(Commit commit)
+        private void LoadChangesOfCommit(Commit commit, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic)
         {
             var committedChanges = new List<CommittedChange>();
 
@@ -159,28 +169,82 @@ namespace RelationalGit
             };
 
             if (gitCommit.Parents.Count() <= 1)
-                committedChanges = GetDiffOfTrees(_gitRepo, gitCommit.Parents.SingleOrDefault()?.Tree, gitCommit.Tree, compareOptions);
+            {
+
+                committedChanges.AddRange(GetDiffOfTrees(_gitRepo, gitCommit.Parents.SingleOrDefault()?.Tree, gitCommit.Tree, compareOptions, fileOidHolder, pathFilesDic));
+            }
             else
             {
-                committedChanges.AddRange(GetDiffOfMergedTrees(_gitRepo, gitCommit.Parents, gitCommit.Tree, compareOptions));
+                committedChanges.AddRange(GetDiffOfMergedTrees(_gitRepo, gitCommit.Parents, gitCommit.Tree, compareOptions, fileOidHolder, pathFilesDic));
             }
 
-            foreach (var committedFile in committedChanges)
-                committedFile.CommitSha = commit.Sha;
+            ReorderChanges(commit, fileOidHolder, pathFilesDic, committedChanges);
 
             commit.CommittedChanges = committedChanges;
         }
 
-        private IEnumerable<CommittedChange> GetDiffOfMergedTrees(Repository gitRepo, IEnumerable<LibGit2Sharp.Commit> parents, Tree tree, CompareOptions compareOptions)
+        private static void ReorderChanges(Commit commit, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic, List<CommittedChange> committedChanges)
+        {
+            foreach (var committedFile in committedChanges)
+            {
+                committedFile.CommitSha = commit.Sha;
+                var canonicalPath = committedFile.CanonicalPath;
+
+                // adding new changes to the dictionary
+                if (!pathFilesDic.ContainsKey(canonicalPath))
+                {
+                    pathFilesDic[canonicalPath] = new List<CommittedChange>();
+                }
+
+                pathFilesDic[canonicalPath].Add(committedFile);
+            }
+
+
+            // reordering changes to their new canonical address. 
+            // so, files with same path/oldpath will have a same canonical address
+            foreach (var committedChange in committedChanges)
+            {
+                if (committedChange.Path == committedChange.OldPath)
+                    continue;
+
+                var pathCanonical = fileOidHolder[committedChange.Path];
+                var oldPathCanonical = fileOidHolder[committedChange.OldPath];
+
+                if (pathCanonical != oldPathCanonical)
+                {
+                    pathFilesDic[pathCanonical] = pathFilesDic[pathCanonical].Concat(pathFilesDic[oldPathCanonical]).ToList();
+                    pathFilesDic.Remove(oldPathCanonical);
+
+                    fileOidHolder[oldPathCanonical] = pathCanonical;
+
+                    foreach (var item in pathFilesDic[pathCanonical])
+                    {
+                        fileOidHolder[item.Path] = pathCanonical;
+                        fileOidHolder[item.OldPath] = pathCanonical;
+                    }
+                }
+            }
+        }
+
+        private IEnumerable<CommittedChange> GetDiffOfMergedTrees(Repository gitRepo, IEnumerable<LibGit2Sharp.Commit> parents, Tree tree, CompareOptions compareOptions, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic)
         {
             var firstParent = parents.ElementAt(0);
             var secondParent = parents.ElementAt(1);
 
-            var firstChanges = GetDiffOfTrees(gitRepo,firstParent.Tree,tree,compareOptions);
-            var secondChanges = GetDiffOfTrees(gitRepo, secondParent.Tree, tree, compareOptions);
+            var copyOfFileOidHolder1 = new Dictionary<string, string>(fileOidHolder);
+            var firstChanges = GetDiffOfTrees(gitRepo,firstParent.Tree,tree,compareOptions, copyOfFileOidHolder1, pathFilesDic);
 
-            var result = firstChanges.Where(c1 => secondChanges.Any(c2 => c2.Oid==c1.Oid));
-            return result;
+            var copyOfFileOidHolder2 = new Dictionary<string, string>(fileOidHolder);
+            var secondChanges = GetDiffOfTrees(gitRepo, secondParent.Tree, tree, compareOptions, copyOfFileOidHolder2, pathFilesDic);
+
+            var changes = firstChanges.Where(c1 => secondChanges.Any(c2 => c2.Oid==c1.Oid));
+
+            foreach (var change in changes)
+            {
+                fileOidHolder[change.Path] = copyOfFileOidHolder1[change.Path];
+            }
+
+            return changes;
         }
 
         private ICollection<CommitBlobBlame> ExtraxtBlames(string[] blameLines,
@@ -205,11 +269,6 @@ namespace RelationalGit
                 if (commit is null)
                     continue;
 
-                /*var mc = _blameRegex.Matches(blameLine);
-                if (mc.Count == 0)
-                    continue;*/
-
-                //var email = mc[0].Groups["email"].Value;
                 var email = commit.AuthorEmail;
 
                 var key=sha+email;
@@ -275,7 +334,7 @@ namespace RelationalGit
         }
 
         private List<CommittedChange> GetDiffOfTrees(LibGit2Sharp.Repository repo, Tree oldTree
-            , Tree newTree, CompareOptions compareOptions)
+            , Tree newTree, CompareOptions compareOptions, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic)
         {
             var result = new List<CommittedChange>();
 
@@ -288,17 +347,24 @@ namespace RelationalGit
 
                 string canonicalPath;
 
-                if (change.OldExists && changeStatus!=ChangeKind.Added)
+                // 1) files with same path should have same canonical path.
+                // 2) files with same path and oldPath should have same canocical path.
+                // file ab is created, file ab gets deleted, file a.b is created, file a.b gets renamed to ab. Then the canonical of a.b should be ab.
+                if (fileOidHolder.ContainsKey(change.Path))
                 {
-                    canonicalPath = _fileOidHolder[change.OldPath];
-                    _fileOidHolder[change.Path] = canonicalPath;
+                    canonicalPath = fileOidHolder[change.Path];
+                }
+                else if (change.OldExists && changeStatus != ChangeKind.Added)
+                {
+                    canonicalPath = fileOidHolder[change.OldPath];
+                    fileOidHolder[change.Path] = canonicalPath;
                 }
                 else
-                    canonicalPath = _fileOidHolder[change.Path] = change.Path;
+                    canonicalPath = fileOidHolder[change.Path] = change.Path;
 
                 var committedFile = new CommittedChange
                 {
-                    CanonicalPath = canonicalPath,
+                    CanonicalPath = canonicalPath, // we fill it later.
                     Status = (short)changeStatus,
                     Oid = change.Oid.Sha,
                     OldPath = change.OldPath,

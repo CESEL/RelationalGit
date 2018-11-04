@@ -112,7 +112,17 @@ namespace RelationalGit
                 SELECT distinct PullRequestNumber,PullRequestReviewerComments.UserLogin FROM PullRequestReviewerComments
                 INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewerComments.PullRequestNumber
                 where PullRequestReviewerComments.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewerComments.UserLogin 
-                AND PullRequestReviewerComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1) as reviewers
+                AND PullRequestReviewerComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1
+                    UNION            
+                SELECT distinct IssueNumber, IssueComments.UserLogin FROM dbo.IssueComments
+				INNER JOIN PullRequests on PullRequests.Number=IssueComments.IssueNumber
+				where IssueComments.UserLogin is not null and PullRequests.UserLogin!=IssueComments.UserLogin 
+				AND IssueComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1
+                AND        (Body LIKE '%lgtm%') OR
+                (Body LIKE '%looks good%') OR
+                (Body LIKE '%its good%') OR
+                (Body LIKE '%look good%') OR
+                (Body LIKE '%good job%')) as reviewers
             on reviewers.PullRequestNumber=PullRequests.Number
             group by Commits.PeriodId,reviewers.UserLogin";
 

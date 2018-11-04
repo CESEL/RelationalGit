@@ -1,20 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RelationalGit
 {
-    public class RandomSpreadingKnowledgeShareStrategy : KnowledgeShareStrategy
+    public class RealisticRandomSpreadingKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         private Random _random = new Random();
-
+       
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            var availableDevelopers = pullRequestContext.AvailableDevelopers.Where(q => q.TotalCommits > 10 || q.TotalReviews > 10).Select(q => q.NormalizedName).ToArray();
+            if (pullRequestContext.ActualReviewers.Count() == 0)
+                return pullRequestContext.ActualReviewers;
+
+            var availableDevelopers = pullRequestContext.AvailableDevelopers.Where(q => q.TotalCommits + q.TotalReviews > 10).Select(q => q.NormalizedName).ToArray();
 
             pullRequestContext.PRKnowledgeables = pullRequestContext.PRKnowledgeables
-                .OrderBy(q => q.NumberOfReviews)
-                .OrderBy(q => q.NumberOfReviewedFiles)
-                .OrderBy(q => q.NumberOfCommits)
+                .OrderBy(q => q.NumberOfTouchedFiles)
+                .OrderBy(q => q.NumberOfReviews + q.NumberOfCommits)
                 .ToArray();
 
             var experiencedDevelopers = pullRequestContext.PRKnowledgeables.Select(q => q.DeveloperName);
@@ -27,12 +30,12 @@ namespace RelationalGit
 
             var leastKnowledgeable = pullRequestContext.WhoHasTheLeastKnowledge();
 
-            var leastIndex = Array.FindIndex(pullRequestContext.ActualReviewers,q=>q== leastKnowledgeable);
+            var leastIndex = Array.FindIndex(pullRequestContext.ActualReviewers, q => q == leastKnowledgeable);
 
             pullRequestContext.ActualReviewers[leastIndex] = randomDeveloper;
 
             return pullRequestContext.ActualReviewers;
         }
-        
+
     }
 }

@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RelationalGit;
 
 namespace RelationalGit.Migrations
 {
     [DbContext(typeof(GitRepositoryDbContext))]
-    partial class GitRepositoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20181104025118_HasReviewed_Added")]
+    partial class HasReviewed_Added
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -265,11 +267,9 @@ namespace RelationalGit.Migrations
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("AvailableCommitters");
-
-                    b.Property<string>("AvailableReviewers");
-
                     b.Property<string>("CanonicalPath");
+
+                    b.Property<string>("Committers");
 
                     b.Property<bool>("HasReviewed");
 
@@ -279,19 +279,15 @@ namespace RelationalGit.Migrations
 
                     b.Property<long>("PeriodId");
 
-                    b.Property<int>("TotalAvailableCommitOnly");
+                    b.Property<string>("Reviewers");
 
-                    b.Property<int>("TotalAvailableCommitters");
-
-                    b.Property<int>("TotalAvailableReviewOnly");
-
-                    b.Property<int>("TotalAvailableReviewers");
+                    b.Property<int>("TotalCommitOnly");
 
                     b.Property<int>("TotalCommitters");
 
                     b.Property<int>("TotalKnowledgeables");
 
-                    b.Property<int>("TotalPullRequests");
+                    b.Property<int>("TotalReviewOnly");
 
                     b.Property<int>("TotalReviewers");
 
@@ -316,11 +312,15 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("CanonicalPath");
 
+                    b.Property<string>("Commits");
+
                     b.Property<long>("LossSimulationId");
 
                     b.Property<string>("NormalizeDeveloperName");
 
                     b.Property<long>("PeriodId");
+
+                    b.Property<string>("PullRequests");
 
                     b.Property<string>("TouchType");
 

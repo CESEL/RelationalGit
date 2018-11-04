@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using EFCore.BulkExtensions;
 
 namespace RelationalGit.Commands
 {
@@ -32,6 +33,7 @@ namespace RelationalGit.Commands
         }
 
         #endregion
+
         internal Task Execute(LossSimulationOption lossSimulationOption)
         {
             _dbContext = new GitRepositoryDbContext(false);
@@ -43,15 +45,31 @@ namespace RelationalGit.Commands
             var knowledgeDistributioneMap = timeMachine.FlyInTime();
 
             var leavers = GetLeavers(lossSimulation);
-            SaveLeaversAndFilesAtRisk(lossSimulation, knowledgeDistributioneMap, leavers);
-            SavePullRequestReviewes(knowledgeDistributioneMap, lossSimulation);
-            SaveFileTouches(knowledgeDistributioneMap, lossSimulation);
-            SaveOwnershipDistribution(knowledgeDistributioneMap,lossSimulation,leavers);
 
-            lossSimulation.EndDateTime = DateTime.Now;
-            _dbContext.Entry(lossSimulation).State=EntityState.Modified;
+            using (var transaction = _dbContext.Database.BeginTransaction())
+            {
+                //SaveLeaversAndFilesAtRisk(lossSimulation, knowledgeDistributioneMap, leavers);
+                //_logger.LogInformation("{datetime}: Leavers and FilesAtRisk are saved successfully.", DateTime.Now);
+
+                SavePullRequestReviewes(knowledgeDistributioneMap, lossSimulation);
+                _logger.LogInformation("{datetime}: RecommendedPullRequestReviewes are saved successfully.", DateTime.Now);
+
+                //SaveFileTouches(knowledgeDistributioneMap, lossSimulation);
+                //_logger.LogInformation("{datetime}: FileTouches are saved successfully.", DateTime.Now);
+
+                SaveOwnershipDistribution(knowledgeDistributioneMap, lossSimulation, leavers);
+                _logger.LogInformation("{datetime}: Ownership Distribution is saved Successfully.", DateTime.Now);
+
+                transaction.Commit();
+                _logger.LogInformation("{datetime}: Transaction is committed.", DateTime.Now);
+            }
 
             _logger.LogInformation("{datetime}: trying to save results into database", DateTime.Now);
+            _dbContext.SaveChanges();
+
+            lossSimulation.EndDateTime = DateTime.Now;
+            _dbContext.Entry(lossSimulation).State = EntityState.Modified;
+
             _dbContext.SaveChanges();
             _logger.LogInformation("{datetime}: results have been saved", DateTime.Now);
             _dbContext.Dispose();
@@ -59,61 +77,86 @@ namespace RelationalGit.Commands
             return Task.CompletedTask;
         }
 
-        private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation
-            , Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
+        private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
         {
+
+            var bulkFileTouches = new List<FileTouch>();
+            var bulkFileKnowledgeable = new List<FileKnowledgeable>();
 
             foreach (var period in _periods)
             {
-                var distribution = new Dictionary<string, HashSet<string>>();
-
-                // get the final list of files by the end of period
+                // get the final list of files by the end of period and also their blame information to that point of time.
                 var blameSnapshot = knowledgeDistributioneMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id);
+
+                // getting the list of people who were active in this period and also who have left the project by the end of this period
+                var availableDevelopersOfPeriod = GetAvailableDevelopersOfPeriod(period).Select(q=>q.NormalizedName).ToHashSet();
+                var leaversOfPeriod = leavers[period.Id].Select(q => q.NormalizedName).ToHashSet();
 
                 foreach (var filePath in blameSnapshot.FilePaths)
                 {
-                    var committers = blameSnapshot[filePath];
+                    // we are counting all developers regardless of their owenership >0
+                    var committers = blameSnapshot[filePath].Where(q => q.Value.OwnedPercentage > 0).Select(q => q.Value.NormalizedDeveloperName).ToHashSet();
 
-                    distribution[filePath] = new HashSet<string>();
+                    var fileReviewDetails = knowledgeDistributioneMap.ReviewBasedKnowledgeMap[filePath]?.Where(q => q.Value.Periods.Any(p => p.Id <= period.Id));
 
-                    foreach (var committer in committers)
+                    // reviewers shouldn't be null. Just for convinience.
+                    var reviewers = fileReviewDetails?.Select(q => q.Value.Developer.NormalizedName).ToHashSet()??new HashSet<string>();
+
+                    var availableCommitters = committers.Where(q => availableDevelopersOfPeriod.Contains(q) && !leaversOfPeriod.Contains(q)).ToArray();
+
+                    var availableReviewers = reviewers.Where(q => availableDevelopersOfPeriod.Contains(q) && !leaversOfPeriod.Contains(q)).ToArray();
+
+                    var knowledgeables = availableReviewers.Union(availableCommitters).ToArray();
+
+                    var totalPullRequests = fileReviewDetails?.SelectMany(q => q.Value.PullRequests).Select(q => q.Number).Distinct().Count();
+
+                    bulkFileKnowledgeable.Add(new FileKnowledgeable()
                     {
-                        // later we can change this threshold!
-                        if(committer.Value.OwnedPercentage>0)
-                            distribution[filePath].Add(committer.Value.NormalizedDeveloperName);
-                    }
+                        CanonicalPath = filePath,
+                        PeriodId = period.Id,
+                        TotalAvailableCommitters = availableCommitters.Count(),
+                        TotalAvailableReviewers = availableReviewers.Count(),
+                        TotalAvailableReviewOnly = availableReviewers.Where(q => !availableCommitters.Contains(q)).Count(),
+                        TotalAvailableCommitOnly = availableCommitters.Where(q => !availableReviewers.Contains(q)).Count(),
+                        TotalKnowledgeables = availableReviewers.Union(availableCommitters).Count(),
+                        Knowledgeables = knowledgeables.Count() > 0 ? knowledgeables.Aggregate((a, b) => a + "," + b) : null,
+                        AvailableCommitters = availableCommitters.Count() > 0 ? availableCommitters.Aggregate((a, b) => a + "," + b) : null,
+                        AvailableReviewers = availableReviewers.Count() > 0 ? availableReviewers.Aggregate((a, b) => a + "," + b) : null,
+                        LossSimulationId = lossSimulation.Id,
+                        HasReviewed = reviewers.Count > 0,
+                        TotalReviewers = reviewers.Count(),
+                        TotalCommitters = committers.Count(),
+                        TotalPullRequests = totalPullRequests.GetValueOrDefault(0)
+                    });
 
-                    var reviewers = knowledgeDistributioneMap.ReviewBasedKnowledgeMap[filePath]?.Where(q=>q.Value.Periods.Any(p=>p.Id<= period.Id));
-
-                    foreach (var reviewer in reviewers)
-                    {
-                        distribution[filePath].Add(reviewer.Value.Developer.NormalizedName);
-                    }
-                }
-
-                var availableDevelopersOfPeriod = GetAvailableDevelopersOfPeriod(period).ToArray();
-                var leaversOfPeriod = leavers[period.Id].ToArray();
-
-                foreach (var filePath in distribution.Keys)
-                {
-                    var knowledgeables = distribution[filePath]
-                        .Where(q=>  availableDevelopersOfPeriod.Any(a=>a.NormalizedName==q) && leaversOfPeriod.All(l=>l.NormalizedName!=q));
-
-                    _dbContext.Add(new FileKnowledgeable()
+                    bulkFileTouches.AddRange(availableCommitters.Select(q => new FileTouch()
                     {
                         CanonicalPath=filePath,
+                        LossSimulationId=lossSimulation.Id,
+                        NormalizeDeveloperName=q,
                         PeriodId=period.Id,
-                        TotalKnowledgeables= knowledgeables.Count(),
-                        Knowledgeables= knowledgeables.Count()>0?knowledgeables.Aggregate((a, b) => a + "," + b):null,
-                        LossSimulationId= lossSimulation.Id
-                    });
+                        TouchType="commit",
+                    }));
+
+                    bulkFileTouches.AddRange(availableReviewers.Select(q => new FileTouch()
+                    {
+                        CanonicalPath = filePath,
+                        LossSimulationId = lossSimulation.Id,
+                        NormalizeDeveloperName = q,
+                        PeriodId = period.Id,
+                        TouchType = "review",
+                    }));
+
                 }
             }
+
+            _dbContext.BulkInsert(bulkFileTouches, new BulkConfig { BatchSize = 50000 });
+            _dbContext.BulkInsert(bulkFileKnowledgeable, new BulkConfig { BatchSize = 50000 });
         }
 
-        private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap, 
-            Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
+        private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
         {
+            var bulkEntities = new List<SimulatedAbondonedFile>();
 
             foreach (var period in _periods)
             {
@@ -124,12 +167,14 @@ namespace RelationalGit.Commands
                 _dbContext.AddRange(leavers[period.Id]);
 
                 var abandonedFiles = GetAbandonedFiles(period, leavers[period.Id], availableDevelopers, knowledgeDistributioneMap, lossSimulation);
-                _dbContext.AddRange(abandonedFiles);
+                bulkEntities.AddRange(abandonedFiles);
 
                 _logger.LogInformation("{datetime}: computing knowledge loss for period {pid} is done.", DateTime.Now, period.Id);
             }
 
+            _dbContext.BulkInsert(bulkEntities);
         }
+
         private Dictionary<long,IEnumerable<SimulatedLeaver>> GetLeavers(LossSimulation lossSimulation)
         {
             var result = new Dictionary<long, IEnumerable<SimulatedLeaver>>();
@@ -156,13 +201,15 @@ namespace RelationalGit.Commands
 
         private void SaveFileTouches(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
         {
+            var bulkEntities = new List<FileTouch>();
+
             var developerFileCommitDetails = knowledgeMap.CommitBasedKnowledgeMap.Details;
 
             foreach(var detail in developerFileCommitDetails)
             {
                 foreach(var period in detail.Periods)
                 {
-                    _dbContext.Add(new FileTouch()
+                    bulkEntities.Add(new FileTouch()
                     {
                         NormalizeDeveloperName = detail.Developer.NormalizedName,
                         PeriodId = period.Id,
@@ -179,7 +226,7 @@ namespace RelationalGit.Commands
             {
                 foreach(var period in detail.Periods.Distinct())
                 {
-                    _dbContext.Add(new FileTouch()
+                    bulkEntities.Add(new FileTouch()
                     {
                         NormalizeDeveloperName = detail.Developer.NormalizedName,
                         PeriodId = period.Id,
@@ -189,23 +236,25 @@ namespace RelationalGit.Commands
                     });
                 }
             }
+
+            _dbContext.BulkInsert(bulkEntities, new BulkConfig { BatchSize=50000});
         }
 
         private void SavePullRequestReviewes(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
         {
-            foreach(var pullRequestReviewerItem in knowledgeMap.PullRequestReviewers)
+            var bulkEntities = new List<RecommendedPullRequestReviewer>();
+
+            foreach (var pullRequestReviewerItem in knowledgeMap.PullRequestReviewers)
             {
                 var pullRequestNumber=pullRequestReviewerItem.Key;
                 foreach(var reviewer in pullRequestReviewerItem.Value)
                 {
-                    _dbContext.Add(new RecommendedPullRequestReviewer()
-                    {
-                        PullRequestNumber=pullRequestNumber,
-                        NormalizedReviewerName=reviewer,
-                        LossSimulationId=lossSimulation.Id
-                    });
+                    reviewer.LossSimulationId = lossSimulation.Id;
+                    bulkEntities.Add(reviewer);
                 }
             }
+
+            _dbContext.BulkInsert(bulkEntities);
         }
 
         private LossSimulation CreateLossSimulation(LossSimulationOption lossSimulationOption)
@@ -302,18 +351,22 @@ namespace RelationalGit.Commands
                     WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
                     MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
-                    AND MergedAtDateTime<={latestCommitDate})")
+                    AND MergedAtDateTime<={latestCommitDate}) and ((Body LIKE '%lgtm%') OR
+                                                   (Body LIKE '%looks good%') OR
+                                                   (Body LIKE '%its good%') OR
+                                                   (Body LIKE '%look good%') OR
+                                                   (Body LIKE '%good job%'))")
             .ToArray();
 
             _logger.LogInformation("{datetime}: Pull Request Reviewer Comments are loaded.", DateTime.Now);
 
             _developers = _dbContext.Developers.ToArray();
 
-            _logger.LogInformation("{datetime}: Committed Changes are loaded.", DateTime.Now);
+            _logger.LogInformation("{datetime}: Developers are loaded.", DateTime.Now);
 
             _developersContributions = _dbContext.DeveloperContributions.ToArray();
 
-            _logger.LogInformation("{datetime}: Committed Changes are loaded.", DateTime.Now);
+            _logger.LogInformation("{datetime}: Developers Contributions are loaded.", DateTime.Now);
 
             _canononicalPathMapper = _dbContext.GetCanonicalPaths();
 
@@ -337,14 +390,13 @@ namespace RelationalGit.Commands
             _canononicalPathMapper,
             _GitHubGitUsernameMapper,
             _periods);
+
+
             return timeMachine;
+
         }
 
-        private IEnumerable<SimulatedLeaver> GetLeavers(
-            Period period, 
-            IEnumerable<Developer> availableDevelopers, 
-            DeveloperContribution[] developersContributions,
-            LossSimulation lossSimulation)
+        private IEnumerable<SimulatedLeaver> GetLeavers(Period period, IEnumerable<Developer> availableDevelopers, DeveloperContribution[] developersContributions, LossSimulation lossSimulation)
         {
             var allPotentialLeavers = GetPotentialLeavers(period, availableDevelopers, developersContributions, lossSimulation);
             var filteredLeavers = FilterDevelopersBasedOnLeaverType(period, developersContributions, lossSimulation.LeaversType, allPotentialLeavers);
@@ -352,6 +404,7 @@ namespace RelationalGit.Commands
             return filteredLeavers;
 
         }
+
         private static IEnumerable<SimulatedLeaver> FilterDevelopersBasedOnLeaverType(Period period, DeveloperContribution[] developersContributions, string leaversType, IEnumerable<SimulatedLeaver> leavers)
         {
             var isCore = leaversType == LeaversType.Core;
@@ -419,10 +472,7 @@ namespace RelationalGit.Commands
             return allLeavers;
         }
 
-        private IEnumerable<SimulatedAbondonedFile> GetAbandonedFiles(Period period,IEnumerable<SimulatedLeaver> leavers, 
-        IEnumerable<Developer> availableDevelopers, 
-        KnowledgeDistributionMap knowledgeMap, 
-        LossSimulation lossSimulation)
+        private IEnumerable<SimulatedAbondonedFile> GetAbandonedFiles(Period period,IEnumerable<SimulatedLeaver> leavers, IEnumerable<Developer> availableDevelopers, KnowledgeDistributionMap knowledgeMap, LossSimulation lossSimulation)
         {
 
             var leaversDic = leavers.ToDictionary(q=>q.Developer.NormalizedName);

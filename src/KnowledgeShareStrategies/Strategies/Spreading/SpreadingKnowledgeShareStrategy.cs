@@ -16,24 +16,29 @@ namespace RelationalGit
 {
     public class SpreadingKnowledgeShareStrategy  : BaseKnowledgeShareStrategy
     {
-        protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
+        protected override DeveloperKnowledge[] SortPRKnowledgeables(PullRequestContext pullRequestContext)
         {
+            if (pullRequestContext.PRKnowledgeables.Length == 0)
+                return pullRequestContext.PRKnowledgeables;
+            /*
+            //var maxTouchedFiles = pullRequestContext.PRKnowledgeables.Max(q=>q.NumberOfTouchedFiles);
+            var maxTouchedFiles = pullRequestContext.PullRequestFiles.Count();
 
-            return developerKnowledges.OrderBy(q=>q.NumberOfTouchedFiles);
+            var touchedFileUpperBound = Math.Ceiling(maxTouchedFiles * 0.5);
+            var touchedFileLowerBound = Math.Ceiling(maxTouchedFiles * 0.0);
 
-            var maxTouchedFiles=developerKnowledges.Max(q=>q.NumberOfTouchedFiles);
+            var availableDevs = pullRequestContext.PRKnowledgeables.Where(q=>pullRequestContext.AvailableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
 
-            var presentDevs  = developerKnowledges
-            .Where(q=>pullRequestContext
-            .AvailableDevelopers.Any(d=>d.NormalizedName==q.DeveloperName));
+            var lessKnowledgedDevelopers = availableDevs.Where(q=>q.NumberOfTouchedFiles<= touchedFileUpperBound && q.NumberOfTouchedFiles>= touchedFileLowerBound);
 
-            var lessKnowledgedDevelopers= presentDevs
-            .Where(q=>q.NumberOfTouchedFiles<=maxTouchedFiles*(0.66));
+            if (lessKnowledgedDevelopers.Count() > 0)
+            {
+                return availableDevs.Where(q => q.NumberOfTouchedFiles > touchedFileUpperBound || q.NumberOfTouchedFiles<touchedFileUpperBound).OrderBy(q=>q.NumberOfTouchedFiles)
+                    .Concat(lessKnowledgedDevelopers.OrderBy(q => q.NumberOfTouchedFiles).ThenBy(q => q.NumberOfReviews)).ToArray();
+            }
+            */
 
-            if(lessKnowledgedDevelopers.Count()>0)
-                return lessKnowledgedDevelopers.OrderBy(q => q.NumberOfCommits).ThenBy(q=>q.NumberOfTouchedFiles);
-
-            return lessKnowledgedDevelopers.OrderBy(q=>q.NumberOfCommits).ThenBy(q=>q.NumberOfTouchedFiles);
+            return pullRequestContext.PRKnowledgeables.OrderByDescending(q=>q.NumberOfTouchedFiles).ThenByDescending(q=>q.NumberOfReviews).ToArray();
         }
     }
 }

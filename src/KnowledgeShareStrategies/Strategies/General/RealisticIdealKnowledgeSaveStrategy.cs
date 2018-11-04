@@ -19,7 +19,7 @@ namespace RelationalGit
         internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
         {
             if (pullRequestContext.ActualReviewers.Count() == 0)
-                return new string[0];
+                return pullRequestContext.ActualReviewers;
                 
             var oldestDevelopers = pullRequestContext.Developers
             .Values

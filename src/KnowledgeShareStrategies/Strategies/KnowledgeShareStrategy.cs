@@ -35,6 +35,10 @@ namespace RelationalGit
             {
                 return new SpreadingKnowledgeShareStrategy();
             }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.SpreadingKnowledge2)
+            {
+                return new SpreadingKnowledgeShareStrategy2();
+            }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedSpreadingReviewers)
             {
                 return new BlameBasedKnowledgeShareStrategy();
@@ -46,6 +50,10 @@ namespace RelationalGit
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RendomReviewers)
             {
                 return new RandomKnowledgeShareStrategy();
+            }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RealisticRandomSpreading)
+            {
+                return new RealisticRandomSpreadingKnowledgeShareStrategy();
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RandomSpreading)
             {

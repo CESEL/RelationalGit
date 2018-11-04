@@ -9,9 +9,9 @@ namespace RelationalGit
     public class KnowledgeDistributionMap
     {
         public CommitBasedKnowledgeMap CommitBasedKnowledgeMap;
-
+         
         public ReviewBasedKnowledgeMap ReviewBasedKnowledgeMap;
-        public Dictionary<long, List<string>> PullRequestReviewers { get;  set; }
+        public Dictionary<long, List<RecommendedPullRequestReviewer>> PullRequestReviewers { get;  set; }
         public BlameBasedKnowledgeMap BlameBasedKnowledgeMap { get; internal set; }
     }
 

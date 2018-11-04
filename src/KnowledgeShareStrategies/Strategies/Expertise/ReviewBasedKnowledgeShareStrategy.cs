@@ -16,12 +16,12 @@ namespace RelationalGit
 {
     public class ReviewBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
-        protected override IEnumerable<DeveloperKnowledge> SortDevelopersKnowledge(DeveloperKnowledge[] developerKnowledges,PullRequestContext pullRequestContext)
+        protected override DeveloperKnowledge[] SortPRKnowledgeables(PullRequestContext pullRequestContext)
         {
-            return developerKnowledges
+            return pullRequestContext.PRKnowledgeables
             .OrderBy(q => q.NumberOfReviews)
             .ThenBy(q => q.NumberOfReviewedFiles)
-            .ThenBy(q=>q.NumberOfCommits);
+            .ThenBy(q=>q.NumberOfCommits).ToArray();
         }
     }
 }
