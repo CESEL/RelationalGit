@@ -22,6 +22,7 @@ namespace RelationalGit.Commands
         private IssueComment[] _issueComments;
         private Developer[] _developers;
         private DeveloperContribution[] _developersContributions;
+        private Dictionary<string, DeveloperContribution> _developersContributionsDic;
         private Dictionary<string, string> _canononicalPathMapper;
         private GitHubGitUser[] _GitHubGitUsernameMapper;
         private Period[] _periods;
@@ -191,7 +192,7 @@ namespace RelationalGit.Commands
 
         private IEnumerable<SimulatedLeaver> GetLeaversOfPeriod(LossSimulation lossSimulation, Period period, IEnumerable<Developer> availableDevelopers)
         {
-            return GetLeavers(period, availableDevelopers, _developersContributions, lossSimulation);
+            return GetLeavers(period, availableDevelopers, _developersContributionsDic, lossSimulation);
         }
 
         private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period)
@@ -366,6 +367,8 @@ namespace RelationalGit.Commands
 
             _developersContributions = _dbContext.DeveloperContributions.ToArray();
 
+            _developersContributionsDic = _developersContributions.ToDictionary(q => q.Id + "-" + q.NormalizedName);
+
             _logger.LogInformation("{datetime}: Developers Contributions are loaded.", DateTime.Now);
 
             _canononicalPathMapper = _dbContext.GetCanonicalPaths();
@@ -396,7 +399,7 @@ namespace RelationalGit.Commands
 
         }
 
-        private IEnumerable<SimulatedLeaver> GetLeavers(Period period, IEnumerable<Developer> availableDevelopers, DeveloperContribution[] developersContributions, LossSimulation lossSimulation)
+        private IEnumerable<SimulatedLeaver> GetLeavers(Period period, IEnumerable<Developer> availableDevelopers, Dictionary<string, DeveloperContribution> developersContributions, LossSimulation lossSimulation)
         {
             var allPotentialLeavers = GetPotentialLeavers(period, availableDevelopers, developersContributions, lossSimulation);
             var filteredLeavers = FilterDevelopersBasedOnLeaverType(period, developersContributions, lossSimulation.LeaversType, allPotentialLeavers);
@@ -405,16 +408,16 @@ namespace RelationalGit.Commands
 
         }
 
-        private static IEnumerable<SimulatedLeaver> FilterDevelopersBasedOnLeaverType(Period period, DeveloperContribution[] developersContributions, string leaversType, IEnumerable<SimulatedLeaver> leavers)
+        private static IEnumerable<SimulatedLeaver> FilterDevelopersBasedOnLeaverType(Period period, Dictionary<string, DeveloperContribution> developersContributions, string leaversType, IEnumerable<SimulatedLeaver> leavers)
         {
             var isCore = leaversType == LeaversType.Core;
-            var isAll = leaversType == LeaversType.All;
 
             foreach (var leaver in leavers)
             {
-                var developerContribution = developersContributions
-                    .SingleOrDefault(q => q.NormalizedName == leaver.NormalizedName && q.PeriodId == period.Id
-                    && (isAll || q.IsCore == isCore));
+                if (leaversType == LeaversType.All)
+                    yield return leaver;
+
+                var developerContribution = developersContributions.GetValueOrDefault(period.Id + "-" + leaver.NormalizedName);
 
                 // some of the devs have no contribution,
                 // because they authored files with unknown extensions
@@ -423,29 +426,33 @@ namespace RelationalGit.Commands
                 if (developerContribution == null)
                     continue;
 
-               yield return leaver;
+                if(developerContribution.IsCore== isCore)
+                    yield return leaver;
             }
         }
 
-        private static IEnumerable<SimulatedLeaver> GetPotentialLeavers(Period period, IEnumerable<Developer> potentialLeavers, DeveloperContribution[] developersContributions, LossSimulation lossSimulation)
+        private static IEnumerable<SimulatedLeaver> GetPotentialLeavers(Period period, IEnumerable<Developer> potentialLeavers, Dictionary<string, DeveloperContribution> developersContributions, LossSimulation lossSimulation)
         {
             var extendedAbsence = lossSimulation.LeaversOfPeriodExtendedAbsence;
             
             var leaversOfPeriod = potentialLeavers.Where(q => q.LastParticipationPeriodId == period.Id);
             
-            var extendedLeaversOfPeriod = lossSimulation.LeaversOfPeriodExtendedAbsence>0
-            ? potentialLeavers.Where(q => q.LastParticipationPeriodId > period.Id).ToList()
-            :new List<Developer>();
+            var extendedLeaversOfPeriod = extendedAbsence > 0
+            ? potentialLeavers.Where(q => q.LastParticipationPeriodId > period.Id).ToList():new List<Developer>();
 
-            for(var j=extendedLeaversOfPeriod.Count()-1;j>=0;j--)
+            // we do not want to put these variablles inside the for loop for performance reasons.
+            var extendedPeriodId = 0L;
+            DeveloperContribution contribution = null;
+
+            for (var j=extendedLeaversOfPeriod.Count()-1;j>=0;j--)
             {
                 var hasPariticipatedInExtendedPeriods=false;
 
                 for (var i = 1; i <= extendedAbsence && !hasPariticipatedInExtendedPeriods; i++)
                 {
-                    var extendedPeriodId = period.Id + i;
-                    hasPariticipatedInExtendedPeriods = developersContributions
-                        .Any(q => q.PeriodId == extendedPeriodId && q.NormalizedName == extendedLeaversOfPeriod[j].NormalizedName && (q.TotalCommits > 0 || q.TotalReviews>0 ));
+                    extendedPeriodId = period.Id + i;
+                    contribution = developersContributions.GetValueOrDefault(extendedPeriodId + "-" + extendedLeaversOfPeriod[j].NormalizedName);
+                    hasPariticipatedInExtendedPeriods = contribution?.TotalCommits + contribution?.TotalReviews > 0;
                 }
 
                 if (hasPariticipatedInExtendedPeriods)

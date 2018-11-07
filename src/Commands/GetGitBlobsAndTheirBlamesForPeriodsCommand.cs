@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -59,14 +60,12 @@ namespace RelationalGit.Commands
 
                 gitRepository.LoadBlobsAndTheirBlamesOfCommit(commit, validExtensions,excludePath, canonicalDic);
 
-                dbContext.CommittedBlob.AddRange(commit.Blobs);
                 var blames = commit.Blobs.SelectMany(m => m.CommitBlobBlames);
-                dbContext.CommitBlobBlames.AddRange(blames);
-        
-                _logger.LogInformation("{datetime}: saving {count} blames of commit {Commitsha} into database.", DateTime.Now,blames.Count(), commit.Sha);
+                _logger.LogInformation("{datetime}: saving {count} blames of {blobCount} from commit {Commitsha} into database.", DateTime.Now, blames.Count(), commit.Blobs.Count(), commit.Sha);
 
-                await dbContext.SaveChangesAsync();
-
+                await dbContext.BulkInsertAsync(commit.Blobs.ToArray());
+                await dbContext.BulkInsertAsync(blames.ToArray());
+              
                 _logger.LogInformation("{datetime}: blames of {Commitsha} have been saved.", DateTime.Now, commit.Sha);
 
             }

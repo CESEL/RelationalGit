@@ -310,9 +310,7 @@ namespace RelationalGit
         {
             var powerShellInstance = PowerShell.Create();
 
-            powerShellInstance
-                .AddScript($@"set-location '{_localClonePath}'")
-                .Invoke();
+            powerShellInstance.AddScript($@"set-location '{_localClonePath}'").Invoke();
             
             return powerShellInstance;
         }

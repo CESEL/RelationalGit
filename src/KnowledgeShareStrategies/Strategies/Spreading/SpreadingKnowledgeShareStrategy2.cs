@@ -119,7 +119,7 @@ namespace RelationalGit
             {
                 var knowledgeables = _knowledge[pullRequestFile];
 
-                if (knowledgeables.Length <= 2)
+                if (knowledgeables.Length <= 3)
                 {
                     _factors.FilesAtRisk++;
                 }

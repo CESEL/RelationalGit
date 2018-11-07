@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -23,11 +24,10 @@ namespace RelationalGit.Commands
             {
                 var gitRepository = new GitRepository(repoPath,_logger);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
-                dbContext.Commits.AddRange(orderedCommits);
-                var relationships = orderedCommits.SelectMany(q => q.CommitRelationship);
-                dbContext.CommitRelationships.AddRange(relationships);
-                _logger.LogInformation("{datetime}: trying to save {count} commits into database.",DateTime.Now,orderedCommits.Count());
-                await dbContext.SaveChangesAsync();
+                var relationships = orderedCommits.SelectMany(q => q.CommitRelationship).ToArray();
+                _logger.LogInformation("{datetime}: trying to save {count} commits into database.", DateTime.Now, orderedCommits.Count());
+                await dbContext.BulkInsertAsync(orderedCommits);
+                await dbContext.BulkInsertAsync(relationships);
                 _logger.LogInformation("{datetime}: commits has been saved successfully.", DateTime.Now);
             }
         }

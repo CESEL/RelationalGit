@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -21,16 +22,17 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
+
                 var gitRepository = new GitRepository(repoPath,_logger);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
                 gitRepository.LoadChangesOfCommits(orderedCommits);
 
+                _logger.LogInformation("{dateTime}: saving committed changes", DateTime.Now);
+
                 foreach (var commit in orderedCommits)
                 {
-                    dbContext.CommittedChanges.AddRange(commit.CommittedChanges);
+                    dbContext.BulkInsert(commit.CommittedChanges.ToArray());
                 }
-
-                _logger.LogInformation("{dateTime}: saving committed changes", DateTime.Now);
 
                 await dbContext.SaveChangesAsync();
 

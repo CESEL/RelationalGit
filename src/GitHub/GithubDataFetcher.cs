@@ -246,7 +246,7 @@ namespace RelationalGit
                               PageSize = 1000
                           }))
                           .ToArray()
-                          .SingleOrDefault(m => m.Event.StringValue == "merged");
+                          .LastOrDefault(m => m.Event.StringValue == "merged"); // some PRs have multiple merged events. we take the last one.
 
                 if (mergeEvent != null)
                     pullRequests[i].MergeCommitSha = mergeEvent.CommitId;
@@ -329,9 +329,15 @@ namespace RelationalGit
 
         private async Task<IReadOnlyList<Octokit.PullRequestFile>> GetPullRequestsFiles(string owner, string repo,PullRequest pullRequest)
         {
-            return await (_client
-                .PullRequest
-                .Files(owner, repo, pullRequest.Number));
+            try
+            {
+                return await (_client.PullRequest.Files(owner, repo, pullRequest.Number));
+            }
+            catch(Octokit.ApiException e) when (e.Message.Contains(" Sorry, there was a problem generating this diff. The repository may be missing relevant data"))
+            {
+                return new List<Octokit.PullRequestFile>(0).AsReadOnly();
+            }
+
         }
 
         private async Task<IReadOnlyList<Octokit.PullRequestCommit>> GetPullRequestsCommits(string owner, string repo, PullRequest pullRequest)

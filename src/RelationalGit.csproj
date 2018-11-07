@@ -18,16 +18,21 @@
     <Version>1.2.3</Version>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Prefer32Bit>true</Prefer32Bit>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="7.0.1" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
     <PackageReference Include="Diacritics" Version="1.0.7" />
     <PackageReference Include="EFCore.BulkExtensions" Version="2.1.9" />
-    <PackageReference Include="F23.StringSimilarity" Version="3.0.0" />
-    <PackageReference Include="LibGit2Sharp" Version="0.25.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.1.2">
+    <PackageReference Include="F23.StringSimilarity" Version="3.1.0" />
+    <PackageReference Include="LibGit2Sharp" Version="0.25.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.1.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
@@ -35,8 +40,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.0.4" />
-    <PackageReference Include="Octokit.Extensions" Version="1.0.5" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.1.0" />
+    <PackageReference Include="Microsoft.WSMan.Management" Version="6.1.0" />
+    <PackageReference Include="Octokit.Extensions" Version="1.0.7" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
   </ItemGroup>
 
