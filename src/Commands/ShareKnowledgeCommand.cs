@@ -31,8 +31,7 @@ namespace RelationalGit.Commands
 
         public ShareKnowledgeCommand(ILogger logger)
         {
-            _logger = logger
-                ;
+            _logger = logger;
         }
 
         #endregion
