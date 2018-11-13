@@ -28,9 +28,11 @@ namespace RelationalGit.Commands
         private Period[] _periods;
         private ILogger _logger;
 
+
         public ShareKnowledgeCommand(ILogger logger)
         {
-            _logger = logger;
+            _logger = logger
+                ;
         }
 
         #endregion
