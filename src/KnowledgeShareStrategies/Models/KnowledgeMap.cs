@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using LibGit2Sharp;
+using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
@@ -161,19 +162,28 @@ namespace RelationalGit
 
         internal BlameSnapshot GetSnapshopOfPeriod(long periodId)
         {
-            return map[periodId];
+            return map.GetValueOrDefault(periodId);
         }
     }
 
     public class BlameSnapshot
     {
         private Dictionary<string, Dictionary<string, FileBlame>> _map = new Dictionary<string, Dictionary<string, FileBlame>>();
+        private Dictionary<string, string> _canonicalToActualPathMapper = new Dictionary<string, string>();
+
+        public BlameSnapshot()
+        {
+            Trie = new DirectoryTrie();
+        }
+
         public void Add(Period period, string filePath, string developerName, CommitBlobBlame commitBlobBlame)
         {
 
             if (!_map.ContainsKey(filePath))
             {
                 _map[filePath] = new Dictionary<string, FileBlame>();
+                Trie.Add(commitBlobBlame.Path); // we build the Trie using the actual file paths. (filePath variable contains canonical path here.)
+                _canonicalToActualPathMapper[commitBlobBlame.CanonicalPath] = commitBlobBlame.Path;
             }
 
             if (!_map[filePath].ContainsKey(developerName))
@@ -211,7 +221,13 @@ namespace RelationalGit
                 return _map.GetValueOrDefault(filePath);
             }
         }
+        
+        public string GetActualPath(string canonicalPath)
+        {
+            return _canonicalToActualPathMapper.GetValueOrDefault(canonicalPath);
+        }
 
+        public DirectoryTrie Trie { get; }
     }
 }
 

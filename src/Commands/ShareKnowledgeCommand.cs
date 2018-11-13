@@ -89,6 +89,10 @@ namespace RelationalGit.Commands
                 // get the final list of files by the end of period and also their blame information to that point of time.
                 var blameSnapshot = knowledgeDistributioneMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id);
 
+                // when we have not extracted the related blame information.
+                if (blameSnapshot == null)
+                    continue;
+
                 // getting the list of people who were active in this period and also who have left the project by the end of this period
                 var availableDevelopersOfPeriod = GetAvailableDevelopersOfPeriod(period).Select(q=>q.NormalizedName).ToHashSet();
                 var leaversOfPeriod = leavers[period.Id].Select(q => q.NormalizedName).ToHashSet();
@@ -367,7 +371,7 @@ namespace RelationalGit.Commands
 
             _developersContributions = _dbContext.DeveloperContributions.ToArray();
 
-            _developersContributionsDic = _developersContributions.ToDictionary(q => q.Id + "-" + q.NormalizedName);
+            _developersContributionsDic = _developersContributions.ToDictionary(q => q.PeriodId+ "-" + q.NormalizedName);
 
             _logger.LogInformation("{datetime}: Developers Contributions are loaded.", DateTime.Now);
 
@@ -401,8 +405,8 @@ namespace RelationalGit.Commands
 
         private IEnumerable<SimulatedLeaver> GetLeavers(Period period, IEnumerable<Developer> availableDevelopers, Dictionary<string, DeveloperContribution> developersContributions, LossSimulation lossSimulation)
         {
-            var allPotentialLeavers = GetPotentialLeavers(period, availableDevelopers, developersContributions, lossSimulation);
-            var filteredLeavers = FilterDevelopersBasedOnLeaverType(period, developersContributions, lossSimulation.LeaversType, allPotentialLeavers);
+            var allPotentialLeavers = GetPotentialLeavers(period, availableDevelopers, developersContributions, lossSimulation).ToArray();
+            var filteredLeavers = FilterDevelopersBasedOnLeaverType(period, developersContributions, lossSimulation.LeaversType, allPotentialLeavers).ToArray();
 
             return filteredLeavers;
 
@@ -416,18 +420,20 @@ namespace RelationalGit.Commands
             {
                 if (leaversType == LeaversType.All)
                     yield return leaver;
+                else
+                {
+                    var developerContribution = developersContributions.GetValueOrDefault(period.Id + "-" + leaver.NormalizedName);
 
-                var developerContribution = developersContributions.GetValueOrDefault(period.Id + "-" + leaver.NormalizedName);
+                    // some of the devs have no contribution,
+                    // because they authored files with unknown extensions
+                    // or we have ignored they knowledge because of mega commits or mega PRs
+                    // or their knowledge is rewritten by someone else 
+                    if (developerContribution == null)
+                        continue;
 
-                // some of the devs have no contribution,
-                // because they authored files with unknown extensions
-                // or we have ignored they knowledge because of mega commits or mega PRs
-                // or their knowledge is rewritten by someone else 
-                if (developerContribution == null)
-                    continue;
-
-                if(developerContribution.IsCore== isCore)
-                    yield return leaver;
+                    if (developerContribution.IsCore == isCore)
+                        yield return leaver;
+                }
             }
         }
 

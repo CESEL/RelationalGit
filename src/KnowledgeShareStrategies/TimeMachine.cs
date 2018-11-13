@@ -70,7 +70,7 @@ namespace RelationalGit
 
             PullRequestsDic = pullRequests.ToDictionary(q => q.Number);
 
-            BlameBasedKnowledgeMap = GetCommitBlobBlamesDictionary(commitBlobBlames);
+            BlameBasedKnowledgeMap = GetBlameBasedKnowledgeMap(commitBlobBlames);
             CommittedChangesDic = GetCommittedChangesDictionary(committedChanges);
             PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
             PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments,issueComments);
@@ -186,15 +186,15 @@ namespace RelationalGit
 
             foreach (var file in pullRequestFiles)
             {
-                AddFileOwnership(knowledgeDistributionMap,blameSnapshot, developersKnowledge, file);
+                AddFileOwnership(knowledgeDistributionMap,blameSnapshot, developersKnowledge, file.FileName, CanononicalPathMapper);
             }
 
             return developersKnowledge.Values.ToArray();
         }
 
-        private void AddFileOwnership(KnowledgeDistributionMap knowledgeDistributionMap,BlameSnapshot blameSnapshot, Dictionary<string, DeveloperKnowledge> developersKnowledge, PullRequestFile file)
+        internal static void AddFileOwnership(KnowledgeDistributionMap knowledgeDistributionMap,BlameSnapshot blameSnapshot, Dictionary<string, DeveloperKnowledge> developersKnowledge, string filePath, Dictionary<string,string> canononicalPathMapper)
         {
-            var canonicalPath = CanononicalPathMapper[file.FileName];
+            var canonicalPath = canononicalPathMapper[filePath];
 
             CalculateModificationExpertise();
             CalculateReviewExpertise();
@@ -238,7 +238,7 @@ namespace RelationalGit
             }
         }
 
-        private void AddReviewOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileReveiewDetail developerFileReveiewDetail, bool hasCommittedThisFileBefore)
+        private static void AddReviewOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileReveiewDetail developerFileReveiewDetail, bool hasCommittedThisFileBefore)
         {
             var developerName = developerFileReveiewDetail.Developer.NormalizedName;
 
@@ -258,7 +258,7 @@ namespace RelationalGit
             developersKnowledge[developerName].NumberOfReviewedFiles++;
         }
 
-        private void AddModificationOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileCommitDetail developerFileCommitsDetail, int totalAuditedLines)
+        private static void AddModificationOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileCommitDetail developerFileCommitsDetail, int totalAuditedLines)
         {
             var developerName = developerFileCommitsDetail.Developer.NormalizedName;
 
@@ -376,37 +376,24 @@ namespace RelationalGit
             return PeriodsDic[commit.PeriodId.Value];
         }
 
-        private BlameBasedKnowledgeMap GetCommitBlobBlamesDictionary(CommitBlobBlame[] commitBlobBlames)
+        private BlameBasedKnowledgeMap GetBlameBasedKnowledgeMap(CommitBlobBlame[] commitBlobBlames)
         {
             var blameBasedKnowledgeMap = new BlameBasedKnowledgeMap();
 
-            UnifyBlames();
-
             foreach (var commitBlobBlame in commitBlobBlames)
             {
-
-
                 var commit = CommitsDic.GetValueOrDefault(commitBlobBlame.CommitSha);
                 var periodId = commit.PeriodId.Value;
                 var period = PeriodsDic[periodId];
                 var filePath = commitBlobBlame.CanonicalPath;
                 var devName = commitBlobBlame.NormalizedDeveloperIdentity;
 
-               
-
                 blameBasedKnowledgeMap.Add(period, filePath, devName, commitBlobBlame);
-
             }
 
             blameBasedKnowledgeMap.ComputeOwnershipPercentage();
 
             return blameBasedKnowledgeMap;
-
-
-            void UnifyBlames()
-            {
-                
-            }
         }
 
         private void GetCommitsPullRequests(Commit[] commits, PullRequest[] pullRequests)

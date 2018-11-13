@@ -25,5 +25,7 @@ namespace RelationalGit
         public static string RealisticRandomSpreading => "realistic-random-spreading";
 
         public static string SpreadingKnowledge2 => "spreading-knowledge-2";
+
+        public static string FolderLevelSpreading => "folder-level-spreading-knowledge";
     }
 }

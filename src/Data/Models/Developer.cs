@@ -24,7 +24,7 @@ namespace RelationalGit
         [NotMapped]
         public List<DeveloperContribution> Contributions { get; private set; }
         public long LastParticipationPeriodId => Math.Max(LastReviewPeriodId??0,LastCommitPeriodId??0);
-        public long FirstParticipationPeriodId => Math.Min(FirstCommitPeriodId ?? 0, FirstReviewPeriodId ?? 0);
+        public long FirstParticipationPeriodId => Math.Min(FirstCommitPeriodId ?? int.MaxValue, FirstReviewPeriodId ?? int.MaxValue);
         internal void AddContributions(IEnumerable<DeveloperContribution> contributions)
         {
             if(Contributions is null)

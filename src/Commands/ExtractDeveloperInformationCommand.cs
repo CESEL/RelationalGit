@@ -143,8 +143,8 @@ namespace RelationalGit.Commands
             foreach (var group in commitsGroupByNormalizedName)
             {
                 var totalReviews = 0;
-                var firstReviewPeriodId = 0L;
-                var lastReviewPeriodId = 0L;
+                long? firstReviewPeriodId = null;
+                long? lastReviewPeriodId = null;
                 var allReviewPeriods ="";
                 var allReviews = reviewersInPeriods.GetValueOrDefault(group.Key);
 
