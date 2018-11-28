@@ -59,6 +59,8 @@ namespace RelationalGit
             
             await new CommandFactory().Execute(configurationOption, logger);
 
+
+
             logger.LogInformation("{datetime} operation {command} has finished", DateTime.Now, configurationOption.Command);
 
         }
