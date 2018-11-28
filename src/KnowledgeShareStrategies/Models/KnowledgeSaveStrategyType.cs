@@ -24,8 +24,19 @@ namespace RelationalGit
 
         public static string RealisticRandomSpreading => "realistic-random-spreading";
 
-        public static string SpreadingKnowledge2 => "spreading-knowledge-2";
+        public static string SpreadingKnowledge2 => "file-level-spreading-knowledge";
 
         public static string FolderLevelSpreading => "folder-level-spreading-knowledge";
+
+        public static string MostTouchedFiles => "most-touched-files";
+        
+        public static string LeastTouchedFiles => "least-touched-files";
+    }
+
+
+    public static class ReviewerReplacementStrategyType
+    {
+        public static string OneOfActuals => "one-of-actuals";
+        public static string AllOfActuals => "all-of-actuals";
     }
 }

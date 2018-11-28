@@ -14,17 +14,14 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class FileBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
+    public class LeastTouchedFilesKnowlegdeShareStrategy : BaseKnowledgeShareStrategy
     {
-        public FileBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        public LeastTouchedFilesKnowlegdeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
         { }
 
         protected override DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext, DeveloperKnowledge[] candidates)
         {
-            return candidates
-            .OrderBy(q => q.NumberOfTouchedFiles)
-            .ThenBy(q => q.NumberOfCommittedFiles)
-            .ThenBy(q=>q.NumberOfAuthoredLines).ToArray();
+            return candidates.OrderByDescending(q => q.NumberOfTouchedFiles).ToArray();
         }
     }
 }

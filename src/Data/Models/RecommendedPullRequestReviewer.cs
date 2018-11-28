@@ -13,11 +13,11 @@ namespace RelationalGit
 
         }
 
-        public RecommendedPullRequestReviewer(long pullRequestNumber, string normalizedReviewerName,long lossSimulationId, RecommendedPullRequestReviewerType type)
+        public RecommendedPullRequestReviewer(long pullRequestNumber, string normalizedReviewerName, RecommendedPullRequestReviewerType type)
         {
             PullRequestNumber = pullRequestNumber;
             NormalizedReviewerName = normalizedReviewerName;
-            LossSimulationId = lossSimulationId;
+            
             Type = type;
         }
 

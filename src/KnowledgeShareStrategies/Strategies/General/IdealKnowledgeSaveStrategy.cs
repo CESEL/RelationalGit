@@ -11,21 +11,22 @@ using System.Collections.Concurrent;
 using System.Threading;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
     public class IdealKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
+        public IdealKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            var oldestDevelopers = pullRequestContext.Developers
-            .Values
-            .Where(q=>q.FirstCommitPeriodId<=pullRequestContext.Period.Id);
+            var oldestDevelopers = pullRequestContext.Developers.Values.Where(q=>q.FirstCommitPeriodId<=pullRequestContext.Period.Id);
 
-            var longtermStayedDeveloper = oldestDevelopers
-            .OrderBy(q=>q.LastCommitPeriodId-q.FirstCommitPeriodId).Last();
+            var longtermStayedDeveloper = oldestDevelopers.OrderBy(q=>q.LastCommitPeriodId-q.FirstCommitPeriodId).Last();
 
-            return new string[]{longtermStayedDeveloper.NormalizedName};
+            return new PullRequestRecommendationResult(new string[] { longtermStayedDeveloper.NormalizedName});
         }
     }
 }

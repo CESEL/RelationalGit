@@ -54,7 +54,10 @@ namespace RelationalGit.CommandLine
 
         [Option("save-strategy")]
         public string KnowledgeSaveStrategyType { get; set; }
-        
+
+        [Option("replacement-strategy")]
+        public string KnowledgeSaveReviewerReplacementType { get; set; }
+
         [Option("mega-pr-size")]
         public int? MegaPullRequestSize { get; set; }
 
@@ -85,6 +88,10 @@ namespace RelationalGit.CommandLine
         [Option("exclude-blame-path")]
         public IEnumerable<string> ExcludeBlamePath { get; set; }
 
+        [Option("simulation-first-period")]
+        public int? KnowledgeSaveReviewerFirstPeriod { get; set; }
+        
+
 
         internal InputOption Override(InputOption fileConfigurationOption)
         {
@@ -105,6 +112,7 @@ namespace RelationalGit.CommandLine
             overridedInputOption.GitHubRepo = Override(GitHubRepo, fileConfigurationOption.GitHubRepo);
             overridedInputOption.GitHubToken = Override(GitHubToken, fileConfigurationOption.GitHubToken);
             overridedInputOption.KnowledgeSaveStrategyType = Override(KnowledgeSaveStrategyType, fileConfigurationOption.KnowledgeSaveStrategyType);
+            overridedInputOption.KnowledgeSaveReviewerReplacementType = Override(KnowledgeSaveReviewerReplacementType, fileConfigurationOption.KnowledgeSaveReviewerReplacementType);
             overridedInputOption.LeaversOfPeriodExtendedAbsence = Override(LeaversOfPeriodExtendedAbsence, fileConfigurationOption.LeaversOfPeriodExtendedAbsence);
             overridedInputOption.LeaversType = Override(LeaversType, fileConfigurationOption.LeaversType);
             overridedInputOption.MegaCommitSize = Override(MegaCommitSize, fileConfigurationOption.MegaCommitSize);
@@ -118,6 +126,7 @@ namespace RelationalGit.CommandLine
             overridedInputOption.ExcludeBlamePath = Override(ExcludeBlamePath, fileConfigurationOption.ExcludeBlamePath);
             overridedInputOption.BlamePeriodsRange= Override(BlamePeriodsRange, fileConfigurationOption.BlamePeriodsRange);
             overridedInputOption.BlamePeriods = Override(BlamePeriods, fileConfigurationOption.BlamePeriods);
+            overridedInputOption.KnowledgeSaveReviewerFirstPeriod = Override(KnowledgeSaveReviewerFirstPeriod, fileConfigurationOption.KnowledgeSaveReviewerFirstPeriod);
 
             return overridedInputOption;
         }

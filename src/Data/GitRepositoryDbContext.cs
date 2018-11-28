@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.IO;
+using RelationalGit.Data.Models;
 
 namespace RelationalGit
 {
@@ -35,6 +36,7 @@ namespace RelationalGit
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfiguration(new PullRequestRecommendationResultEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new AliasedDeveloperNameEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new FileTouchEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new RecommendedPullRequestReviewerEntityTypeConfiguration());
@@ -51,6 +53,8 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new PullRequestReviewerCommentEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new IssueCommentEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
+
         }
 
         public DbSet<IssueComment> IssueComments { get; set; }
@@ -77,7 +81,10 @@ namespace RelationalGit
         public DbSet<RecommendedPullRequestReviewer> RecommendedPullRequestReviewers { get; set; }
         public DbSet<SimulatedAbondonedFile> SimulatedAbondonedFiles { get; set; }
         public DbSet<SimulatedLeaver> SimulatedLeavers { get; set; }
+        public DbSet<PullRequestRecommendationResult> PullRequestRecommendationResults { get; set; }
+
         public DbQuery<PeriodReviewerCountQuery> PeriodReviewerCountQuery {get;set;}
+
         public Dictionary<string, string> GetCanonicalPaths()
         {
             var canonicalResults = this.CommittedChanges.Select(m => new { m.CanonicalPath, m.Path })
@@ -149,6 +156,16 @@ namespace RelationalGit
             return dic;
         }
     }
+
+    class PullRequestRecommendationResultEntityTypeConfiguration : IEntityTypeConfiguration<PullRequestRecommendationResult>
+    {
+        public void Configure(EntityTypeBuilder<PullRequestRecommendationResult> configuration)
+        {
+            configuration.HasIndex(b => b.PullRequestNumber);
+            configuration.HasIndex(b => b.LossSimulationId);
+        }
+    }
+
     class FileKnowledgeableEntityTypeConfiguration : IEntityTypeConfiguration<FileKnowledgeable>
     {
         public void Configure(EntityTypeBuilder<FileKnowledgeable> configuration)

@@ -1,71 +1,126 @@
 ﻿
+using RelationalGit.KnowledgeShareStrategies.Models;
 using System;
+using System.Linq;
 
 namespace RelationalGit
 {
     public abstract class KnowledgeShareStrategy
     {
-        public static KnowledgeShareStrategy Create(string knowledgeShareStrategyType)
+        protected string ReviewerReplacementStrategyType { get; private set; }
+
+        public KnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
+        {
+            ReviewerReplacementStrategyType = knowledgeSaveReviewerReplacementType;
+        }
+
+        public static KnowledgeShareStrategy Create(string knowledgeShareStrategyType, string knowledgeSaveReviewerReplacementType)
         {
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Nothing)
             {
-                return new NothingKnowledgeShareStrategy();
+                return new NothingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ActualReviewers)
             {
-                return new ActualKnowledgeShareStrategy();
+                return new ActualKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Ideal)
             {
-                return new IdealKnowledgeShareStrategy();
+                return new IdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RealisticIdeal)
             {
-                return new RealisticIdealKnowledgeShareStrategy();
+                return new RealisticIdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedExpertiseReviewers)
             {
-                return new CommitBasedKnowledgeShareStrategy();
+                return new CommitBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileBasedExpertiseReviewers)
             {
-                return new FileBasedKnowledgeShareStrategy();
+                return new FileBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedSpreadingReviewers)
             {
-                return new SpreadingKnowledgeShareStrategy();
+                return new SpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.SpreadingKnowledge2)
             {
-                return new SpreadingKnowledgeShareStrategy2();
+                return new FileLevelSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedSpreadingReviewers)
             {
-                return new BlameBasedKnowledgeShareStrategy();
+                return new BlameBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ReviewBasedSpreadingReviewers)
             {
-                return new ReviewBasedKnowledgeShareStrategy();
+                return new ReviewBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RendomReviewers)
             {
-                return new RandomKnowledgeShareStrategy();
+                return new RandomKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RealisticRandomSpreading)
             {
-                return new RealisticRandomSpreadingKnowledgeShareStrategy();
+                return new RealisticRandomSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RandomSpreading)
             {
-                return new RandomSpreadingKnowledgeShareStrategy();
+                return new RandomSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FolderLevelSpreading)
             {
-                return new FolderLevelSpreadingKnowledgeShareStrategy();
+                return new FolderLevelSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.LeastTouchedFiles)
+            {
+                return new LeastTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType);
+            }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.MostTouchedFiles)
+            {
+                return new MostTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType);
+            }
+
 
             throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");
         }
-        internal abstract string[] RecommendReviewers(PullRequestContext pullRequestContext);
+
+        internal PullRequestRecommendationResult Recommend(PullRequestContext pullRequestContext)
+        {
+            var pullRequestRecommendationResult = RecommendReviewers(pullRequestContext);
+
+            pullRequestRecommendationResult.ActualReviewers = pullRequestContext.ActualReviewers.Select(q=>q.DeveloperName).ToArray();
+            pullRequestRecommendationResult.PullRequestNumber = pullRequestContext.PullRequest.Number;
+            pullRequestRecommendationResult.IsSimulated = true;
+
+            CalculateMetrics(pullRequestRecommendationResult);
+
+            return pullRequestRecommendationResult;
+
+        }
+
+        private void CalculateMetrics(PullRequestRecommendationResult result)
+        {
+            if (result.ActualReviewers.Count()==0 || result.SortedCandidates == null || result.SortedCandidates.Count() == 0)
+                return;
+
+            result.TopFiveIsAccurate = result.SortedCandidates.TakeLast(5).Any(q=> result.ActualReviewers.Any(a=>a==q));
+            result.TopTenIsAccurate = result.SortedCandidates.TakeLast(10).Any(q => result.ActualReviewers.Any(a => a == q));
+            var firstCorretRecommendation = result.SortedCandidates.TakeLast(10).LastOrDefault(q => result.ActualReviewers.Any(a => a == q));
+
+            if (firstCorretRecommendation != null)
+            {
+                result.MeanReciprocalRank = 1.0 / (Array.FindIndex(result.SortedCandidates.TakeLast(10).Reverse().ToArray(), q => q == firstCorretRecommendation) + 1);
+            }
+            else
+            {
+                result.MeanReciprocalRank = 0;
+            }
+
+        }
+
+        protected abstract PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext);
     }
+
+
 }

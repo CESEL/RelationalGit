@@ -11,24 +11,65 @@ using System.Collections.Concurrent;
 using System.Threading;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
     public class RandomKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         private Random random=new Random();
-        internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
+
+        public RandomKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
             if(pullRequestContext.ActualReviewers.Count()==0)
-                return new string[0];
+                return new PullRequestRecommendationResult(new string[0]);
 
-            var selectedReviewer = random.Next(0,pullRequestContext.ActualReviewers.Count());
-            var selectedDeveloper = random.Next(0,pullRequestContext.AvailableDevelopers.Count());
+            var availableDevs = pullRequestContext.AvailableDevelopers.Where(q => q.TotalCommits > 10 || q.TotalReviews > 10).ToArray();
+            var reviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray();
 
-            pullRequestContext.ActualReviewers[selectedReviewer]
-                = pullRequestContext.AvailableDevelopers[selectedDeveloper].NormalizedName;
+            if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.OneOfActuals)
+            {
+                return new PullRequestRecommendationResult(OneOfActualsRecomendation(availableDevs, reviewers));
+            }
+            else if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.AllOfActuals)
+            {
+                return new PullRequestRecommendationResult(AllOfActualsRecomendation(availableDevs, reviewers));
+            }
 
-            return pullRequestContext.ActualReviewers;
+            throw new Exception($"the specified ReviewerReplacementStrategyType is unknown: {ReviewerReplacementStrategyType}");
+        }
+
+        private string[] AllOfActualsRecomendation(Developer[] availableDevs, string[] reviewers)
+        {
+            var countOfPossibleRecommendation = Math.Min(reviewers.Length, availableDevs.Length);
+            var recommendations = new string[countOfPossibleRecommendation];
+
+            for (int i = 0; i < countOfPossibleRecommendation;)
+            {
+                var selectedReviewer = random.Next(0, reviewers.Length);
+                if (!recommendations.Any(q => q == reviewers[selectedReviewer]))
+                {
+                    recommendations[i] = reviewers[selectedReviewer];
+                    i++;
+                }
+            }
+
+            return recommendations;
+        }
+
+        private string[] OneOfActualsRecomendation(Developer[] availableDevs, string[] reviewers)
+        {
+            var recommendations = (string[]) reviewers.Clone();
+
+            var selectedReviewer = random.Next(0, reviewers.Length);
+            var selectedDeveloper = random.Next(0, availableDevs.Length);
+
+            recommendations[selectedReviewer] = availableDevs[selectedDeveloper].NormalizedName;
+
+            return recommendations;
         }
     }
 }

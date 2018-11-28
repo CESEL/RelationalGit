@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RelationalGit.KnowledgeShareStrategies.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,9 +8,13 @@ namespace RelationalGit
     public class RealisticRandomSpreadingKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         private Random _random = new Random();
-       
-        internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
+
+        public RealisticRandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
+            /*
             if (pullRequestContext.ActualReviewers.Count() == 0)
                 return pullRequestContext.ActualReviewers;
 
@@ -34,7 +39,9 @@ namespace RelationalGit
 
             pullRequestContext.ActualReviewers[leastIndex] = randomDeveloper;
 
-            return pullRequestContext.ActualReviewers;
+            return pullRequestContext.ActualReviewers;*/
+
+            return null;
         }
 
     }

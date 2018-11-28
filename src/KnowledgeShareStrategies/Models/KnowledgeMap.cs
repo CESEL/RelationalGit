@@ -12,7 +12,7 @@ namespace RelationalGit
         public CommitBasedKnowledgeMap CommitBasedKnowledgeMap;
          
         public ReviewBasedKnowledgeMap ReviewBasedKnowledgeMap;
-        public Dictionary<long, List<RecommendedPullRequestReviewer>> PullRequestReviewers { get;  set; }
+        public Dictionary<long, PullRequestRecommendationResult> PullRequestSimulatedRecommendationMap { get;  set; }
         public BlameBasedKnowledgeMap BlameBasedKnowledgeMap { get; internal set; }
     }
 

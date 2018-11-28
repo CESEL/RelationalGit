@@ -12,6 +12,7 @@ using System.Threading;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
+using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
@@ -27,6 +28,7 @@ namespace RelationalGit
         private Dictionary<int, PullRequest> PullRequestsDic { get; set; }
         private Dictionary<long, List<PullRequestFile>> PullRequestFilesDic { get; set; }
         private Dictionary<long, List<string>> PullRequestReviewersDic { get; set; }
+        private Dictionary<long, PullRequestRecommendationResult> PullRequestSimulatedRecommendationDic { get; set; } = new Dictionary<long, PullRequestRecommendationResult>();
         private PullRequestReviewerComment[] PullRequestReviewComments { get; set; }
         private Dictionary<string, string> CanononicalPathMapper { get; set; }
         private UsernameRepository UsernameRepository { get; set; }
@@ -38,19 +40,20 @@ namespace RelationalGit
 
         private ILogger _logger;
 
-        private Func<PullRequestContext, string[]> ChangeThePastByRecommendingReviewersFunc;
+        private KnowledgeShareStrategy KnowledgeShareStrategy;
+        private int _firstSimulationPeriod;
 
         #endregion
 
-        public TimeMachine(Func<PullRequestContext, string[]> changeThePastByRecommendingReviewersFunc,ILogger logger)
+        public TimeMachine(KnowledgeShareStrategy knowledgeShareStrategy, ILogger logger)
         {
             _logger = logger;
-            ChangeThePastByRecommendingReviewersFunc = changeThePastByRecommendingReviewersFunc;
+            KnowledgeShareStrategy = knowledgeShareStrategy;
         }
         public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
         CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles,IssueComment[] issueComments,
          PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
-         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods)
+         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod)
         {
             _logger.LogInformation("{datetime}: Trying to initialize TimeMachine.", DateTime.Now);
 
@@ -75,8 +78,9 @@ namespace RelationalGit
             PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
             PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments,issueComments);
 
-
             GetCommitsPullRequests(SortedCommits, pullRequests);
+
+            _firstSimulationPeriod = firstPeriod;
 
             _logger.LogInformation("{datetime}: TimeMachine is initialized.", DateTime.Now);
 
@@ -90,7 +94,7 @@ namespace RelationalGit
             {
                 CommitBasedKnowledgeMap = CommitBasedKnowledgeMap,
                 ReviewBasedKnowledgeMap = ReviewBasedKnowledgeMap,
-                PullRequestReviewers = new Dictionary<long, List<RecommendedPullRequestReviewer>>(),
+                PullRequestSimulatedRecommendationMap = PullRequestSimulatedRecommendationDic,
                 BlameBasedKnowledgeMap = BlameBasedKnowledgeMap
             };
 
@@ -121,51 +125,50 @@ namespace RelationalGit
 
         private void ChangeThePastByRecommendingReviewers(KnowledgeDistributionMap knowledgeMap, PullRequest pullRequest)
         {
-            if (ChangeThePastByRecommendingReviewersFunc != null)
+            if (KnowledgeShareStrategy != null)
             {
-                var actualReviewers = PullRequestReviewersDic.GetValueOrDefault(pullRequest.Number,new List<string>(0));
                 var pullRequestContext = GetPullRequestContext(pullRequest, knowledgeMap);
-                var recommendedReviewers = ChangeThePastByRecommendingReviewersFunc(pullRequestContext);
 
-                knowledgeMap.PullRequestReviewers[pullRequest.Number] = new List<RecommendedPullRequestReviewer>(); ;
-
-                foreach (var recommendedReviewer in recommendedReviewers)
+                var periodOfPullRequest = GetPeriodOfPullRequest(pullRequest).Id;
+                
+                if(periodOfPullRequest >= _firstSimulationPeriod)
                 {
-                    if (actualReviewers.Any(q => q == recommendedReviewer))
+                    var recommendationResult = KnowledgeShareStrategy.Recommend(pullRequestContext);
+                    PullRequestSimulatedRecommendationDic[pullRequest.Number] = recommendationResult;
+                }
+                else
+                {
+                    PullRequestSimulatedRecommendationDic[pullRequest.Number] = new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, null)
                     {
-                        knowledgeMap.PullRequestReviewers[pullRequest.Number].Add(new RecommendedPullRequestReviewer(pullRequest.Number, recommendedReviewer, 0, RecommendedPullRequestReviewerType.Actual));
-                    }
-                    else
-                    {
-                        knowledgeMap.PullRequestReviewers[pullRequest.Number].Add(new RecommendedPullRequestReviewer(pullRequest.Number, recommendedReviewer, 0, RecommendedPullRequestReviewerType.Recommended));
-                    }
+                        ActualReviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray(),
+                        PullRequestNumber = pullRequest.Number,
+                        IsSimulated = false
+                    };
                 }
 
-                PullRequestReviewersDic[pullRequest.Number] = recommendedReviewers.ToList();
 
             }
         }
+
         private PullRequestContext GetPullRequestContext(PullRequest pullRequest, KnowledgeDistributionMap knowledgeMap)
         {
-            var actualReviewers = PullRequestReviewersDic
-            .GetValueOrDefault(pullRequest.Number, defaultValue: new List<string>())
-            .ToArray();
-
-            var pullRequestFiles = PullRequestFilesDic
-            .GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>())
-            .ToArray();
+           
+            var pullRequestFiles = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>()).ToArray();
 
             var period = GetPeriodOfPullRequest(pullRequest);
 
-            var availableDevelopers = GetAvailableDevelopersOfPeriod(period)
-            .ToArray();
+            var availableDevelopers = GetAvailableDevelopersOfPeriod(period).ToArray();
 
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
+
+            var pullRequestKnowledgeableDevelopers = GetPullRequestKnowledgeables(pullRequestFiles, knowledgeMap, period);
+
+            var actualReviewers = GetKnowledgeOfActualReviewers(PullRequestReviewersDic.GetValueOrDefault(pullRequest.Number) ?? new List<string>(0), pullRequestKnowledgeableDevelopers);
 
             return new PullRequestContext()
             {
                 PRSubmitterNormalizedName = prSubmitter?.NormalizedName,
-                ActualReviewers = actualReviewers,
+                ActualReviewers = actualReviewers.ToArray(),
                 PullRequestFiles = pullRequestFiles,
                 AvailableDevelopers = availableDevelopers,
                 PullRequest = pullRequest,
@@ -174,9 +177,20 @@ namespace RelationalGit
                 Period = period,
                 Developers = new ReadOnlyDictionary<string, Developer>(DevelopersDic),
                 Blames = BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id),
-                PRKnowledgeables = GetPullRequestKnowledgeables(pullRequestFiles,knowledgeMap,period)
+                PRKnowledgeables = pullRequestKnowledgeableDevelopers
             };
 
+        }
+
+        private IEnumerable<DeveloperKnowledge> GetKnowledgeOfActualReviewers(List<string> subset, DeveloperKnowledge[] superset)
+        {
+            foreach (var item in subset)
+            {
+                yield return superset.SingleOrDefault(q => q.DeveloperName == item)?? new DeveloperKnowledge()
+                {
+                    DeveloperName = item
+                };
+            }
         }
 
         private DeveloperKnowledge[] GetPullRequestKnowledgeables(PullRequestFile[] pullRequestFiles, KnowledgeDistributionMap knowledgeDistributionMap, Period period)
@@ -276,12 +290,10 @@ namespace RelationalGit
             developersKnowledge[developerName].NumberOfAuthoredLines += totalAuditedLines;
         }
 
-
         private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period)
         {
             return DevelopersDic.Values.Where(dev => dev.FirstParticipationPeriodId <= period.Id && dev.LastParticipationPeriodId >= period.Id);
         }
-
 
         private Period GetPeriodOfPullRequest(PullRequest pullRequest)
         {
@@ -292,7 +304,7 @@ namespace RelationalGit
 
         private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
         {
-            var reviewersNamesOfPullRequest = PullRequestReviewersDic[pullRequest.Number].Select(reviewerName => DevelopersDic[reviewerName]);
+            var reviewersNamesOfPullRequest = PullRequestSimulatedRecommendationDic[pullRequest.Number].SelectedReviewers.Select(reviewerName => DevelopersDic[reviewerName]);
             var period = GetPeriodOfPullRequest(pullRequest);
 
             // some of the pull requests have no modified files strangely
@@ -305,7 +317,6 @@ namespace RelationalGit
                 ReviewBasedKnowledgeMap.Add(canonicalPath, reviewersNamesOfPullRequest, pullRequest, period);
             }
         }
-
 
         private void AddProposedChangesToPrSubmitterKnowledge(PullRequest pullRequest, Commit prMergedCommit)
         {
@@ -517,7 +528,6 @@ namespace RelationalGit
             if (reviewerNormalizedName != null && !prReviewers[prNumber].Any(q => q == reviewerNormalizedName))
                 prReviewers[prNumber].Add(reviewerNormalizedName);
         }
-
 
         private void GetDevelopersContributions(Developer[] developers, DeveloperContribution[] developersContributions)
         {

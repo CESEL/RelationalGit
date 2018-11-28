@@ -11,24 +11,25 @@ using System.Collections.Concurrent;
 using System.Threading;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
     public class RealisticIdealKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
+        public RealisticIdealKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
             if (pullRequestContext.ActualReviewers.Count() == 0)
-                return pullRequestContext.ActualReviewers;
-                
-            var oldestDevelopers = pullRequestContext.Developers
-            .Values
-            .Where(q=>q.FirstCommitPeriodId<=pullRequestContext.Period.Id);
+                return new PullRequestRecommendationResult(new string[0]);
 
-            var longtermStayedDeveloper = oldestDevelopers
-            .OrderBy(q=>q.LastCommitPeriodId-q.FirstCommitPeriodId).Last();
+            var oldestDevelopers = pullRequestContext.Developers.Values.Where(q=>q.FirstCommitPeriodId<=pullRequestContext.Period.Id);
 
-            return new string[]{longtermStayedDeveloper.NormalizedName};
+            var longtermStayedDeveloper = oldestDevelopers.OrderBy(q=>q.LastCommitPeriodId-q.FirstCommitPeriodId).Last();
+
+            return new PullRequestRecommendationResult(new string[] { longtermStayedDeveloper.NormalizedName });
         }
     }
 }

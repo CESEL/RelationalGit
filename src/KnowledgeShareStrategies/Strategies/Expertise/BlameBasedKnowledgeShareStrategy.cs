@@ -16,9 +16,12 @@ namespace RelationalGit
 {
     public class BlameBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
-        protected override DeveloperKnowledge[] SortPRKnowledgeables(PullRequestContext pullRequestContext)
+        public BlameBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext,DeveloperKnowledge[] candidates)
         {
-            return pullRequestContext.PRKnowledgeables
+            return candidates
             .OrderBy(q => q.NumberOfAuthoredLines)
             .ThenBy(q => q.NumberOfCommits)
             .ThenBy(q=>q.NumberOfCommittedFiles).ToArray();

@@ -11,14 +11,19 @@ using System.Collections.Concurrent;
 using System.Threading;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
     public class NothingKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
+
+        public NothingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            return new string[0];
+            return new PullRequestRecommendationResult(new string[0]);
         }
     }
 }

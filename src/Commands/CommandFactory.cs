@@ -149,11 +149,13 @@ namespace RelationalGit.Commands
                 var lossSimulationOption = new LossSimulationOption()
                 {
                     KnowledgeShareStrategyType=options.KnowledgeSaveStrategyType,
+                    KnowledgeSaveReviewerReplacementType=options.KnowledgeSaveReviewerReplacementType,
                     MegaPullRequestSize=options.MegaPullRequestSize.Value,
                     LeaversType=options.LeaversType,
                     FilesAtRiksOwnershipThreshold = options.FilesAtRiksOwnershipThreshold.Value,
                     FilesAtRiksOwnersThreshold = options.FilesAtRiksOwnersThreshold.Value,
-                    LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence.Value
+                    LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence.Value,
+                    KnowledgeSaveReviewerFirstPeriod = options.KnowledgeSaveReviewerFirstPeriod.Value
                 };
 
                 await cmd.Execute(lossSimulationOption);

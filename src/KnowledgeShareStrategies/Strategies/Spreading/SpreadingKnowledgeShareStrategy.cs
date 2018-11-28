@@ -16,9 +16,14 @@ namespace RelationalGit
 {
     public class SpreadingKnowledgeShareStrategy  : BaseKnowledgeShareStrategy
     {
-        protected override DeveloperKnowledge[] SortPRKnowledgeables(PullRequestContext pullRequestContext)
+
+        public SpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext, DeveloperKnowledge[] candidates)
         {
-            if (pullRequestContext.PRKnowledgeables.Length == 0)
+            
+            if (candidates.Length == 0)
                 return pullRequestContext.PRKnowledgeables;
             /*
             //var maxTouchedFiles = pullRequestContext.PRKnowledgeables.Max(q=>q.NumberOfTouchedFiles);
@@ -38,7 +43,7 @@ namespace RelationalGit
             }
             */
 
-            return pullRequestContext.PRKnowledgeables.OrderByDescending(q=>q.NumberOfTouchedFiles).ThenByDescending(q=>q.NumberOfReviews).ToArray();
+            return candidates.OrderByDescending(q=>q.NumberOfTouchedFiles).ThenByDescending(q=>q.NumberOfReviews).ToArray();
         }
     }
 }

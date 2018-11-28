@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RelationalGit;
 
 namespace RelationalGit.Migrations
 {
     [DbContext(typeof(GitRepositoryDbContext))]
-    partial class GitRepositoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20181127221959_pull_Request_Recommendation_Results")]
+    partial class pull_Request_Recommendation_Results
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -217,21 +219,21 @@ namespace RelationalGit.Migrations
 
                     b.Property<long>("LossSimulationId");
 
-                    b.Property<double?>("MeanReciprocalRank");
+                    b.Property<double>("MeanReciprocalRank");
 
                     b.Property<long>("PullRequestNumber");
 
                     b.Property<string>("SelectedReviewers");
 
-                    b.Property<int?>("SelectedReviewersLength");
+                    b.Property<int>("SelectedReviewersLength");
 
                     b.Property<string>("SortedCandidates");
 
-                    b.Property<int?>("SortedCandidatesLength");
+                    b.Property<int>("SortedCandidatesLength");
 
-                    b.Property<bool?>("TopFiveIsAccurate");
+                    b.Property<bool>("TopFiveIsAccurate");
 
-                    b.Property<bool?>("TopTenIsAccurate");
+                    b.Property<bool>("TopTenIsAccurate");
 
                     b.HasKey("Id");
 
@@ -495,8 +497,6 @@ namespace RelationalGit.Migrations
                     b.Property<int>("FilesAtRiksOwnersThreshold");
 
                     b.Property<double>("FilesAtRiksOwnershipThreshold");
-
-                    b.Property<int>("FirstPeriod");
 
                     b.Property<string>("KnowledgeSaveReviewerReplacementType");
 

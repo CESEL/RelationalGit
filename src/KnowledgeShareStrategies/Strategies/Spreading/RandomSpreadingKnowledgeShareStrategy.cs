@@ -1,38 +1,40 @@
-﻿using System;
+﻿using RelationalGit.KnowledgeShareStrategies.Models;
+using System;
 using System.Linq;
 
 namespace RelationalGit
 {
-    public class RandomSpreadingKnowledgeShareStrategy : KnowledgeShareStrategy
+    public class RandomSpreadingKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
         private Random _random = new Random();
 
-        internal override string[] RecommendReviewers(PullRequestContext pullRequestContext)
+        public RandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        { }
+
+        protected override DeveloperKnowledge[] GetCandidates(PullRequestContext pullRequestContext)
         {
-            var availableDevelopers = pullRequestContext.AvailableDevelopers.Where(q => q.TotalCommits > 10 || q.TotalReviews > 10).Select(q => q.NormalizedName).ToArray();
+            var availableDevelopers = pullRequestContext.AvailableDevelopers.Where(q => q.NormalizedName==pullRequestContext.PRSubmitterNormalizedName && (q.TotalCommits > 10 || q.TotalReviews > 10)).ToArray();
+            var experiencedDevelopers = pullRequestContext.PRKnowledgeables;
 
-            pullRequestContext.PRKnowledgeables = pullRequestContext.PRKnowledgeables
-                .OrderBy(q => q.NumberOfReviews)
-                .OrderBy(q => q.NumberOfReviewedFiles)
-                .OrderBy(q => q.NumberOfCommits)
-                .ToArray();
+            var nonexperiencedDevelopers = availableDevelopers.Where(q => experiencedDevelopers.Any(e => e.DeveloperName == q.NormalizedName)).Select(q=> new DeveloperKnowledge()
+                {
+                    DeveloperName=q.NormalizedName
+                }).ToArray();
 
-            var experiencedDevelopers = pullRequestContext.PRKnowledgeables.Select(q => q.DeveloperName);
-            var nonexperiencedDevelopers = availableDevelopers.Except(experiencedDevelopers).ToArray();
-
-            if (nonexperiencedDevelopers.Length == 0)
-                return pullRequestContext.ActualReviewers;
-
-            var randomDeveloper = nonexperiencedDevelopers[_random.Next(0, nonexperiencedDevelopers.Length)];
-
-            var leastKnowledgeable = pullRequestContext.WhoHasTheLeastKnowledge();
-
-            var leastIndex = Array.FindIndex(pullRequestContext.ActualReviewers,q=>q== leastKnowledgeable);
-
-            pullRequestContext.ActualReviewers[leastIndex] = randomDeveloper;
-
-            return pullRequestContext.ActualReviewers;
+            return nonexperiencedDevelopers;
         }
-        
+
+        protected override DeveloperKnowledge[] SortActualReviewers(PullRequestContext pullRequestContext, DeveloperKnowledge[] actualReviewers)
+        {
+            return actualReviewers.OrderBy(q => q.NumberOfReviews)
+                            .OrderBy(q => q.NumberOfReviewedFiles)
+                            .OrderBy(q => q.NumberOfCommits)
+                            .ToArray();
+        }
+
+        protected override DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext, DeveloperKnowledge[] candidates)
+        {
+            return new DeveloperKnowledge[] { candidates[_random.Next(0,candidates.Length)] };
+        }
     }
 }

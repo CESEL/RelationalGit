@@ -17,5 +17,9 @@ namespace RelationalGit
         public double FilesAtRiksOwnershipThreshold { get;  set; }
         public int FilesAtRiksOwnersThreshold { get;  set; }
         public int LeaversOfPeriodExtendedAbsence { get;  set; }
+        public string KnowledgeSaveReviewerReplacementType { get; internal set; }
+        public int FirstPeriod { get; internal set; }
+
     }
+
 }

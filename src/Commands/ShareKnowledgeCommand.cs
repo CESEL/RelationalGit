@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using EFCore.BulkExtensions;
+using RelationalGit.Data.Models;
 
 namespace RelationalGit.Commands
 {
@@ -42,7 +43,7 @@ namespace RelationalGit.Commands
 
             var lossSimulation = CreateLossSimulation(lossSimulationOption);
 
-            var timeMachine = CreateTimeMachine(lossSimulation.KnowledgeShareStrategyType, lossSimulation.MegaPullRequestSize);
+            var timeMachine = CreateTimeMachine(lossSimulation);
 
             var knowledgeDistributioneMap = timeMachine.FlyInTime();
 
@@ -62,6 +63,9 @@ namespace RelationalGit.Commands
                 SaveOwnershipDistribution(knowledgeDistributioneMap, lossSimulation, leavers);
                 _logger.LogInformation("{datetime}: Ownership Distribution is saved Successfully.", DateTime.Now);
 
+                SavePullRequestSimulatedRecommendationResults(knowledgeDistributioneMap, lossSimulation);
+                _logger.LogInformation("{datetime}: Pull Requests Recommendation Results are saved Successfully.", DateTime.Now);
+
                 transaction.Commit();
                 _logger.LogInformation("{datetime}: Transaction is committed.", DateTime.Now);
             }
@@ -77,6 +81,38 @@ namespace RelationalGit.Commands
             _dbContext.Dispose();
 
             return Task.CompletedTask;
+        }
+
+        private void SavePullRequestSimulatedRecommendationResults(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation)
+        {
+            var results = knowledgeDistributioneMap.PullRequestSimulatedRecommendationMap.Values;
+            var bulkPullRequestSimulatedRecommendationResults = new List<PullRequestRecommendationResult>();
+
+            foreach (var result in results)
+            {
+                if (!result.IsSimulated)
+                    continue;
+
+                bulkPullRequestSimulatedRecommendationResults.Add(new PullRequestRecommendationResult()
+                {
+                    ActualReviewers = result.ActualReviewers?.Count() > 0 ? result.ActualReviewers?.Aggregate((a, b) => a + ", " + b) : null,
+                    SelectedReviewers = result.SelectedReviewers?.Count() > 0 ? result.SelectedReviewers?.Aggregate((a, b) => a + ", " + b) : null,
+                    SortedCandidates = result.SortedCandidates?.Count() > 0 ? result.SortedCandidates?.Aggregate((a, b) => a + ", " + b) : null,
+                    ActualReviewersLength = result.ActualReviewers.Length,
+                    SelectedReviewersLength = result.SelectedReviewers.Length,
+                    SortedCandidatesLength = result.SortedCandidates?.Length,
+                    PullRequestNumber=result.PullRequestNumber,
+                    MeanReciprocalRank=result.MeanReciprocalRank,
+                    TopFiveIsAccurate=result.TopFiveIsAccurate,
+                    TopTenIsAccurate=result.TopTenIsAccurate,
+                    LossSimulationId=lossSimulation.Id
+                });
+            }
+
+
+            _dbContext.BulkInsert(bulkPullRequestSimulatedRecommendationResults, new BulkConfig { BatchSize = 50000 });
+
+
         }
 
         private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
@@ -156,8 +192,8 @@ namespace RelationalGit.Commands
                 }
             }
 
-            _dbContext.BulkInsert(bulkFileTouches, new BulkConfig { BatchSize = 50000 });
-            _dbContext.BulkInsert(bulkFileKnowledgeable, new BulkConfig { BatchSize = 50000 });
+            _dbContext.BulkInsert(bulkFileTouches, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = int.MaxValue });
+            _dbContext.BulkInsert(bulkFileKnowledgeable, new BulkConfig { BatchSize = 50000,BulkCopyTimeout=int.MaxValue });
         }
 
         private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
@@ -250,10 +286,10 @@ namespace RelationalGit.Commands
         {
             var bulkEntities = new List<RecommendedPullRequestReviewer>();
 
-            foreach (var pullRequestReviewerItem in knowledgeMap.PullRequestReviewers)
+            foreach (var pullRequestReviewerItem in knowledgeMap.PullRequestSimulatedRecommendationMap)
             {
                 var pullRequestNumber=pullRequestReviewerItem.Key;
-                foreach(var reviewer in pullRequestReviewerItem.Value)
+                foreach(var reviewer in pullRequestReviewerItem.Value.RecommendedPullRequestReviewers)
                 {
                     reviewer.LossSimulationId = lossSimulation.Id;
                     bulkEntities.Add(reviewer);
@@ -274,6 +310,8 @@ namespace RelationalGit.Commands
                 FilesAtRiksOwnershipThreshold = lossSimulationOption.FilesAtRiksOwnershipThreshold,
                 FilesAtRiksOwnersThreshold = lossSimulationOption.FilesAtRiksOwnersThreshold,
                 LeaversOfPeriodExtendedAbsence = lossSimulationOption.LeaversOfPeriodExtendedAbsence,
+                KnowledgeSaveReviewerReplacementType = lossSimulationOption.KnowledgeSaveReviewerReplacementType,
+                FirstPeriod= lossSimulationOption.KnowledgeSaveReviewerFirstPeriod
             };
 
             _dbContext.Add(lossSimulation);
@@ -281,13 +319,13 @@ namespace RelationalGit.Commands
             return lossSimulation;
         }
 
-        private TimeMachine CreateTimeMachine(string knowledgeShareStrategyType, int megaPullRequestSize)
+        private TimeMachine CreateTimeMachine(LossSimulation lossSimulation)
         {
             _logger.LogInformation("{datetime}: initializing the Time Machine.",DateTime.Now);
 
-            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(knowledgeShareStrategyType);
+            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(lossSimulation.KnowledgeShareStrategyType, lossSimulation.KnowledgeSaveReviewerReplacementType);
 
-            var timeMachine = new TimeMachine(knowledgeShareStrategy.RecommendReviewers,_logger);
+            var timeMachine = new TimeMachine(knowledgeShareStrategy,_logger);
 
             _commits = _dbContext.Commits.Where(q => !q.Ignore).ToArray();
 
@@ -308,7 +346,7 @@ namespace RelationalGit.Commands
             .FromSql($@"SELECT * FROM PullRequests 
                     WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
                     MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
-                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
+                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate}")
             .ToArray();
 
@@ -321,7 +359,7 @@ namespace RelationalGit.Commands
             (SELECT Number FROM PullRequests 
                     WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
                     MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
-                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
+                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
 
@@ -333,7 +371,7 @@ namespace RelationalGit.Commands
             (SELECT Number FROM PullRequests 
                     WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
                     MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
-                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
+                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .Where(q => q.State != "DISMISSED")
             .ToArray();
@@ -346,7 +384,7 @@ namespace RelationalGit.Commands
             (SELECT Number FROM PullRequests 
                     WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
                     MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
-                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
+                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
 
@@ -356,7 +394,7 @@ namespace RelationalGit.Commands
             (SELECT Number FROM PullRequests 
                     WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
                     MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
-                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{megaPullRequestSize})
+                    Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate}) and ((Body LIKE '%lgtm%') OR
                                                    (Body LIKE '%looks good%') OR
                                                    (Body LIKE '%its good%') OR
@@ -397,7 +435,8 @@ namespace RelationalGit.Commands
             _pullRequestReviewComments,
             _canononicalPathMapper,
             _GitHubGitUsernameMapper,
-            _periods);
+            _periods,
+            lossSimulation.FirstPeriod);
 
 
             return timeMachine;
