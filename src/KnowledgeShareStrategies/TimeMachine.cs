@@ -26,6 +26,7 @@ namespace RelationalGit
         private DeveloperContribution[] DevelopersContributions { get; set; }
         private Dictionary<string, List<CommittedChange>> CommittedChangesDic { get; set; }
         private Dictionary<int, PullRequest> PullRequestsDic { get; set; }
+        public PullRequestEffortKnowledgeMap PullRequestEffortKnowledgeMap { get; private set; }
         private Dictionary<long, List<PullRequestFile>> PullRequestFilesDic { get; set; }
         private Dictionary<long, List<string>> PullRequestReviewersDic { get; set; }
         private Dictionary<long, PullRequestRecommendationResult> PullRequestSimulatedRecommendationDic { get; set; } = new Dictionary<long, PullRequestRecommendationResult>();
@@ -42,6 +43,7 @@ namespace RelationalGit
 
         private KnowledgeShareStrategy KnowledgeShareStrategy;
         private int _firstSimulationPeriod;
+        private string _selectedReviewersType;
 
         #endregion
 
@@ -53,7 +55,7 @@ namespace RelationalGit
         public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
         CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles,IssueComment[] issueComments,
          PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
-         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod)
+         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod,string selectedReviewersType)
         {
             _logger.LogInformation("{datetime}: Trying to initialize TimeMachine.", DateTime.Now);
 
@@ -73,17 +75,31 @@ namespace RelationalGit
 
             PullRequestsDic = pullRequests.ToDictionary(q => q.Number);
 
+            PullRequestEffortKnowledgeMap = new PullRequestEffortKnowledgeMap();
             BlameBasedKnowledgeMap = GetBlameBasedKnowledgeMap(commitBlobBlames);
             CommittedChangesDic = GetCommittedChangesDictionary(committedChanges);
             PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
             PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments,issueComments);
 
-            GetCommitsPullRequests(SortedCommits, pullRequests);
+            GetCommitsPullRequests(pullRequests);
 
             _firstSimulationPeriod = firstPeriod;
+            _selectedReviewersType = selectedReviewersType;
 
             _logger.LogInformation("{datetime}: TimeMachine is initialized.", DateTime.Now);
 
+        }
+
+        private void UpdatePullRequestEffortKnowledgeMap(IEnumerable<PullRequestReviewerComment> pullRequestReviewComments)
+        {
+            foreach (var pullRequestReviewComment in pullRequestReviewComments)
+            {
+                PullRequestEffortKnowledgeMap.Add(
+                        CanononicalPathMapper.GetValueOrDefault(pullRequestReviewComment.Path),
+                        UsernameRepository.GetByGitHubLogin(pullRequestReviewComment.UserLogin),
+                        pullRequestReviewComment.CreatedAtDateTime
+                    );
+            }
         }
 
         public KnowledgeDistributionMap FlyInTime()
@@ -95,7 +111,8 @@ namespace RelationalGit
                 CommitBasedKnowledgeMap = CommitBasedKnowledgeMap,
                 ReviewBasedKnowledgeMap = ReviewBasedKnowledgeMap,
                 PullRequestSimulatedRecommendationMap = PullRequestSimulatedRecommendationDic,
-                BlameBasedKnowledgeMap = BlameBasedKnowledgeMap
+                BlameBasedKnowledgeMap = BlameBasedKnowledgeMap,
+                PullRequestEffortKnowledgeMap = PullRequestEffortKnowledgeMap
             };
 
             foreach (var commit in SortedCommits)
@@ -113,6 +130,7 @@ namespace RelationalGit
 
         private void UpdateReviewBasedKnowledgeMap(KnowledgeDistributionMap knowledgeMap, Commit commit, PullRequest pullRequest)
         {
+            
             if (pullRequest != null)
             {
                 AddProposedChangesToPrSubmitterKnowledge(pullRequest, commit);
@@ -120,6 +138,8 @@ namespace RelationalGit
                 ChangeThePastByRecommendingReviewers(knowledgeMap, pullRequest);
 
                 UpdateReviewBasedKnowledgeMap(pullRequest);
+
+                UpdatePullRequestEffortKnowledgeMap(PullRequestReviewComments.Where(q => q.PullRequestNumber == pullRequest.Number));
             }
         }
 
@@ -167,6 +187,7 @@ namespace RelationalGit
 
             return new PullRequestContext()
             {
+                SelectedReviewersType=_selectedReviewersType,
                 PRSubmitterNormalizedName = prSubmitter?.NormalizedName,
                 ActualReviewers = actualReviewers.ToArray(),
                 PullRequestFiles = pullRequestFiles,
@@ -407,16 +428,16 @@ namespace RelationalGit
             return blameBasedKnowledgeMap;
         }
 
-        private void GetCommitsPullRequests(Commit[] commits, PullRequest[] pullRequests)
+        private void GetCommitsPullRequests(PullRequest[] pullRequests)
         {
-            foreach (var commit in commits)
+            foreach (var pullRequest in pullRequests)
             {
                 // It's possible that two pull requests have the same merge commit
                 // it's a bug in github. We take only one of them in such a scenario.
                 // https://github.com/dotnet/coreclr/pull/9909
                 // https://github.com/dotnet/coreclr/pull/9379
-                var mergedPullRequest = pullRequests.FirstOrDefault(q => q.MergeCommitSha == commit.Sha);
-                commit.MergedPullRequest = mergedPullRequest;
+                var mergedCommit = CommitsDic.GetValueOrDefault(pullRequest.MergeCommitSha);
+                mergedCommit.MergedPullRequest = pullRequest;
             }
         }
 

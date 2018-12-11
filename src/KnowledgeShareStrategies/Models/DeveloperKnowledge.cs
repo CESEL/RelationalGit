@@ -13,6 +13,11 @@ namespace RelationalGit
         public int NumberOfReviews { get; set; }
         public string DeveloperName { get; set; }
         public int NumberOfAuthoredLines { get; set; }
+
+        /// <summary>
+        /// Use this field when you want assign score to developers
+        /// </summary>
+        public double Score { get; set; }
     }
 }
 

@@ -155,7 +155,8 @@ namespace RelationalGit.Commands
                     FilesAtRiksOwnershipThreshold = options.FilesAtRiksOwnershipThreshold.Value,
                     FilesAtRiksOwnersThreshold = options.FilesAtRiksOwnersThreshold.Value,
                     LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence.Value,
-                    KnowledgeSaveReviewerFirstPeriod = options.KnowledgeSaveReviewerFirstPeriod.Value
+                    KnowledgeSaveReviewerFirstPeriod = options.KnowledgeSaveReviewerFirstPeriod.Value,
+                    SelectedReviewersType=options.SelectedReviewersType
                 };
 
                 await cmd.Execute(lossSimulationOption);

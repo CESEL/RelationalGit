@@ -90,9 +90,10 @@ namespace RelationalGit.CommandLine
 
         [Option("simulation-first-period")]
         public int? KnowledgeSaveReviewerFirstPeriod { get; set; }
+
+        [Option("selected-reviewers-type")]
+        public string SelectedReviewersType { get; set; }
         
-
-
         internal InputOption Override(InputOption fileConfigurationOption)
         {
             var overridedInputOption = new InputOption()
@@ -127,6 +128,7 @@ namespace RelationalGit.CommandLine
             overridedInputOption.BlamePeriodsRange= Override(BlamePeriodsRange, fileConfigurationOption.BlamePeriodsRange);
             overridedInputOption.BlamePeriods = Override(BlamePeriods, fileConfigurationOption.BlamePeriods);
             overridedInputOption.KnowledgeSaveReviewerFirstPeriod = Override(KnowledgeSaveReviewerFirstPeriod, fileConfigurationOption.KnowledgeSaveReviewerFirstPeriod);
+            overridedInputOption.SelectedReviewersType = Override(SelectedReviewersType, fileConfigurationOption.SelectedReviewersType);
 
             return overridedInputOption;
         }

@@ -16,9 +16,9 @@ namespace RelationalGit
 
             var availableDevs = folderLevelOwners
             .Where(q => q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName &&
-            pullRequestContext.AvailableDevelopers.Any(d => d.NormalizedName == q.DeveloperName) &&
-            pullRequestContext.ActualReviewers.All(a => a.DeveloperName != q.DeveloperName) &&
-            pullRequestContext.Developers[q.DeveloperName].TotalCommits + pullRequestContext.Developers[q.DeveloperName].TotalReviews > 50)
+            IsDeveloperAvailable(pullRequestContext, q.DeveloperName) &&
+            !IsDevelperAmongActualReviewers(pullRequestContext, q.DeveloperName) &&
+            IsCoreDeveloper(pullRequestContext, q.DeveloperName))
             .ToArray();
 
             return availableDevs;

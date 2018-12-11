@@ -8,8 +8,8 @@ namespace RelationalGit
 {
     public class PullRequestContext
     {
-        
         public string PRSubmitterNormalizedName { get; set; }
+        public string SelectedReviewersType { get; set; }
         internal Developer[] AvailableDevelopers;
         public DeveloperKnowledge[] ActualReviewers { get; internal set; }
         public PullRequestFile[] PullRequestFiles { get; internal set; }

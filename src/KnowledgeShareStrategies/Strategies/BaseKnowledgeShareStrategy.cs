@@ -48,6 +48,20 @@ namespace RelationalGit
                 var countOfPossibleRecommendation = Math.Min(SortedActualReviewers.Length, SortedCandidates.Length);
                 recommendedReviewers = SortedCandidates.TakeLast(SortedActualReviewers.Length).ToArray();
             }
+            else if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.AddNewReviewerToActuals)
+            {
+                // we do not take the dev with most expertise to avoid knowledge concentration
+                var addedReviewer = SortedCandidates.LastOrDefault(q=> SortedActualReviewers.All(sar=>sar.DeveloperName!=q.DeveloperName));
+
+                if(addedReviewer==null)
+                {
+                    recommendedReviewers = SortedActualReviewers;
+                }
+                else
+                {
+                    recommendedReviewers = SortedActualReviewers.Concat(new DeveloperKnowledge[] { addedReviewer }).ToArray();
+                }
+            }
 
             return new PullRequestRecommendationResult(recommendedReviewers.Select(q=>q.DeveloperName).ToArray(),SortedCandidates.Select(q => q.DeveloperName).ToArray());
         }
@@ -88,12 +102,14 @@ namespace RelationalGit
 
         protected DeveloperKnowledge[] AvailablePRKnowledgeables(PullRequestContext pullRequestContext)
         {
-            return pullRequestContext.PRKnowledgeables.Where(q => 
-            q.DeveloperName!=pullRequestContext.PRSubmitterNormalizedName 
-            &&
-            pullRequestContext.AvailableDevelopers.Any(d => d.NormalizedName == q.DeveloperName))
+            return pullRequestContext.PRKnowledgeables
+                .Where(q => q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName
+                && IsDeveloperAvailable(pullRequestContext,q.DeveloperName)
+                && IsCoreDeveloper(pullRequestContext, q.DeveloperName) // we want to suggest people who have a great chance to stay in the project
+                )
             .ToArray();
         }
+
 
         protected abstract DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext, DeveloperKnowledge[] candidates);
 

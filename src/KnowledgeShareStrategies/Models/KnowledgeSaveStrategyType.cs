@@ -26,17 +26,32 @@ namespace RelationalGit
 
         public static string SpreadingKnowledge2 => "file-level-spreading-knowledge";
 
+        public static string FileLevelSpreadingReplaceAll => "file-level-spreading-knowledge-replace-all";
+
         public static string FolderLevelSpreading => "folder-level-spreading-knowledge";
 
         public static string MostTouchedFiles => "most-touched-files";
         
         public static string LeastTouchedFiles => "least-touched-files";
-    }
 
+        public static string FolderLevelSpreadingPlusOne => "folder-level-spreading-knowledge-plus-one";
+
+        public static string Bird => "bird";
+    }
 
     public static class ReviewerReplacementStrategyType
     {
         public static string OneOfActuals => "one-of-actuals";
         public static string AllOfActuals => "all-of-actuals";
+        public static string AddNewReviewerToActuals => "add-one-reviewer-to-actuals";
     }
+
+    public static class SelectedReviewersType
+    {
+        public static string Core => "core";
+        public static string NonCore => "noncore";
+        public static string All => "all";
+    }
+
+    
 }

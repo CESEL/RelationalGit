@@ -1,5 +1,6 @@
 ﻿
 using RelationalGit.KnowledgeShareStrategies.Models;
+using RelationalGit.KnowledgeShareStrategies.Strategies.Spreading;
 using System;
 using System.Linq;
 
@@ -36,10 +37,7 @@ namespace RelationalGit
             {
                 return new CommitBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
-            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileBasedExpertiseReviewers)
-            {
-                return new FileBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
-            }
+
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedSpreadingReviewers)
             {
                 return new SpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
@@ -47,6 +45,10 @@ namespace RelationalGit
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.SpreadingKnowledge2)
             {
                 return new FileLevelSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+            }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileLevelSpreadingReplaceAll)
+            {
+                return new FileLevelSpreadingKnowledgeReplaceAllShareStrategy(knowledgeSaveReviewerReplacementType);
             }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedSpreadingReviewers)
             {
@@ -72,6 +74,10 @@ namespace RelationalGit
             {
                 return new FolderLevelSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FolderLevelSpreadingPlusOne)
+            {
+                return new FolderLevelSpreadingPlusOneKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+            }
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.LeastTouchedFiles)
             {
                 return new LeastTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType);
@@ -79,6 +85,10 @@ namespace RelationalGit
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.MostTouchedFiles)
             {
                 return new MostTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType);
+            }
+            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Bird)
+            {
+                return new BirdKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
 
 
@@ -120,6 +130,26 @@ namespace RelationalGit
         }
 
         protected abstract PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext);
+
+        protected static bool IsCoreDeveloper(PullRequestContext pullRequestContext, string developerName)
+        {
+            if (pullRequestContext.SelectedReviewersType == SelectedReviewersType.All)
+                return true;
+
+            return pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.Period.Id)?.TotalCommits > 20
+                            || pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.Period.Id)?.TotalReviews > 5;
+        }
+
+        protected static bool IsDevelperAmongActualReviewers(PullRequestContext pullRequestContext, string developerName)
+        {
+            return pullRequestContext.ActualReviewers.Any(a => a.DeveloperName == developerName);
+        }
+
+        protected static bool IsDeveloperAvailable(PullRequestContext pullRequestContext, string developerName)
+        {
+            return pullRequestContext.AvailableDevelopers.Any(d => d.NormalizedName == developerName);
+        }
+
     }
 
 

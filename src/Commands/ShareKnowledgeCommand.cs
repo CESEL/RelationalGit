@@ -311,7 +311,8 @@ namespace RelationalGit.Commands
                 FilesAtRiksOwnersThreshold = lossSimulationOption.FilesAtRiksOwnersThreshold,
                 LeaversOfPeriodExtendedAbsence = lossSimulationOption.LeaversOfPeriodExtendedAbsence,
                 KnowledgeSaveReviewerReplacementType = lossSimulationOption.KnowledgeSaveReviewerReplacementType,
-                FirstPeriod= lossSimulationOption.KnowledgeSaveReviewerFirstPeriod
+                FirstPeriod= lossSimulationOption.KnowledgeSaveReviewerFirstPeriod,
+                SelectedReviewersType=lossSimulationOption.SelectedReviewersType
             };
 
             _dbContext.Add(lossSimulation);
@@ -321,6 +322,35 @@ namespace RelationalGit.Commands
 
         private TimeMachine CreateTimeMachine(LossSimulation lossSimulation)
         {
+            _developersContributions = _dbContext.DeveloperContributions.ToArray();
+
+
+            /*var dict = new Dictionary<long, List<double>>();
+
+            for (int i = 1; i < 14; i++)
+            {
+                var coreDevs = _developersContributions.Where(q => q.PeriodId == i && !(q.TotalCommits > 20 || q.TotalReviews > 5)).Select(q=>q.NormalizedName).ToHashSet();
+
+                for (int j = 1; j < 14 ; j++)
+                {
+                    if (j + i > 14)
+                        continue;
+
+                    var remainedDevsCount = _developersContributions.Where(q => q.PeriodId == i+j && (q.TotalCommits>0 || q.TotalReviews>0) && coreDevs.Contains(q.NormalizedName)).Count();
+
+                    if (!dict.ContainsKey(j))
+                        dict[j] = new List<double>();
+
+                    dict[j].Add((double)remainedDevsCount / coreDevs.Count());
+                }
+            }
+
+            var list = new Dictionary<long,double>();
+            foreach (var kv in dict)
+            {
+                list[kv.Key]= kv.Value.Average();
+            }*/
+
             _logger.LogInformation("{datetime}: initializing the Time Machine.",DateTime.Now);
 
             var knowledgeShareStrategy = KnowledgeShareStrategy.Create(lossSimulation.KnowledgeShareStrategyType, lossSimulation.KnowledgeSaveReviewerReplacementType);
@@ -408,7 +438,8 @@ namespace RelationalGit.Commands
 
             _logger.LogInformation("{datetime}: Developers are loaded.", DateTime.Now);
 
-            _developersContributions = _dbContext.DeveloperContributions.ToArray();
+            
+
 
             _developersContributionsDic = _developersContributions.ToDictionary(q => q.PeriodId+ "-" + q.NormalizedName);
 
@@ -436,7 +467,7 @@ namespace RelationalGit.Commands
             _canononicalPathMapper,
             _GitHubGitUsernameMapper,
             _periods,
-            lossSimulation.FirstPeriod);
+            lossSimulation.FirstPeriod,lossSimulation.SelectedReviewersType);
 
 
             return timeMachine;

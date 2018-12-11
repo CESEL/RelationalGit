@@ -17,7 +17,7 @@ namespace RelationalGit
 {
     public class RandomKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        private Random random=new Random();
+        private static Random _random=new Random();
 
         public RandomKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
         { }
@@ -27,19 +27,35 @@ namespace RelationalGit
             if(pullRequestContext.ActualReviewers.Count()==0)
                 return new PullRequestRecommendationResult(new string[0]);
 
-            var availableDevs = pullRequestContext.AvailableDevelopers.Where(q => q.TotalCommits > 10 || q.TotalReviews > 10).ToArray();
+            var availableDevs = pullRequestContext.AvailableDevelopers.Where(q => IsCoreDeveloper(pullRequestContext,q.NormalizedName)).ToArray();
             var reviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray();
 
             if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.OneOfActuals)
             {
-                return new PullRequestRecommendationResult(OneOfActualsRecomendation(availableDevs, reviewers));
+                return new PullRequestRecommendationResult(OneOfActualsRecomendation(availableDevs, reviewers), availableDevs.Select(q => q.NormalizedName).ToArray());
             }
             else if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.AllOfActuals)
             {
-                return new PullRequestRecommendationResult(AllOfActualsRecomendation(availableDevs, reviewers));
+                return new PullRequestRecommendationResult(AllOfActualsRecomendation(availableDevs, reviewers), availableDevs.Select(q => q.NormalizedName).ToArray());
+            }
+            else if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.AddNewReviewerToActuals)
+            {
+                return new PullRequestRecommendationResult(AddNewReviewerToActualsRecommendation(availableDevs, reviewers), availableDevs.Select(q=>q.NormalizedName).ToArray());
             }
 
             throw new Exception($"the specified ReviewerReplacementStrategyType is unknown: {ReviewerReplacementStrategyType}");
+        }
+
+        private string[] AddNewReviewerToActualsRecommendation(Developer[] availableDevs, string[] reviewers)
+        {
+            var possibleCandidates = availableDevs.Where(q => reviewers.All(r => r != q.NormalizedName)).ToArray();
+
+            if (possibleCandidates.Length == 0)
+                return reviewers;
+
+            var selectedDeveloper = _random.Next(0, possibleCandidates.Length);
+            return reviewers.Concat(new[]{ possibleCandidates[selectedDeveloper].NormalizedName}).ToArray();
+
         }
 
         private string[] AllOfActualsRecomendation(Developer[] availableDevs, string[] reviewers)
@@ -49,10 +65,10 @@ namespace RelationalGit
 
             for (int i = 0; i < countOfPossibleRecommendation;)
             {
-                var selectedReviewer = random.Next(0, reviewers.Length);
-                if (!recommendations.Any(q => q == reviewers[selectedReviewer]))
+                var selectedReviewer = _random.Next(0, availableDevs.Length);
+                if (!recommendations.Any(q => q == availableDevs[selectedReviewer].NormalizedName))
                 {
-                    recommendations[i] = reviewers[selectedReviewer];
+                    recommendations[i] = availableDevs[selectedReviewer].NormalizedName;
                     i++;
                 }
             }
@@ -62,12 +78,14 @@ namespace RelationalGit
 
         private string[] OneOfActualsRecomendation(Developer[] availableDevs, string[] reviewers)
         {
+            var possibleCandidates = availableDevs.Where(q => reviewers.All(r => r != q.NormalizedName)).ToArray();
+
             var recommendations = (string[]) reviewers.Clone();
 
-            var selectedReviewer = random.Next(0, reviewers.Length);
-            var selectedDeveloper = random.Next(0, availableDevs.Length);
+            var selectedReviewer = _random.Next(0, reviewers.Length);
+            var selectedDeveloper = _random.Next(0, possibleCandidates.Length);
 
-            recommendations[selectedReviewer] = availableDevs[selectedDeveloper].NormalizedName;
+            recommendations[selectedReviewer] = possibleCandidates[selectedDeveloper].NormalizedName;
 
             return recommendations;
         }
