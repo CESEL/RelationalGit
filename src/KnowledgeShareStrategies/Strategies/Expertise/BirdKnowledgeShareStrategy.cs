@@ -1,23 +1,14 @@
-﻿
-using LibGit2Sharp;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-using System.Management.Automation;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Threading;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-
-namespace RelationalGit
+﻿namespace RelationalGit
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
     public class BirdKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
-        public BirdKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
-        { }
+        public BirdKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
+            : base(knowledgeSaveReviewerReplacementType)
+        {
+        }
 
         protected override DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext, DeveloperKnowledge[] candidates)
         {
@@ -27,16 +18,23 @@ namespace RelationalGit
                 {
                     var canonicalPath = pullRequestContext.CanononicalPathMapper.GetValueOrDefault(pullRequestFile.FileName);
                     if (canonicalPath == null)
+                    {
                         continue;
+                    }
 
                     var fileExpertise = pullRequestContext.KnowledgeMap.PullRequestEffortKnowledgeMap.GetFileExpertise(canonicalPath);
-                    var reviewerExpertise = pullRequestContext.KnowledgeMap.PullRequestEffortKnowledgeMap.GetReviewerExpertise(canonicalPath,candidate.DeveloperName);
 
                     if (fileExpertise.TotalComments == 0)
+                    {
                         continue;
+                    }
+
+                    var reviewerExpertise = pullRequestContext.KnowledgeMap.PullRequestEffortKnowledgeMap.GetReviewerExpertise(canonicalPath,candidate.DeveloperName);
 
                     if (reviewerExpertise == (0, 0, null))
+                    {
                         continue;
+                    }
 
                     var scoreTotalComments = reviewerExpertise.TotalComments / (double)fileExpertise.TotalComments;
                     var scoreTotalWorkDays = reviewerExpertise.TotalWorkDays / (double)fileExpertise.TotalWorkDays;

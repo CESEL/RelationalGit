@@ -1,17 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-
-using AutoMapper;
 using RelationalGit.Commands;
-using LibGit2Sharp;
-using System.Linq;
 using RelationalGit.Mapping;
-using Microsoft.EntityFrameworkCore;
-using Octokit.Internal;
-using Octokit;
 using System.IO;
-using System.Management.Automation;
 using RelationalGit.CommandLine;
 using CommandLine;
 using Microsoft.Extensions.Logging;
@@ -82,7 +73,9 @@ namespace RelationalGit
                 .WithNotParsed(errors => Console.WriteLine(errors.ToString()));
 
             if (string.IsNullOrEmpty(userInput.AppsettingsPath))
+            {
                 userInput.AppsettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "relationalgit.json");
+            }
 
             GitRepositoryDbContext.AppSettingsPath = userInput.AppsettingsPath;
 

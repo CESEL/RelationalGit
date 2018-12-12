@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 {
     public class FileLevelSpreadingKnowledgeShareStrategy : SpreadingKnowledgeShareStrategyBase
     {
-        public FileLevelSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
-        { }
+        public FileLevelSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
+            : base(knowledgeSaveReviewerReplacementType)
+        {
+        }
 
         private DeveloperKnowledge[] GetChangeableReviewers(PullRequestContext pullRequestContext, string[] fixedReviewers)
         {
@@ -17,12 +18,10 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
         private DeveloperKnowledge[] GetFixedReviewers(PullRequestContext pullRequestContext)
         {
-            var fixedDevelopers = pullRequestContext.ActualReviewers
+            return pullRequestContext.ActualReviewers
                 .OrderBy(q => pullRequestContext.Developers[q.DeveloperName].TotalCommits + pullRequestContext.Developers[q.DeveloperName].TotalReviews)
                 .TakeLast(1)
                 .ToArray();
-
-            return fixedDevelopers;
         }
 
         internal override bool ShouldRecommend(PullRequestContext pullRequestContext)
@@ -34,9 +33,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         {
             simulationResults.Sort();
 
-            var recommendedSet = simulationResults[simulationResults.Count - 1];
-
-            return recommendedSet;
+            return simulationResults[simulationResults.Count - 1];
         }
 
         internal override IEnumerable<(string[] Reviewers, DeveloperKnowledge SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs, PullRequestKnowledgeDistribution prereviewKnowledgeDistribution)
@@ -72,8 +69,10 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
     public class FileLevelSpreadingKnowledgeReplaceAllShareStrategy : FileLevelSpreadingKnowledgeShareStrategy
     {
-        public FileLevelSpreadingKnowledgeReplaceAllShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
-        { }
+        public FileLevelSpreadingKnowledgeReplaceAllShareStrategy(string knowledgeSaveReviewerReplacementType)
+            : base(knowledgeSaveReviewerReplacementType)
+        {
+        }
 
         internal override bool ShouldRecommend(PullRequestContext pullRequestContext)
         {
@@ -96,9 +95,11 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         private void GetAllPossibleSets(DeveloperKnowledge[] availableDevs,int currentIndex, int numberOfReviewers, List<string[]> foundSets, List<string> currentSet)
         {
             if (numberOfReviewers == 0)
+            {
                 return;
+            }
 
-            for (int i = currentIndex; i < availableDevs.Length-numberOfReviewers + 1; i++)
+            for (int i = currentIndex; i < availableDevs.Length - numberOfReviewers + 1; i++)
             {
                 currentSet.Add(availableDevs[i].DeveloperName);
 
@@ -111,7 +112,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
                     GetAllPossibleSets(availableDevs, i + 1, numberOfReviewers - 1, foundSets, currentSet);
                 }
 
-                currentSet.RemoveAt(currentSet.Count-1);
+                currentSet.RemoveAt(currentSet.Count - 1);
             }
         }
     }

@@ -1,7 +1,5 @@
 ﻿using RelationalGit.KnowledgeShareStrategies.Models;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace RelationalGit
 {
@@ -9,8 +7,10 @@ namespace RelationalGit
     {
         private Random _random = new Random();
 
-        public RealisticRandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
-        { }
+        public RealisticRandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
+            : base(knowledgeSaveReviewerReplacementType)
+        {
+        }
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {

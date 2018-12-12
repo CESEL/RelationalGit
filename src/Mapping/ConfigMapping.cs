@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RelationalGit.Mapping
@@ -18,7 +16,7 @@ namespace RelationalGit.Mapping
 
                 cfg.CreateMap<Octokit.PullRequest, PullRequest>()
                 .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.Value.ToUniversalTime()))
-                .ForMember(d => d.MergedAtDateTime, opt => opt.MapFrom(s => s.MergedAt.HasValue? s.MergedAt.Value.DateTime:default(DateTime?)));
+                .ForMember(d => d.MergedAtDateTime, opt => opt.MapFrom(s => s.MergedAt.HasValue ? s.MergedAt.Value.DateTime : default(DateTime?)));
 
                 cfg.CreateMap<Octokit.IssueComment, IssueComment>()
                 .ForMember(d => d.CreatedAtDateTime, opt => opt.MapFrom(s => s.CreatedAt.ToUniversalTime()))
@@ -29,14 +27,14 @@ namespace RelationalGit.Mapping
 
                 cfg.CreateMap<Octokit.Issue, Issue>()
                 .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.HasValue ? s.ClosedAt.Value.DateTime : default(DateTime?)))
-                .ForMember(d=>d.State,opt=>opt.MapFrom(s=>s.State.ToString()))
+                .ForMember(d => d.State,opt => opt.MapFrom(s => s.State.ToString()))
                 .ForMember(d => d.PullRequestNumber, 
                 opt => 
-                opt.MapFrom(s => s.PullRequest!=null? int.Parse(new Regex(".*\\/(?<pull_request_number>\\d+)")
+                opt.MapFrom(s => s.PullRequest != null ? int.Parse(new Regex(".*\\/(?<pull_request_number>\\d+)")
                                 .Match(s.PullRequest.Url)
                                 .Groups["pull_request_number"]
-                                .Value):0 ))
-                .ForMember(d => d.Label, opt => opt.MapFrom(s => string.Join(",",s.Labels.SelectMany(l=>l.Name))));
+                                .Value) : 0 ))
+                .ForMember(d => d.Label, opt => opt.MapFrom(s => string.Join(",",s.Labels.SelectMany(l => l.Name))));
 
                 cfg.CreateMap<Octokit.PullRequestReview, PullRequestReviewer>()
                 .ForMember(d => d.State, opt => opt.MapFrom(s => s.State.ToString()));

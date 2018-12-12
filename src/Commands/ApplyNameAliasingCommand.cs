@@ -1,12 +1,7 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Diacritics.Extensions;
-using F23.StringSimilarity;
 using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands

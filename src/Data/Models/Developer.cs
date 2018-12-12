@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using System.Text;
 
 namespace RelationalGit
 {
@@ -23,12 +22,14 @@ namespace RelationalGit
 
         [NotMapped]
         public Dictionary<long,DeveloperContribution> ContributionsPerPeriod { get; private set; }
-        public long LastParticipationPeriodId => Math.Max(LastReviewPeriodId??0,LastCommitPeriodId??0);
+        public long LastParticipationPeriodId => Math.Max(LastReviewPeriodId ?? 0,LastCommitPeriodId ?? 0);
         public long FirstParticipationPeriodId => Math.Min(FirstCommitPeriodId ?? int.MaxValue, FirstReviewPeriodId ?? int.MaxValue);
         internal void AddContributions(IEnumerable<DeveloperContribution> contributions)
         {
             if(ContributionsPerPeriod == null)
+            {
                 ContributionsPerPeriod = new Dictionary<long, DeveloperContribution>();
+            }
 
             foreach (var contribution in contributions)
             {

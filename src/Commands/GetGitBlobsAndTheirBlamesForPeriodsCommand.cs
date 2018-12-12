@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RelationalGit.Commands
@@ -47,8 +46,11 @@ namespace RelationalGit.Commands
 
             periods = periods.Where(m => !extractedCommits.Any(c => c == m.LastCommitSha)).ToArray();
 
-            if (options.PeriodIds != null && options.PeriodIds.Count()>0)
+            if (options.PeriodIds != null && options.PeriodIds.Count() > 0)
+            {
                 periods = periods.Where(q => options.PeriodIds.Any(p => p == q.Id)).ToArray();
+            }
+
             return periods;
         }
 

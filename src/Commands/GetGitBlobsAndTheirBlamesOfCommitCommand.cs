@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RelationalGit.Commands
@@ -14,7 +11,7 @@ namespace RelationalGit.Commands
 
         public GetGitBlobsAndTheirBlamesOfCommitCommand(ILogger logger)
         {
-            _logger=logger;
+            _logger = logger;
         }
         public async Task Execute(string repoPath,string branchName,string commitSha,string[] validExtensions, string[] excludedBlamePaths)
         {

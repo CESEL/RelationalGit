@@ -19,7 +19,10 @@ namespace RelationalGit
         /// <param name = "name">The name of the argument</param>
         public static void ArgumentNotNull(object value, string name)
         {
-            if (value != null) return;
+            if (value != null)
+            {
+                return;
+            }
 
             throw new ArgumentNullException(name);
         }
@@ -32,7 +35,10 @@ namespace RelationalGit
         public static void ArgumentNotNullOrEmptyString(string value, string name)
         {
             ArgumentNotNull(value, name);
-            if (!string.IsNullOrWhiteSpace(value)) return;
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
 
             throw new ArgumentException("String cannot be empty", name);
         }
@@ -47,7 +53,10 @@ namespace RelationalGit
         {
             ArgumentNotNull(value, name);
 
-            if (value.TotalMilliseconds > 0) return;
+            if (value.TotalMilliseconds > 0)
+            {
+                return;
+            }
 
             throw new ArgumentException("Timespan must be greater than zero", name);
         }

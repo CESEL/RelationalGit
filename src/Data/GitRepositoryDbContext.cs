@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -18,7 +17,7 @@ namespace RelationalGit
 
         }
 
-        public GitRepositoryDbContext(bool autoDetectChangesEnabled=true,int commandTimeout= 150000)
+        public GitRepositoryDbContext(bool autoDetectChangesEnabled = true,int commandTimeout = 150000)
         {
             Database.SetCommandTimeout(commandTimeout);
             ChangeTracker.AutoDetectChangesEnabled = autoDetectChangesEnabled;
@@ -99,7 +98,9 @@ namespace RelationalGit
             {
                 if (canonicalDictionary.ContainsKey(canonicalResult.Path)
                     && canonicalDictionary[canonicalResult.Path] != canonicalResult.CanonicalPath)
+                {
                     k++;
+                }
 
                 canonicalDictionary[canonicalResult.Path] = canonicalResult.CanonicalPath;
             }
@@ -141,16 +142,20 @@ namespace RelationalGit
             foreach(var reviewerInPeriod in reviewersInPeriods)
             {
                 // we don't drop a reviewer if we couldn't find the corresponding normalized name. Instead we use the GitHub Login directly.
-                var normalizedName = githubGitMapper.FirstOrDefault(q=>q.GitHubUsername==reviewerInPeriod.GitHubUserLogin)
+                var normalizedName = githubGitMapper.FirstOrDefault(q => q.GitHubUsername == reviewerInPeriod.GitHubUserLogin)
                 ?.GitNormalizedUsername ?? "UnmatchedGithubLogin-" + reviewerInPeriod.GitHubUserLogin;
 
-                if(normalizedName==null)
+                if(normalizedName == null)
+                {
                     continue;
+                }
 
-                if(!dic.ContainsKey(normalizedName))
-                    dic[normalizedName]=new Dictionary<long,int>();
-                
-                dic[normalizedName][reviewerInPeriod.PeriodId]=reviewerInPeriod.Count;
+                if (!dic.ContainsKey(normalizedName))
+                {
+                    dic[normalizedName] = new Dictionary<long,int>();
+                }
+
+                dic[normalizedName][reviewerInPeriod.PeriodId] = reviewerInPeriod.Count;
             }
 
             return dic;
@@ -247,7 +252,7 @@ namespace RelationalGit
 
             configuration.HasIndex(b => b.NormalizedAuthorName);
 
-            configuration.HasIndex(b=>b.Ignore);
+            configuration.HasIndex(b => b.Ignore);
 
         }
     }
@@ -292,7 +297,7 @@ namespace RelationalGit
 
             configuration.HasIndex(b => b.CanonicalPath);
 
-            configuration.HasIndex(b=>b.Ignore);
+            configuration.HasIndex(b => b.Ignore);
 
         }
     }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace RelationalGit.KnowledgeShareStrategies.Models
@@ -26,7 +24,9 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
             pathParts = pathParts.Take(pathParts.Length - parentIndex).ToArray();
 
             if (pathParts.Length == 0)
+            {
                 return new string[] { filePath };
+            }
 
             return _root.GetFiles(pathParts,0);
         }
@@ -48,7 +48,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
         {
             var currentNode = this;
 
-            while (pathParts.Length>indexPart)
+            while (pathParts.Length > indexPart)
             {
                 if (!currentNode._children.ContainsKey(pathParts[indexPart]))
                 {
@@ -68,7 +68,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
         {
             var currentNode = this;
 
-            while (pathParts.Length!=indexPart && currentNode!=null)
+            while (pathParts.Length != indexPart && currentNode != null)
             {
                 currentNode = currentNode._children.GetValueOrDefault(pathParts[indexPart]);
                 indexPart++;

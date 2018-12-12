@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RelationalGit.CommandLine;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RelationalGit.Commands
@@ -23,7 +20,7 @@ namespace RelationalGit.Commands
                 var cmd = new GetPullRequestsCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName:"mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
             }
-            else if (options.Command.ToLower() ==CommandType.GetPullRequestReviewes)
+            else if (options.Command.ToLower() == CommandType.GetPullRequestReviewes)
             {
                 var cmd = new GetPullRequestReviewersCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", options.GitHubOwner, options.GitHubRepo, options.GitBranch);
@@ -88,8 +85,10 @@ namespace RelationalGit.Commands
 
                 var periods = new int[0];
 
-                if(options.BlamePeriods!=null)
+                if(options.BlamePeriods != null)
+                {
                     periods = options.BlamePeriods?.ToArray();
+                }
 
                 if (options.BlamePeriodsRange?.Count() > 0)
                 {
@@ -148,15 +147,15 @@ namespace RelationalGit.Commands
 
                 var lossSimulationOption = new LossSimulationOption()
                 {
-                    KnowledgeShareStrategyType=options.KnowledgeSaveStrategyType,
-                    KnowledgeSaveReviewerReplacementType=options.KnowledgeSaveReviewerReplacementType,
-                    MegaPullRequestSize=options.MegaPullRequestSize.Value,
-                    LeaversType=options.LeaversType,
+                    KnowledgeShareStrategyType = options.KnowledgeSaveStrategyType,
+                    KnowledgeSaveReviewerReplacementType = options.KnowledgeSaveReviewerReplacementType,
+                    MegaPullRequestSize = options.MegaPullRequestSize.Value,
+                    LeaversType = options.LeaversType,
                     FilesAtRiksOwnershipThreshold = options.FilesAtRiksOwnershipThreshold.Value,
                     FilesAtRiksOwnersThreshold = options.FilesAtRiksOwnersThreshold.Value,
                     LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence.Value,
                     KnowledgeSaveReviewerFirstPeriod = options.KnowledgeSaveReviewerFirstPeriod.Value,
-                    SelectedReviewersType=options.SelectedReviewersType
+                    SelectedReviewersType = options.SelectedReviewersType
                 };
 
                 await cmd.Execute(lossSimulationOption);

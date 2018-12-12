@@ -1,12 +1,7 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Diacritics.Extensions;
-using F23.StringSimilarity;
 using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands
@@ -24,7 +19,7 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext())
             {
-                var commitAuthors= await dbContext.Commits
+                var commitAuthors = await dbContext.Commits
                 .FromSql(@"select c1.* from Commits as c1
                 INNER JOIN (select NormalizedAuthorName,AuthorName,max(AuthorDateTime) as AuthorDateTime from Commits
                 group by NormalizedAuthorName,AuthorName) as c2 on c1.AuthorDateTime=c2.AuthorDateTime

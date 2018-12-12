@@ -1,10 +1,7 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RelationalGit.Commands
@@ -45,9 +42,13 @@ namespace RelationalGit.Commands
                         var candidateCommits = commits.Where(q => !q.Ignore && q.AuthorDateTime <= commits[i - 1].AuthorDateTime);
 
                         if (candidateCommits.Count() > 0) // the problem happens (rarely) in the first period.
+                        {
                             periods[currentPeriodIndex].LastCommitSha = candidateCommits.Last().Sha;
+                        }
                         else
+                        {
                             periods[currentPeriodIndex].LastCommitSha = periods[currentPeriodIndex].FirstCommitSha;
+                        }
 
                         currentPeriodIndex++;
 
@@ -76,7 +77,7 @@ namespace RelationalGit.Commands
 
         private Period[] GetPeriods(string periodType, int periodLength, DateTime beginDatetime, DateTime endDatetime)
         {
-            var periodId=0;
+            var periodId = 0;
             var periods = new List<Period>();
             var pinDatetime = beginDatetime;
 
@@ -84,7 +85,7 @@ namespace RelationalGit.Commands
             {
                 periods.Add(new Period()
                 {
-                    Id=++periodId,                    
+                    Id = ++periodId,                    
                     FromDateTime = pinDatetime,
                     ToDateTime = periodType == PeriodType.Month 
                     ? pinDatetime.AddMonths(periodLength)

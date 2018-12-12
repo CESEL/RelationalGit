@@ -2,14 +2,7 @@
 using LibGit2Sharp;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
-using System.Management.Automation;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Threading;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 using RelationalGit.KnowledgeShareStrategies.Models;
@@ -187,7 +180,7 @@ namespace RelationalGit
 
             return new PullRequestContext()
             {
-                SelectedReviewersType=_selectedReviewersType,
+                SelectedReviewersType = _selectedReviewersType,
                 PRSubmitterNormalizedName = prSubmitter?.NormalizedName,
                 ActualReviewers = actualReviewers.ToArray(),
                 PullRequestFiles = pullRequestFiles,
@@ -207,7 +200,7 @@ namespace RelationalGit
         {
             foreach (var item in subset)
             {
-                yield return superset.SingleOrDefault(q => q.DeveloperName == item)?? new DeveloperKnowledge()
+                yield return superset.SingleOrDefault(q => q.DeveloperName == item) ?? new DeveloperKnowledge()
                 {
                     DeveloperName = item
                 };
@@ -239,7 +232,9 @@ namespace RelationalGit
                 var fileCommitsDetail = knowledgeDistributionMap.CommitBasedKnowledgeMap[canonicalPath];
 
                 if (fileCommitsDetail == null)
+                {
                     return;
+                }
 
                 foreach (var devCommitDetail in fileCommitsDetail.Values)
                 {
@@ -258,7 +253,9 @@ namespace RelationalGit
                 var fileReviewDetails = knowledgeDistributionMap.ReviewBasedKnowledgeMap[canonicalPath];
 
                 if (fileReviewDetails == null)
+                {
                     return;
+                }
 
                 foreach (var devReviewDetail in fileReviewDetails.Values)
                 {
@@ -288,7 +285,9 @@ namespace RelationalGit
             developersKnowledge[developerName].NumberOfReviews += developerFileReveiewDetail.PullRequests.Count();
 
             if (!hasCommittedThisFileBefore)
+            {
                 developersKnowledge[developerName].NumberOfTouchedFiles++;
+            }
 
             developersKnowledge[developerName].NumberOfReviewedFiles++;
         }
@@ -347,10 +346,14 @@ namespace RelationalGit
             // which may not be correct in rare scenarios
 
             if (prMergedCommit == null || pullRequest == null)
+            {
                 return;
+            }
 
             if (pullRequest.MergeCommitSha != prMergedCommit.Sha)
+            {
                 return;
+            }
 
             // some of the pull requests have no modified files
             // https://github.com/dotnet/coreclr/pull/13534
@@ -359,8 +362,10 @@ namespace RelationalGit
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin)?.NormalizedName;
 
             // we have ignored mega developers
-            if(prSubmitter==null)
+            if(prSubmitter == null)
+            {
                 return;
+            }
 
             var period = GetPeriodOfCommit(prMergedCommit);
 
@@ -374,7 +379,9 @@ namespace RelationalGit
         private void AssignKnowledgeToDeveloper(Commit commit,ChangeKind changeKind, string developerName, Period period, string filePath)
         {
             if (filePath == null || developerName == null)
+            {
                 return;
+            }
 
             var developer = DevelopersDic[developerName];
 
@@ -399,7 +406,7 @@ namespace RelationalGit
             {
                 // should we consider Canonical Path or Path?
                 var canonicalPath = change.CanonicalPath;
-                AssignKnowledgeToDeveloper(commit,(ChangeKind)change.Status, developerName, period, canonicalPath);
+                AssignKnowledgeToDeveloper(commit, (ChangeKind)change.Status, developerName, period, canonicalPath);
             }
         }
 
@@ -450,7 +457,9 @@ namespace RelationalGit
             {
                 key = pullRequestFiles[i].PullRequestNumber;
                 if (!result.ContainsKey(key))
+                {
                     result[key] = new List<PullRequestFile>();
+                }
 
                 result[key].Add(pullRequestFiles[i]);
             }
@@ -467,7 +476,9 @@ namespace RelationalGit
             {
                 key = committedChanges[i].CommitSha;
                 if (!result.ContainsKey(key))
+                {
                     result[key] = new List<CommittedChange>();
+                }
 
                 result[key].Add(committedChanges[i]);
             }
@@ -490,15 +501,19 @@ namespace RelationalGit
                 var prNumber = pullRequestReviewComments[i].PullRequestNumber;
 
                 if(ShouldConsiderComment(prNumber,pullRequestReviewComments[i]))
+                {
                     AssignReviewerToPullRequest(pullRequestReviewComments[i].UserLogin,  prNumber,result);
+                }
             }
 
             for (var i = 0; i < issueComments.Length; i++)
             {
-                var prNumber = (int) issueComments[i].IssueNumber;
+                var prNumber = (int)issueComments[i].IssueNumber;
 
                 if (ShouldConsiderComment(prNumber, issueComments[i]))
+                {
                     AssignReviewerToPullRequest(issueComments[i].UserLogin, prNumber, result);
+                }
             }
 
             return result;
@@ -513,7 +528,9 @@ namespace RelationalGit
                 // if a comment has been left after merge, we don't consider the commenter
                 // as a knoledgeable person about the PR
             if (prMergedDateTime < pullRequestReviewerComment.CreatedAtDateTime || pullRequestReviewerComment.UserLogin == pr.UserLogin)
+            {
                 return false;
+            }
 
             return true;
         }
@@ -526,8 +543,10 @@ namespace RelationalGit
 
             // if a comment has been left after merge, we don't consider the commenter
             // as a knoledgeable person about the PR
-            if (prMergedDateTime < issueComment.CreatedAtDateTime || issueComment.UserLogin==pr.UserLogin)
+            if (prMergedDateTime < issueComment.CreatedAtDateTime || issueComment.UserLogin == pr.UserLogin)
+            {
                 return false;
+            }
 
             return true;
         }
@@ -537,17 +556,23 @@ namespace RelationalGit
             var prSubmitter = PullRequestsDic[prNumber].UserLogin;
 
             if (prSubmitter == reviewerName)
+            {
                 return;
+            }
 
             if (!prReviewers.ContainsKey(prNumber))
+            {
                 prReviewers[prNumber] = new List<string>();
+            }
 
             var reviewerNormalizedName = UsernameRepository.GetByGitHubLogin(reviewerName)?.NormalizedName;
 
             // Pull Request Reviewers and Comments contains duplicated items, So we need to check for it
             // https://api.github.com/repos/dotnet/coreclr/pulls/7886/reviews
             if (reviewerNormalizedName != null && !prReviewers[prNumber].Any(q => q == reviewerNormalizedName))
+            {
                 prReviewers[prNumber].Add(reviewerNormalizedName);
+            }
         }
 
         private void GetDevelopersContributions(Developer[] developers, DeveloperContribution[] developersContributions)

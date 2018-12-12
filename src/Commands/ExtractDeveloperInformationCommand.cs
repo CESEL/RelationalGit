@@ -3,10 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Diacritics.Extensions;
-using F23.StringSimilarity;
 using Microsoft.Extensions.Logging;
 
 namespace RelationalGit.Commands
@@ -26,7 +23,7 @@ namespace RelationalGit.Commands
             {
                 _logger.LogInformation("{datetime}: extracting developer statistics for each period.", DateTime.Now);
 
-                var reviewersDic =dbContext.GetPeriodReviewerCounts();
+                var reviewersDic = dbContext.GetPeriodReviewerCounts();
                 await ExtractDevelopersInformation(reviewersDic,dbContext);
                 await ExctractContributionsPerPeriod(coreDeveloperThreshold,coreDeveloperCalculationType,reviewersDic, dbContext);
                 await dbContext.SaveChangesAsync();
@@ -76,10 +73,10 @@ namespace RelationalGit.Commands
                     knowledgePortions += ownershipPercentage;
 
                     var totalReviews = reviewersInPeriods.ContainsKey(dev.DeveloperName)
-                    ?reviewersInPeriods[dev.DeveloperName].ContainsKey(period.Id)
-                    ?reviewersInPeriods[dev.DeveloperName][period.Id]
-                    :0
-                    :0;
+                    ? reviewersInPeriods[dev.DeveloperName].ContainsKey(period.Id)
+                    ? reviewersInPeriods[dev.DeveloperName][period.Id]
+                    : 0
+                    : 0;
 
                     dbContext.Add(new DeveloperContribution()
                     {
@@ -89,7 +86,7 @@ namespace RelationalGit.Commands
                         PeriodId = period.Id,
                         LinesPercentage = ownershipPercentage,
                         TotalCommits = commits.SingleOrDefault(q => q.PeriodId == period.Id && q.DeveloperName == dev.DeveloperName)?.TotalCommits ?? 0,
-                        TotalReviews=totalReviews
+                        TotalReviews = totalReviews
                     });
                 }
                 
@@ -116,16 +113,16 @@ namespace RelationalGit.Commands
 
         private bool IsCore(double knowledgePortions, double authorshipPercentage,int authoredLines, double threshold, string coreDeveloperCalculationType)
         {
-            if(coreDeveloperCalculationType==CoreDeveloperCalculationType.AuthorshipQuantile){
+            if(coreDeveloperCalculationType == CoreDeveloperCalculationType.AuthorshipQuantile){
                  return knowledgePortions <= threshold;
             }
-            else if (coreDeveloperCalculationType==CoreDeveloperCalculationType.AuthoredLinesPercentage)
+            else if (coreDeveloperCalculationType == CoreDeveloperCalculationType.AuthoredLinesPercentage)
             {   
-                return authorshipPercentage>=threshold;
+                return authorshipPercentage >= threshold;
             }
-            else if (coreDeveloperCalculationType==CoreDeveloperCalculationType.AuthoredLines)
+            else if (coreDeveloperCalculationType == CoreDeveloperCalculationType.AuthoredLines)
             {   
-                return authoredLines>=threshold;
+                return authoredLines >= threshold;
             }
 
             throw new ArgumentException($"Undefined {nameof(coreDeveloperCalculationType)}");
@@ -145,15 +142,15 @@ namespace RelationalGit.Commands
                 var totalReviews = 0;
                 long? firstReviewPeriodId = null;
                 long? lastReviewPeriodId = null;
-                var allReviewPeriods ="";
+                var allReviewPeriods = "";
                 var allReviews = reviewersInPeriods.GetValueOrDefault(group.Key);
 
-                if(allReviews!=null)
+                if(allReviews != null)
                 {
-                    totalReviews = allReviews.Sum(q=>q.Value);
-                    firstReviewPeriodId = allReviews.Min(q=>q.Key);
-                    lastReviewPeriodId = allReviews.Max(q=>q.Key);
-                    allReviewPeriods = allReviews.Keys.Select(q=>q.ToString()).Aggregate((a, b) => (a + "," + b)).ToString();
+                    totalReviews = allReviews.Sum(q => q.Value);
+                    firstReviewPeriodId = allReviews.Min(q => q.Key);
+                    lastReviewPeriodId = allReviews.Max(q => q.Key);
+                    allReviewPeriods = allReviews.Keys.Select(q => q.ToString()).Aggregate((a, b) => (a + "," + b)).ToString();
                 }
 
                 dbContext.Add(new Developer()
@@ -168,8 +165,8 @@ namespace RelationalGit.Commands
                     LastCommitPeriodId = group.Max(q => q.PeriodId),
                     FirstCommitPeriodId = group.Min(q => q.PeriodId),
                     TotalReviews = totalReviews,
-                    FirstReviewPeriodId=firstReviewPeriodId,
-                    LastReviewPeriodId=lastReviewPeriodId,
+                    FirstReviewPeriodId = firstReviewPeriodId,
+                    LastReviewPeriodId = lastReviewPeriodId,
                     AllReviewPeriods = allReviewPeriods
                 });
             }

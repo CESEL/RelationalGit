@@ -7,19 +7,24 @@ namespace RelationalGit
 {
     public abstract class SpreadingKnowledgeShareStrategyBase : KnowledgeShareStrategy
     {
-        public SpreadingKnowledgeShareStrategyBase(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
+        public SpreadingKnowledgeShareStrategyBase(string knowledgeSaveReviewerReplacementType)
+            : base(knowledgeSaveReviewerReplacementType)
         {
         }
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
             if (!ShouldRecommend(pullRequestContext))
+            {
                 return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers);
+            }
 
             var availableDevs = AvailablePRKnowledgeables(pullRequestContext);
 
             if (availableDevs.Length == 0)
+            {
                 return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers);
+            }
 
             var simulationResults = new List<PullRequestKnowledgeDistribution>();
             var simulator = new PullRequestReviewSimulator(pullRequestContext, availableDevs);
@@ -151,7 +156,7 @@ namespace RelationalGit
             }
 
             PullRequestKnowledgeDistributionFactors.TotalKnowledgeables += knowledgeables.Length;
-            PullRequestKnowledgeDistributionFactors.AddedKnowledge += reviewers?.Where(r => existingKnowledgeables.All(e => e != r)).Count()??0;
+            PullRequestKnowledgeDistributionFactors.AddedKnowledge += reviewers?.Where(r => existingKnowledgeables.All(e => e != r)).Count() ?? 0;
         }
 
         public int CompareTo(PullRequestKnowledgeDistribution other)
@@ -187,16 +192,26 @@ namespace RelationalGit
         public int CompareTo(PullRequestKnowledgeDistributionFactors other)
         {
             if (AddedKnowledge > other.AddedKnowledge)
+            {
                 return 1;
+            }
+
             if (AddedKnowledge < other.AddedKnowledge)
+            {
                 return -1;
+            }
 
             if (FilesAtRisk > other.FilesAtRisk)
+            {
                 return 1;
-            if (FilesAtRisk < other.FilesAtRisk)
-                return -1;
+            }
 
-            if (CandidateReviewerKnowledge!= other.CandidateReviewerKnowledge && (CandidateReviewerKnowledge == null || other.CandidateReviewerKnowledge == null))
+            if (FilesAtRisk < other.FilesAtRisk)
+            {
+                return -1;
+            }
+
+            if (CandidateReviewerKnowledge != other.CandidateReviewerKnowledge && (CandidateReviewerKnowledge == null || other.CandidateReviewerKnowledge == null))
             {
                 var actual = CandidateReviewerKnowledge == null ? this : other;
                 var simulated = CandidateReviewerKnowledge == null ? other : this;
@@ -208,27 +223,44 @@ namespace RelationalGit
                         var developerKnowledge = _availableDevs.SingleOrDefault(q => q.DeveloperName == actualReviewer);
 
                         if (developerKnowledge != null && developerKnowledge.NumberOfTouchedFiles >= simulated.CandidateReviewerKnowledge.NumberOfTouchedFiles)
+                        {
                             return (actual == this) ? 1 : -1;
+                        }
                     }
                 }
             }
             else
             {
                 if (CandidateReviewerKnowledge?.NumberOfTouchedFiles > other.CandidateReviewerKnowledge?.NumberOfTouchedFiles)
+                {
                     return 1;
+                }
+
                 if (CandidateReviewerKnowledge?.NumberOfTouchedFiles < other.CandidateReviewerKnowledge?.NumberOfTouchedFiles)
+                {
                     return -1;
+                }
             }
 
             if (TotalKnowledgeables > other.TotalKnowledgeables)
+            {
                 return 1;
+            }
+
             if (TotalKnowledgeables < other.TotalKnowledgeables)
+            {
                 return -1;
+            }
 
             if (Reviewers.All(q => PullRequestContext.ActualReviewers.Any(q1 => q1.DeveloperName == q)))
+            {
                 return 1;
+            }
+
             if (other.Reviewers.All(q => PullRequestContext.ActualReviewers.Any(q1 => q1.DeveloperName == q)))
+            {
                 return -1;
+            }
 
             return 0;
         }

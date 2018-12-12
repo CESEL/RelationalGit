@@ -1,31 +1,25 @@
-﻿
-using LibGit2Sharp;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using System.Linq;
-using System.Management.Automation;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Threading;
 using AutoMapper;
-using Microsoft.Extensions.Logging;
 using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
     public class RandomKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        private static Random _random=new Random();
+        private static Random _random = new Random();
 
-        public RandomKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
-        { }
+        public RandomKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
+            : base(knowledgeSaveReviewerReplacementType)
+        {
+        }
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            if(pullRequestContext.ActualReviewers.Count()==0)
+            if(pullRequestContext.ActualReviewers.Count() == 0)
+            {
                 return new PullRequestRecommendationResult(new string[0]);
+            }
 
             var availableDevs = pullRequestContext.AvailableDevelopers.Where(q => IsCoreDeveloper(pullRequestContext,q.NormalizedName)).ToArray();
             var reviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray();
@@ -40,7 +34,7 @@ namespace RelationalGit
             }
             else if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.AddNewReviewerToActuals)
             {
-                return new PullRequestRecommendationResult(AddNewReviewerToActualsRecommendation(availableDevs, reviewers), availableDevs.Select(q=>q.NormalizedName).ToArray());
+                return new PullRequestRecommendationResult(AddNewReviewerToActualsRecommendation(availableDevs, reviewers), availableDevs.Select(q => q.NormalizedName).ToArray());
             }
 
             throw new Exception($"the specified ReviewerReplacementStrategyType is unknown: {ReviewerReplacementStrategyType}");
@@ -51,7 +45,9 @@ namespace RelationalGit
             var possibleCandidates = availableDevs.Where(q => reviewers.All(r => r != q.NormalizedName)).ToArray();
 
             if (possibleCandidates.Length == 0)
+            {
                 return reviewers;
+            }
 
             var selectedDeveloper = _random.Next(0, possibleCandidates.Length);
             return reviewers.Concat(new[]{ possibleCandidates[selectedDeveloper].NormalizedName}).ToArray();
@@ -80,7 +76,7 @@ namespace RelationalGit
         {
             var possibleCandidates = availableDevs.Where(q => reviewers.All(r => r != q.NormalizedName)).ToArray();
 
-            var recommendations = (string[]) reviewers.Clone();
+            var recommendations = (string[])reviewers.Clone();
 
             var selectedReviewer = _random.Next(0, reviewers.Length);
             var selectedDeveloper = _random.Next(0, possibleCandidates.Length);

@@ -1,8 +1,6 @@
 ﻿using CommandLine;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace RelationalGit.CommandLine
 {
@@ -98,8 +96,8 @@ namespace RelationalGit.CommandLine
         {
             var overridedInputOption = new InputOption()
             {
-                Command=Command,
-                AppsettingsPath=AppsettingsPath
+                Command = Command,
+                AppsettingsPath = AppsettingsPath
             };
             
             overridedInputOption.CoreDeveloperCalculationType = Override(CoreDeveloperCalculationType, fileConfigurationOption.CoreDeveloperCalculationType);
@@ -125,7 +123,7 @@ namespace RelationalGit.CommandLine
             overridedInputOption.IssueLabels = Override(IssueLabels, fileConfigurationOption.IssueLabels);
             overridedInputOption.IssueState = Override(IssueState, fileConfigurationOption.IssueState);
             overridedInputOption.ExcludeBlamePath = Override(ExcludeBlamePath, fileConfigurationOption.ExcludeBlamePath);
-            overridedInputOption.BlamePeriodsRange= Override(BlamePeriodsRange, fileConfigurationOption.BlamePeriodsRange);
+            overridedInputOption.BlamePeriodsRange = Override(BlamePeriodsRange, fileConfigurationOption.BlamePeriodsRange);
             overridedInputOption.BlamePeriods = Override(BlamePeriods, fileConfigurationOption.BlamePeriods);
             overridedInputOption.KnowledgeSaveReviewerFirstPeriod = Override(KnowledgeSaveReviewerFirstPeriod, fileConfigurationOption.KnowledgeSaveReviewerFirstPeriod);
             overridedInputOption.SelectedReviewersType = Override(SelectedReviewersType, fileConfigurationOption.SelectedReviewersType);
@@ -141,7 +139,7 @@ namespace RelationalGit.CommandLine
 
         private IEnumerable<T> Override<T>(IEnumerable<T> original, IEnumerable<T> replace)
         {
-            return original != null && original.Count()>0 ? original : replace;
+            return original != null && original.Count() > 0 ? original : replace;
         }
     }
 }

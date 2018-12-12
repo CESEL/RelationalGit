@@ -1,19 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace RelationalGit.KnowledgeShareStrategies.Models
 {
     public class PullRequestRecommendationResult
     {
-        public PullRequestRecommendationResult(DeveloperKnowledge[] selectedReviewers, DeveloperKnowledge[] sortedCandidates= null)
+        public PullRequestRecommendationResult(DeveloperKnowledge[] selectedReviewers, DeveloperKnowledge[] sortedCandidates = null)
         {
-            SortedCandidates = sortedCandidates?.Select(q=>q.DeveloperName).ToArray();
+            SortedCandidates = sortedCandidates?.Select(q => q.DeveloperName).ToArray();
             SelectedReviewers = selectedReviewers.Select(q => q.DeveloperName).ToArray();
         }
 
-        public PullRequestRecommendationResult(string[] selectedReviewers, string[] sortedCandidates=null)
+        public PullRequestRecommendationResult(string[] selectedReviewers, string[] sortedCandidates = null)
         {
             SortedCandidates = sortedCandidates;
             SelectedReviewers = selectedReviewers;

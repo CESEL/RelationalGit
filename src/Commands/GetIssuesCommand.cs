@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RelationalGit.Commands
@@ -16,7 +13,7 @@ namespace RelationalGit.Commands
             _logger = logger;
         }
 
-        public async Task Execute(string token, string agenName, string owner, string repo, string[] labels,string state="All")
+        public async Task Execute(string token, string agenName, string owner, string repo, string[] labels,string state = "All")
         {
             using (var dbContext = new GitRepositoryDbContext())
             {

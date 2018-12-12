@@ -1,14 +1,14 @@
-﻿using RelationalGit.KnowledgeShareStrategies.Models;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace RelationalGit
 {
     public class FolderLevelSpreadingKnowledgeShareStrategy : SpreadingKnowledgeShareStrategyBase
     {
-        public FolderLevelSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) : base(knowledgeSaveReviewerReplacementType)
-        { }
+        public FolderLevelSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
+            : base(knowledgeSaveReviewerReplacementType)
+        {
+        }
 
         internal override DeveloperKnowledge[] AvailablePRKnowledgeables(PullRequestContext pullRequestContext)
         {
@@ -86,12 +86,16 @@ namespace RelationalGit
             {
                 var canonicalPath = pullRequestContext.CanononicalPathMapper[pullRequestFile.FileName];
                 if (canonicalPath == null)
+                {
                     continue;
+                }
 
                 var actualPath = blameSnapshot.GetActualPath(canonicalPath);
 
                 if (actualPath == null)
+                {
                     continue;
+                }
 
                 var neighbors = blameSnapshot.Trie.GetFileNeighbors(1, actualPath);
 

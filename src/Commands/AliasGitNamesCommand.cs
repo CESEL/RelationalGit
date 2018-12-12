@@ -1,9 +1,6 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Diacritics.Extensions;
 using F23.StringSimilarity;
@@ -25,7 +22,7 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                var normalizedDevelopers=new List<AliasedDeveloperName>();
+                var normalizedDevelopers = new List<AliasedDeveloperName>();
 
                 var authorsPlace = new Dictionary<string, string>();
 
@@ -38,13 +35,13 @@ namespace RelationalGit.Commands
 
                 foreach (var author in authors)
                 {
-                    var normalizedEmail=author.AuthorEmail
+                    var normalizedEmail = author.AuthorEmail
                         .Replace(" ",string.Empty)
                         .ToLower()
                         .Trim()
                         .RemoveDiacritics();
                     
-                    var normalizedName=author.AuthorName
+                    var normalizedName = author.AuthorName
                         .Replace(" ",string.Empty)
                         .Trim()
                         .ToLower()
@@ -56,15 +53,17 @@ namespace RelationalGit.Commands
                     
                     if (authorsPlace.ContainsKey(normalizedName))
                     {
-                        var uniqueId= authorsPlace[normalizedName];
+                        var uniqueId = authorsPlace[normalizedName];
 
                         if (authorsPlace.ContainsKey(normalizedEmail) &&
-                            authorsPlace[normalizedEmail]!=uniqueId)
+                            authorsPlace[normalizedEmail] != uniqueId)
                         {
-                            var oldUniqueId=authorsPlace[normalizedEmail];
+                            var oldUniqueId = authorsPlace[normalizedEmail];
                             
-                            foreach(var dev in normalizedDevelopers.Where(q=>q.NormalizedName==oldUniqueId))
-                                dev.NormalizedName=uniqueId;
+                            foreach(var dev in normalizedDevelopers.Where(q => q.NormalizedName == oldUniqueId))
+                            {
+                                dev.NormalizedName = uniqueId;
+                            }
                         }
 
                         authorsPlace[normalizedEmail] = uniqueId;
@@ -81,30 +80,30 @@ namespace RelationalGit.Commands
                     }
 
                     normalizedDevelopers.Add(new AliasedDeveloperName(){
-                        Email=author.AuthorEmail,
-                        Name=author.AuthorName,
-                        NormalizedName=authorsPlace[normalizedName]
+                        Email = author.AuthorEmail,
+                        Name = author.AuthorName,
+                        NormalizedName = authorsPlace[normalizedName]
                     });
                 }
 
                 var damerauDistanceAlgorithm = new Damerau();
-                normalizedDevelopers = normalizedDevelopers.OrderBy(q=>q.NormalizedName)
+                normalizedDevelopers = normalizedDevelopers.OrderBy(q => q.NormalizedName)
                 .ToList();
 
-                for(var i=0;i<normalizedDevelopers.Count-1;i++)
+                for(var i = 0;i < normalizedDevelopers.Count - 1;i++)
                 {
                     var firstDev = normalizedDevelopers[i];
-                    var secondDev=normalizedDevelopers[i+1];
-                    var distance= damerauDistanceAlgorithm.Distance(firstDev.NormalizedName, secondDev.NormalizedName);
+                    var secondDev = normalizedDevelopers[i + 1];
+                    var distance = damerauDistanceAlgorithm.Distance(firstDev.NormalizedName, secondDev.NormalizedName);
                     
-                    if(distance==1)
+                    if(distance == 1)
                     {
-                        secondDev.NormalizedName=firstDev.NormalizedName;        
+                        secondDev.NormalizedName = firstDev.NormalizedName;        
                     }
                 }
 
                 _logger.LogInformation("{datetime}: after normalization, there are {count} unique authors have been found.", 
-                    DateTime.Now, normalizedDevelopers.Select(q=>q.NormalizedName).Distinct().Count());
+                    DateTime.Now, normalizedDevelopers.Select(q => q.NormalizedName).Distinct().Count());
 
 
                 dbContext.AddRange(normalizedDevelopers);
