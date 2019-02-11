@@ -7,14 +7,13 @@ namespace RelationalGit.Commands
 {
     internal class CommandFactory
     {
-        public async Task Execute(InputOption options,ILogger logger)
+        public async Task Execute(InputOption options, ILogger logger)
         {
-            await RunCommand(options,logger);
+            await RunCommand(options, logger);
         }
 
-        private static async Task RunCommand(InputOption options,ILogger logger)
+        private static async Task RunCommand(InputOption options, ILogger logger)
         {
-
             if (options.Command.ToLower() == CommandType.GetPullRequests)
             {
                 var cmd = new GetPullRequestsCommand(logger);
@@ -54,15 +53,15 @@ namespace RelationalGit.Commands
             {
                 var cmd = new GetIssuesCommand(logger);
 
-                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", owner: options.GitHubOwner, repo: options.GitHubRepo, 
-                    labels:options.IssueLabels.ToArray(), 
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", owner: options.GitHubOwner, repo: options.GitHubRepo,
+                    labels:options.IssueLabels.ToArray(),
                     state: options.IssueState);
             }
             else if (options.Command.ToLower() == "-get-issuesevents")
             {
                 var cmd = new GetIssuesEventsCommand(logger);
 
-                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi",owner: options.GitHubOwner,repo: options.GitHubRepo);
+                await cmd.Execute(options.GitHubToken, agenName: "mirsaeedi", owner: options.GitHubOwner, repo: options.GitHubRepo);
             }
             else if (options.Command.ToLower() == CommandType.GetGitCommits)
             {
@@ -77,15 +76,15 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.ExtractBlameFromCommit)
             {
                 var cmd = new GetGitBlobsAndTheirBlamesOfCommitCommand(logger);
-                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.CommitSha,options.Extensions.ToArray(), options.ExcludeBlamePath?.ToArray() ?? new string[0]);
+                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.CommitSha, options.Extensions.ToArray(), options.ExcludeBlamePath?.ToArray() ?? System.Array.Empty<string>());
             }
             else if (options.Command.ToLower() == CommandType.ExtractBlameForEachPeriod)
             {
                 var cmd = new GetGitBlobsAndTheirBlamesForPeriodsCommand(logger);
 
-                var periods = new int[0];
+                var periods = System.Array.Empty<int>();
 
-                if(options.BlamePeriods != null)
+                if (options.BlamePeriods != null)
                 {
                     periods = options.BlamePeriods?.ToArray();
                 }
@@ -106,7 +105,8 @@ namespace RelationalGit.Commands
                     Extensions = options.Extensions.ToArray(),
                     GitBranch = options.GitBranch,
                     PeriodIds = periods,
-                    ExcludedBlamePaths = options.ExcludeBlamePath?.ToArray() ?? new string[0]
+                    ExcludedBlamePaths = options.ExcludeBlamePath?.ToArray() ?? System.Array.Empty<string>(),
+                    ExtractBlames = options.ExtractBlames.Value
                 };
 
                 await cmd.Execute(extractBlameForEachPeriodOption);
@@ -114,7 +114,7 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.Periodize)
             {
                 var cmd = new PeriodizeGitCommits(logger);
-                await cmd.Execute(options.RepositoryPath, options.GitBranch,options.PeriodType,options.PeriodLength.Value);
+                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.PeriodType, options.PeriodLength.Value);
             }
             else if (options.Command.ToLower() == CommandType.DoNameAliasing)
             {
@@ -129,13 +129,13 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.ExtractDeveloperInformation)
             {
                 var cmd = new ExtractDeveloperInformationCommand(logger);
-                await cmd.Execute(options.CoreDeveloperThreshold.Value,options.CoreDeveloperCalculationType);
+                await cmd.Execute(options.CoreDeveloperThreshold.Value, options.CoreDeveloperCalculationType);
             }
             else if (options.Command.ToLower() == CommandType.IgnoreMegaCommitsAndDevelopers)
             {
                 var cmd = new IgnoreMegaCommitsCommand(logger);
-                await cmd.Execute(options.MegaCommitSize.Value,options.MegaDevelopers);
-            }  
+                await cmd.Execute(options.MegaCommitSize.Value, options.MegaDevelopers);
+            }
             else if (options.Command.ToLower() == CommandType.MapGitHubGitNames)
             {
                 var cmd = new MapGitHubGitNamesCommand(logger);
@@ -155,7 +155,12 @@ namespace RelationalGit.Commands
                     FilesAtRiksOwnersThreshold = options.FilesAtRiksOwnersThreshold.Value,
                     LeaversOfPeriodExtendedAbsence = options.LeaversOfPeriodExtendedAbsence.Value,
                     KnowledgeSaveReviewerFirstPeriod = options.KnowledgeSaveReviewerFirstPeriod.Value,
-                    SelectedReviewersType = options.SelectedReviewersType
+                    SelectedReviewersType = options.SelectedReviewersType,
+                    PullRequestReviewerSelectionStrategy = options.PullRequestReviewerSelectionStrategy,
+                    AddOnlyToUnsafePullrequests = options.AddOnlyToUnsafePullrequests,
+                    LgtmTerms =options.LgtmTerms.ToArray(),
+                    MinimumActualReviewersLength = options.MinimumActualReviewersLength,
+                    NumberOfPeriodsForCalculatingProbabilityOfStay = options.NumberOfPeriodsForCalculatingProbabilityOfStay
                 };
 
                 await cmd.Execute(lossSimulationOption);

@@ -8,7 +8,9 @@ namespace RelationalGit
     public abstract class BaseKnowledgeShareStrategy : KnowledgeShareStrategy
     {
         public PullRequestContext PullRequestContext { get; private set; }
+
         public DeveloperKnowledge[] SortedCandidates { get; set; }
+
         public DeveloperKnowledge[] SortedActualReviewers { get; set; }
 
         public BaseKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
@@ -22,7 +24,7 @@ namespace RelationalGit
 
             if (pullRequestContext.ActualReviewers.Count() == 0)
             {
-                return new PullRequestRecommendationResult(new string[0],null);
+                return new PullRequestRecommendationResult(Array.Empty<string>(), null);
             };
 
             var candidates = GetCandidates(pullRequestContext);
@@ -47,7 +49,7 @@ namespace RelationalGit
                 // we do not take the dev with most expertise to avoid knowledge concentration
                 var addedReviewer = SortedCandidates.LastOrDefault(q => SortedActualReviewers.All(sar => sar.DeveloperName != q.DeveloperName));
 
-                if(addedReviewer == null)
+                if (addedReviewer == null)
                 {
                     recommendedReviewers = SortedActualReviewers;
                 }
@@ -57,7 +59,7 @@ namespace RelationalGit
                 }
             }
 
-            return new PullRequestRecommendationResult(recommendedReviewers.Select(q => q.DeveloperName).ToArray(),SortedCandidates.Select(q => q.DeveloperName).ToArray());
+            return new PullRequestRecommendationResult(recommendedReviewers.Select(q => q.DeveloperName).ToArray(), SortedCandidates.Select(q => q.DeveloperName).ToArray());
         }
 
         protected DeveloperKnowledge[] RepleaceLeastWithMostKnowledged(PullRequestContext pullRequestContext, DeveloperKnowledge leastKnowledgedReviewer, DeveloperKnowledge mostKnowledgedReviewer)
@@ -81,12 +83,12 @@ namespace RelationalGit
             for (var i = SortedCandidates.Length - 1; i >= 0; i--)
             {
                 var isReviewer = actualReviewers.Any(q => q.DeveloperName == SortedCandidates[i].DeveloperName);
-                var isPrSubmitter = PullRequestContext.PRKnowledgeables[i].DeveloperName == PullRequestContext.PRSubmitterNormalizedName;
-                var isAvailable = PullRequestContext.AvailableDevelopers.Any(q => q.NormalizedName == PullRequestContext.PRKnowledgeables[i].DeveloperName);
+                var isPrSubmitter = PullRequestContext.PullRequestKnowledgeables[i].DeveloperName == PullRequestContext.PRSubmitterNormalizedName;
+                var isAvailable = PullRequestContext.AvailableDevelopers.Any(q => q.NormalizedName == PullRequestContext.PullRequestKnowledgeables[i].DeveloperName);
 
                 if (!isReviewer && !isPrSubmitter && isAvailable)
                 {
-                    return PullRequestContext.PRKnowledgeables[i];
+                    return PullRequestContext.PullRequestKnowledgeables[i];
                 }
             }
 
@@ -100,7 +102,7 @@ namespace RelationalGit
 
         protected DeveloperKnowledge[] AvailablePRKnowledgeables(PullRequestContext pullRequestContext)
         {
-            return pullRequestContext.PRKnowledgeables
+            return pullRequestContext.PullRequestKnowledgeables
                 .Where(q => q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName
                 && IsDeveloperAvailable(pullRequestContext, q.DeveloperName)
                 && IsCoreDeveloper(pullRequestContext, q.DeveloperName)) // we want to suggest people who have a great chance to stay in the project

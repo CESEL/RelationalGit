@@ -61,21 +61,24 @@ namespace RelationalGit.CommandLine
 
         [Option("leavers-type")]
         public string LeaversType { get; set; }
-        
+
         [Option("core-dev-calculatuon-type")]
         public string CoreDeveloperCalculationType { get; set; }
-        
+
         [Option("file-risk-ownership-threshold")]
         public double? FilesAtRiksOwnershipThreshold { get; set; }
-        
+
         [Option("file-risk-owners-threshold")]
         public int? FilesAtRiksOwnersThreshold { get; set; }
-        
+
         [Option("leavers-extention")]
         public int? LeaversOfPeriodExtendedAbsence { get; set; }
-        
+
         [Option("mega-devs")]
         public IEnumerable<string> MegaDevelopers { get; set; }
+
+        [Option("lgtm-terms")]
+        public IEnumerable<string> LgtmTerms { get; set; }
 
         [Option("blame-periods")]
         public IEnumerable<int> BlamePeriods { get; set; }
@@ -89,9 +92,24 @@ namespace RelationalGit.CommandLine
         [Option("simulation-first-period")]
         public int? KnowledgeSaveReviewerFirstPeriod { get; set; }
 
+        [Option("minimum-actual-reviewers")]
+        public int? MinimumActualReviewersLength { get; set; }
+
+        [Option("pullRequests-reviewer-selection")]
+        public string PullRequestReviewerSelectionStrategy { get; set; }
+
+        [Option("periods-stay-probability")]
+        public int? NumberOfPeriodsForCalculatingProbabilityOfStay { get; set; }
+
         [Option("selected-reviewers-type")]
         public string SelectedReviewersType { get; set; }
-        
+
+        [Option("extract-blames")]
+        public bool? ExtractBlames { get; set; }
+
+        [Option("add-only-to-unsafe-pullrequests")]
+        public bool? AddOnlyToUnsafePullrequests { get;  set; }
+
         internal InputOption Override(InputOption fileConfigurationOption)
         {
             var overridedInputOption = new InputOption()
@@ -99,7 +117,7 @@ namespace RelationalGit.CommandLine
                 Command = Command,
                 AppsettingsPath = AppsettingsPath
             };
-            
+
             overridedInputOption.CoreDeveloperCalculationType = Override(CoreDeveloperCalculationType, fileConfigurationOption.CoreDeveloperCalculationType);
             overridedInputOption.CommitSha = Override(CommitSha, fileConfigurationOption.CommitSha);
             overridedInputOption.CoreDeveloperThreshold = Override(CoreDeveloperThreshold, fileConfigurationOption.CoreDeveloperThreshold);
@@ -127,10 +145,15 @@ namespace RelationalGit.CommandLine
             overridedInputOption.BlamePeriods = Override(BlamePeriods, fileConfigurationOption.BlamePeriods);
             overridedInputOption.KnowledgeSaveReviewerFirstPeriod = Override(KnowledgeSaveReviewerFirstPeriod, fileConfigurationOption.KnowledgeSaveReviewerFirstPeriod);
             overridedInputOption.SelectedReviewersType = Override(SelectedReviewersType, fileConfigurationOption.SelectedReviewersType);
+            overridedInputOption.ExtractBlames = Override(ExtractBlames, fileConfigurationOption.ExtractBlames);
+            overridedInputOption.LgtmTerms = Override(LgtmTerms, fileConfigurationOption.LgtmTerms);
+            overridedInputOption.PullRequestReviewerSelectionStrategy = Override(PullRequestReviewerSelectionStrategy, fileConfigurationOption.PullRequestReviewerSelectionStrategy);
+            overridedInputOption.NumberOfPeriodsForCalculatingProbabilityOfStay = Override(NumberOfPeriodsForCalculatingProbabilityOfStay, fileConfigurationOption.NumberOfPeriodsForCalculatingProbabilityOfStay);
+            overridedInputOption.MinimumActualReviewersLength = Override(MinimumActualReviewersLength, fileConfigurationOption.MinimumActualReviewersLength);
+            overridedInputOption.AddOnlyToUnsafePullrequests = Override(AddOnlyToUnsafePullrequests, fileConfigurationOption.AddOnlyToUnsafePullrequests);
 
             return overridedInputOption;
         }
-
 
         private T Override<T>(T original, T replace)
         {
@@ -139,7 +162,7 @@ namespace RelationalGit.CommandLine
 
         private IEnumerable<T> Override<T>(IEnumerable<T> original, IEnumerable<T> replace)
         {
-            return original != null && original.Count() > 0 ? original : replace;
+            return original?.Count() > 0 ? original : replace;
         }
     }
 }

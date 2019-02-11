@@ -4,7 +4,6 @@ namespace RelationalGit
 {
     public class NothingKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-
         public NothingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
             : base(knowledgeSaveReviewerReplacementType)
         {
@@ -12,7 +11,7 @@ namespace RelationalGit
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            return new PullRequestRecommendationResult(new string[0]);
+            return new PullRequestRecommendationResult(System.Array.Empty<string>());
         }
     }
 }

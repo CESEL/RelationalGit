@@ -29,7 +29,6 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
         {
             get
             {
-
                 foreach (var recommendedReviewer in SelectedReviewers)
                 {
                     var reviewerType = ActualReviewers.Any(q => q == recommendedReviewer)
@@ -45,6 +44,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
         public bool? TopTenIsAccurate { get; internal set; }
 
         public double? MeanReciprocalRank { get; internal set; }
+
         public bool IsSimulated { get; internal set; }
     }
 }

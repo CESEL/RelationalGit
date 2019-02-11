@@ -8,19 +8,18 @@ namespace RelationalGit.Commands
 {
     public class GetGitCommitsChangesCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetGitCommitsChangesCommand(ILogger logger)
         {
             _logger = logger;
         }
 
-        public async Task Execute(string repoPath,string branchName)
+        public async Task Execute(string repoPath, string branchName)
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-
-                var gitRepository = new GitRepository(repoPath,_logger);
+                var gitRepository = new GitRepository(repoPath, _logger);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
                 gitRepository.LoadChangesOfCommits(orderedCommits);
 
@@ -34,7 +33,6 @@ namespace RelationalGit.Commands
                 await dbContext.SaveChangesAsync();
 
                 _logger.LogInformation("{dateTime}: committed changes have been saved successfully", DateTime.Now);
-
             }
         }
     }

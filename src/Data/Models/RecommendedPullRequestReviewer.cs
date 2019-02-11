@@ -4,7 +4,6 @@
     {
         public RecommendedPullRequestReviewer()
         {
-
         }
 
         public RecommendedPullRequestReviewer(long pullRequestNumber, string normalizedReviewerName, RecommendedPullRequestReviewerType type)
@@ -31,5 +30,4 @@
         Actual,
         Recommended
     }
-
 }

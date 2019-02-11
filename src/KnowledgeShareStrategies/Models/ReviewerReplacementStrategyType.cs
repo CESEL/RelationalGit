@@ -1,6 +1,5 @@
 ﻿namespace RelationalGit
 {
-
     public static class ReviewerReplacementStrategyType
     {
         public static string OneOfActuals => "one-of-actuals";

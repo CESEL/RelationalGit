@@ -27,14 +27,14 @@ namespace RelationalGit.Mapping
 
                 cfg.CreateMap<Octokit.Issue, Issue>()
                 .ForMember(d => d.ClosedAtDateTime, opt => opt.MapFrom(s => s.ClosedAt.HasValue ? s.ClosedAt.Value.DateTime : default(DateTime?)))
-                .ForMember(d => d.State,opt => opt.MapFrom(s => s.State.ToString()))
+                .ForMember(d => d.State, opt => opt.MapFrom(s => s.State.ToString()))
                 .ForMember(d => d.PullRequestNumber, 
                 opt => 
                 opt.MapFrom(s => s.PullRequest != null ? int.Parse(new Regex(".*\\/(?<pull_request_number>\\d+)")
                                 .Match(s.PullRequest.Url)
                                 .Groups["pull_request_number"]
-                                .Value) : 0 ))
-                .ForMember(d => d.Label, opt => opt.MapFrom(s => string.Join(",",s.Labels.SelectMany(l => l.Name))));
+                                .Value) : 0))
+                .ForMember(d => d.Label, opt => opt.MapFrom(s => string.Join(",", s.Labels.SelectMany(l => l.Name))));
 
                 cfg.CreateMap<Octokit.PullRequestReview, PullRequestReviewer>()
                 .ForMember(d => d.State, opt => opt.MapFrom(s => s.State.ToString()));
@@ -59,7 +59,6 @@ namespace RelationalGit.Mapping
                     Parent = p.Sha
                 }).ToArray()))
                 .ForMember(d => d.IsMergeCommit, opts => opts.MapFrom(s => s.Parents.Count() > 1)); // test this
-
             });
         }
     }

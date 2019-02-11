@@ -7,7 +7,7 @@ namespace RelationalGit
 {
     public class RandomKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        private static Random _random = new Random();
+        private static readonly Random _random = new Random();
 
         public RandomKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
             : base(knowledgeSaveReviewerReplacementType)
@@ -16,12 +16,12 @@ namespace RelationalGit
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            if(pullRequestContext.ActualReviewers.Count() == 0)
+            if (pullRequestContext.ActualReviewers.Count() == 0)
             {
-                return new PullRequestRecommendationResult(new string[0]);
+                return new PullRequestRecommendationResult(Array.Empty<string>());
             }
 
-            var availableDevs = pullRequestContext.AvailableDevelopers.Where(q => IsCoreDeveloper(pullRequestContext,q.NormalizedName)).ToArray();
+            var availableDevs = pullRequestContext.AvailableDevelopers.Where(q => IsCoreDeveloper(pullRequestContext, q.NormalizedName)).ToArray();
             var reviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray();
 
             if (ReviewerReplacementStrategyType == RelationalGit.ReviewerReplacementStrategyType.OneOfActuals)
@@ -51,7 +51,6 @@ namespace RelationalGit
 
             var selectedDeveloper = _random.Next(0, possibleCandidates.Length);
             return reviewers.Concat(new[]{ possibleCandidates[selectedDeveloper].NormalizedName}).ToArray();
-
         }
 
         private string[] AllOfActualsRecomendation(Developer[] availableDevs, string[] reviewers)

@@ -27,8 +27,7 @@ namespace RelationalGit.Commands
         private Dictionary<string, string> _canononicalPathMapper;
         private GitHubGitUser[] _GitHubGitUsernameMapper;
         private Period[] _periods;
-        private ILogger _logger;
-
+        private readonly ILogger _logger;
 
         public ShareKnowledgeCommand(ILogger logger)
         {
@@ -111,15 +110,11 @@ namespace RelationalGit.Commands
                 });
             }
 
-
             _dbContext.BulkInsert(bulkPullRequestSimulatedRecommendationResults, new BulkConfig { BatchSize = 50000 });
-
-
         }
 
         private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
         {
-
             var bulkFileTouches = new List<FileTouch>();
             var bulkFileKnowledgeable = new List<FileKnowledgeable>();
 
@@ -154,7 +149,12 @@ namespace RelationalGit.Commands
 
                     var knowledgeables = availableReviewers.Union(availableCommitters).ToArray();
 
-                    var totalPullRequests = fileReviewDetails?.SelectMany(q => q.Value.PullRequests).Select(q => q.Number).Distinct().Count();
+                    var totalPullRequests = fileReviewDetails?
+                        .SelectMany(q => q.Value.PullRequests
+                        .Where(pr => pr.MergedAtDateTime.Value < period.ToDateTime))
+                        .Select(q => q.Number)
+                        .Distinct()
+                        .Count();
 
                     bulkFileKnowledgeable.Add(new FileKnowledgeable()
                     {
@@ -192,12 +192,11 @@ namespace RelationalGit.Commands
                         PeriodId = period.Id,
                         TouchType = "review",
                     }));
-
                 }
             }
 
             _dbContext.BulkInsert(bulkFileTouches, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = int.MaxValue });
-            _dbContext.BulkInsert(bulkFileKnowledgeable, new BulkConfig { BatchSize = 50000,BulkCopyTimeout = int.MaxValue });
+            _dbContext.BulkInsert(bulkFileKnowledgeable, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = int.MaxValue });
         }
 
         private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
@@ -221,15 +220,14 @@ namespace RelationalGit.Commands
             _dbContext.BulkInsert(bulkEntities);
         }
 
-        private Dictionary<long,IEnumerable<SimulatedLeaver>> GetLeavers(LossSimulation lossSimulation)
+        private Dictionary<long, IEnumerable<SimulatedLeaver>> GetLeavers(LossSimulation lossSimulation)
         {
             var result = new Dictionary<long, IEnumerable<SimulatedLeaver>>();
 
             foreach (var period in _periods)
             {
                 var availableDevelopers = GetAvailableDevelopersOfPeriod(period);
-                var leavers = GetLeaversOfPeriod(lossSimulation, period, availableDevelopers);
-                result[period.Id] = leavers;
+                result[period.Id] = GetLeaversOfPeriod(lossSimulation, period, availableDevelopers);
             }
 
             return result;
@@ -245,15 +243,13 @@ namespace RelationalGit.Commands
             return _developers.Where(q => q.LastParticipationPeriodId >= period.Id && q.FirstParticipationPeriodId <= period.Id);
         }
 
-        private void SaveFileTouches(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
+        private void SaveFileTouches(KnowledgeDistributionMap knowledgeMap, LossSimulation lossSimulation)
         {
             var bulkEntities = new List<FileTouch>();
 
-            var developerFileCommitDetails = knowledgeMap.CommitBasedKnowledgeMap.Details;
-
-            foreach(var detail in developerFileCommitDetails)
+            foreach (var detail in knowledgeMap.CommitBasedKnowledgeMap.Details)
             {
-                foreach(var period in detail.Periods)
+                foreach (var period in detail.Periods)
                 {
                     bulkEntities.Add(new FileTouch()
                     {
@@ -266,11 +262,9 @@ namespace RelationalGit.Commands
                 }
             }
 
-            var developerFileReviewDetails = knowledgeMap.ReviewBasedKnowledgeMap.Details;
-
-            foreach(var detail in developerFileReviewDetails)
+            foreach (var detail in knowledgeMap.ReviewBasedKnowledgeMap.Details)
             {
-                foreach(var period in detail.Periods.Distinct())
+                foreach (var period in detail.Periods.Distinct())
                 {
                     bulkEntities.Add(new FileTouch()
                     {
@@ -286,21 +280,21 @@ namespace RelationalGit.Commands
             _dbContext.BulkInsert(bulkEntities, new BulkConfig { BatchSize = 50000});
         }
 
-        private void SavePullRequestReviewes(KnowledgeDistributionMap knowledgeMap,LossSimulation lossSimulation)
+        private void SavePullRequestReviewes(KnowledgeDistributionMap knowledgeMap, LossSimulation lossSimulation)
         {
             var bulkEntities = new List<RecommendedPullRequestReviewer>();
 
             foreach (var pullRequestReviewerItem in knowledgeMap.PullRequestSimulatedRecommendationMap)
             {
                 var pullRequestNumber = pullRequestReviewerItem.Key;
-                foreach(var reviewer in pullRequestReviewerItem.Value.RecommendedPullRequestReviewers)
+                foreach (var reviewer in pullRequestReviewerItem.Value.RecommendedPullRequestReviewers)
                 {
                     reviewer.LossSimulationId = lossSimulation.Id;
                     bulkEntities.Add(reviewer);
                 }
             }
 
-            _dbContext.BulkInsert(bulkEntities);
+            _dbContext.BulkInsert(bulkEntities,new BulkConfig { BulkCopyTimeout=0});
         }
 
         private LossSimulation CreateLossSimulation(LossSimulationOption lossSimulationOption)
@@ -316,7 +310,12 @@ namespace RelationalGit.Commands
                 LeaversOfPeriodExtendedAbsence = lossSimulationOption.LeaversOfPeriodExtendedAbsence,
                 KnowledgeSaveReviewerReplacementType = lossSimulationOption.KnowledgeSaveReviewerReplacementType,
                 FirstPeriod = lossSimulationOption.KnowledgeSaveReviewerFirstPeriod,
-                SelectedReviewersType = lossSimulationOption.SelectedReviewersType
+                SelectedReviewersType = lossSimulationOption.SelectedReviewersType,
+                PullRequestReviewerSelectionStrategy = lossSimulationOption.PullRequestReviewerSelectionStrategy,
+                AddOnlyToUnsafePullrequests = lossSimulationOption.AddOnlyToUnsafePullrequests,
+                MinimumActualReviewersLength = lossSimulationOption.MinimumActualReviewersLength,
+                NumberOfPeriodsForCalculatingProbabilityOfStay = lossSimulationOption.NumberOfPeriodsForCalculatingProbabilityOfStay,
+                LgtmTerms = lossSimulationOption.LgtmTerms.Aggregate((a, b) => a + "," + b)
             };
 
             _dbContext.Add(lossSimulation);
@@ -328,38 +327,16 @@ namespace RelationalGit.Commands
         {
             _developersContributions = _dbContext.DeveloperContributions.ToArray();
 
+            _logger.LogInformation("{datetime}: initializing the Time Machine.", DateTime.Now);
 
-            /*var dict = new Dictionary<long, List<double>>();
+            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(
+                lossSimulation.KnowledgeShareStrategyType,
+                lossSimulation.KnowledgeSaveReviewerReplacementType,
+                lossSimulation.NumberOfPeriodsForCalculatingProbabilityOfStay,
+                lossSimulation.PullRequestReviewerSelectionStrategy,
+                lossSimulation.AddOnlyToUnsafePullrequests);
 
-            for (int i = 1; i < 14; i++)
-            {
-                var coreDevs = _developersContributions.Where(q => q.PeriodId == i && !(q.TotalCommits > 20 || q.TotalReviews > 5)).Select(q=>q.NormalizedName).ToHashSet();
-
-                for (int j = 1; j < 14 ; j++)
-                {
-                    if (j + i > 14)
-                        continue;
-
-                    var remainedDevsCount = _developersContributions.Where(q => q.PeriodId == i+j && (q.TotalCommits>0 || q.TotalReviews>0) && coreDevs.Contains(q.NormalizedName)).Count();
-
-                    if (!dict.ContainsKey(j))
-                        dict[j] = new List<double>();
-
-                    dict[j].Add((double)remainedDevsCount / coreDevs.Count());
-                }
-            }
-
-            var list = new Dictionary<long,double>();
-            foreach (var kv in dict)
-            {
-                list[kv.Key]= kv.Value.Average();
-            }*/
-
-            _logger.LogInformation("{datetime}: initializing the Time Machine.",DateTime.Now);
-
-            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(lossSimulation.KnowledgeShareStrategyType, lossSimulation.KnowledgeSaveReviewerReplacementType);
-
-            var timeMachine = new TimeMachine(knowledgeShareStrategy,_logger);
+            var timeMachine = new TimeMachine(knowledgeShareStrategy, _logger);
 
             _commits = _dbContext.Commits.Where(q => !q.Ignore).ToArray();
 
@@ -389,9 +366,7 @@ namespace RelationalGit.Commands
             _pullRequestFiles = _dbContext
             .PullRequestFiles
             .FromSql($@"SELECT * From PullRequestFiles Where PullRequestNumber in
-            (SELECT Number FROM PullRequests 
-                    WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
-                    MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND 
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
@@ -401,9 +376,7 @@ namespace RelationalGit.Commands
             _pullRequestReviewers = _dbContext
             .PullRequestReviewers
             .FromSql($@"SELECT * From PullRequestReviewers Where PullRequestNumber in
-            (SELECT Number FROM PullRequests 
-                    WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
-                    MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .Where(q => q.State != "DISMISSED")
@@ -414,35 +387,24 @@ namespace RelationalGit.Commands
             _pullRequestReviewComments = _dbContext
             .PullRequestReviewerComments
             .FromSql($@"SELECT * From PullRequestReviewerComments Where PullRequestNumber in
-            (SELECT Number FROM PullRequests 
-                    WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
-                    MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
 
-            _issueComments = _dbContext
-            .IssueComments
-            .FromSql($@"SELECT * From IssueComments Where IssueNumber in
-            (SELECT Number FROM PullRequests 
-                    WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
-                    MergeCommitSha NOT IN (SELECT Sha FROM Commits WHERE Ignore=1) AND 
+            var lgtmTerms = lossSimulation.LgtmTerms.Split(',').Select(q => $"(Body LIKE '{q}')").Aggregate((a, b) => a + " OR " + b);
+            var query = $@"SELECT * From IssueComments Where IssueNumber in
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
-                    AND MergedAtDateTime<={latestCommitDate}) and ((Body LIKE '%lgtm%') OR
-                                                   (Body LIKE '%looks good%') OR
-                                                   (Body LIKE '%its good%') OR
-                                                   (Body LIKE '%look good%') OR
-                                                   (Body LIKE '%good job%'))")
-            .ToArray();
+                    AND MergedAtDateTime<='{latestCommitDate}') and ({lgtmTerms})";
+
+            _issueComments = _dbContext.IssueComments.FromSql(query).ToArray();
 
             _logger.LogInformation("{datetime}: Pull Request Reviewer Comments are loaded.", DateTime.Now);
 
             _developers = _dbContext.Developers.ToArray();
 
             _logger.LogInformation("{datetime}: Developers are loaded.", DateTime.Now);
-
-            
-
 
             _developersContributionsDic = _developersContributions.ToDictionary(q => q.PeriodId + "-" + q.NormalizedName);
 
@@ -470,20 +432,17 @@ namespace RelationalGit.Commands
             _canononicalPathMapper,
             _GitHubGitUsernameMapper,
             _periods,
-            lossSimulation.FirstPeriod,lossSimulation.SelectedReviewersType);
-
+            lossSimulation.FirstPeriod,
+            lossSimulation.SelectedReviewersType,
+            lossSimulation.MinimumActualReviewersLength);
 
             return timeMachine;
-
         }
 
         private IEnumerable<SimulatedLeaver> GetLeavers(Period period, IEnumerable<Developer> availableDevelopers, Dictionary<string, DeveloperContribution> developersContributions, LossSimulation lossSimulation)
         {
             var allPotentialLeavers = GetPotentialLeavers(period, availableDevelopers, developersContributions, lossSimulation).ToArray();
-            var filteredLeavers = FilterDevelopersBasedOnLeaverType(period, developersContributions, lossSimulation.LeaversType, allPotentialLeavers).ToArray();
-
-            return filteredLeavers;
-
+            return FilterDevelopersBasedOnLeaverType(period, developersContributions, lossSimulation.LeaversType, allPotentialLeavers).ToArray();
         }
 
         private static IEnumerable<SimulatedLeaver> FilterDevelopersBasedOnLeaverType(Period period, Dictionary<string, DeveloperContribution> developersContributions, string leaversType, IEnumerable<SimulatedLeaver> leavers)
@@ -518,9 +477,9 @@ namespace RelationalGit.Commands
         private static IEnumerable<SimulatedLeaver> GetPotentialLeavers(Period period, IEnumerable<Developer> potentialLeavers, Dictionary<string, DeveloperContribution> developersContributions, LossSimulation lossSimulation)
         {
             var extendedAbsence = lossSimulation.LeaversOfPeriodExtendedAbsence;
-            
+
             var leaversOfPeriod = potentialLeavers.Where(q => q.LastParticipationPeriodId == period.Id);
-            
+
             var extendedLeaversOfPeriod = extendedAbsence > 0
             ? potentialLeavers.Where(q => q.LastParticipationPeriodId > period.Id).ToList() : new List<Developer>();
 
@@ -545,7 +504,7 @@ namespace RelationalGit.Commands
                 }
             }
 
-            var allLeavers = extendedLeaversOfPeriod
+            return extendedLeaversOfPeriod
             .Select(q => new SimulatedLeaver()
             {
                 PeriodId = period.Id,
@@ -561,19 +520,16 @@ namespace RelationalGit.Commands
                 NormalizedName = q.NormalizedName,
                 LeavingType = "last-commit"
             }));
-
-            return allLeavers;
         }
 
-        private IEnumerable<SimulatedAbondonedFile> GetAbandonedFiles(Period period,IEnumerable<SimulatedLeaver> leavers, IEnumerable<Developer> availableDevelopers, KnowledgeDistributionMap knowledgeMap, LossSimulation lossSimulation)
+        private IEnumerable<SimulatedAbondonedFile> GetAbandonedFiles(Period period, IEnumerable<SimulatedLeaver> leavers, IEnumerable<Developer> availableDevelopers, KnowledgeDistributionMap knowledgeMap, LossSimulation lossSimulation)
         {
-
             var leaversDic = leavers.ToDictionary(q => q.Developer.NormalizedName);
             var availableDevelopersDic = availableDevelopers.ToDictionary(q => q.NormalizedName);
 
             var authorsFileBlames = knowledgeMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id);
 
-            foreach(var filePath in authorsFileBlames.FilePaths)
+            foreach (var filePath in authorsFileBlames.FilePaths)
             {
                 var isFileSavedByReview = IsFileSavedByReview(filePath, knowledgeMap.ReviewBasedKnowledgeMap, period);
                 if (isFileSavedByReview)
@@ -586,7 +542,7 @@ namespace RelationalGit.Commands
                 var remainingBlames = authorsFileBlames[filePath].Values.Where(q => availableDevelopersDic.ContainsKey(q.NormalizedDeveloperName))
                     .OrderByDescending(q => q.TotalAuditedLines)
                     .ToArray();
-                
+
                 var abandonedBlames = remainingBlames.Where(q => leaversDic.ContainsKey(q.NormalizedDeveloperName)).ToArray();
 
                 var remainingTotalLines = remainingBlames.Sum(q => q.TotalAuditedLines);
@@ -597,7 +553,7 @@ namespace RelationalGit.Commands
 
                 var leftKnowledgePercentage = 1 - (remainingPercentage - abandonedPercentage);
 
-                if(leftKnowledgePercentage >= lossSimulation.FilesAtRiksOwnershipThreshold)
+                if (leftKnowledgePercentage >= lossSimulation.FilesAtRiksOwnershipThreshold)
                 {
                     yield return new SimulatedAbondonedFile()
                     {
@@ -615,12 +571,12 @@ namespace RelationalGit.Commands
                 var totalNonAbandonedLines = (double)nonAbandonedBlames.Sum(q => q.TotalAuditedLines);
 
                 var topOwnedPortion = 0.0;
-                for(var i = 0;i < nonAbandonedBlames.Count() && i < lossSimulation.FilesAtRiksOwnersThreshold;i++)
+                for (var i = 0;i < nonAbandonedBlames.Count() && i < lossSimulation.FilesAtRiksOwnersThreshold;i++)
                 {
                     topOwnedPortion += nonAbandonedBlames[i].TotalAuditedLines / totalNonAbandonedLines;
                 }
 
-                if(topOwnedPortion >= lossSimulation.FilesAtRiksOwnershipThreshold)
+                if (topOwnedPortion >= lossSimulation.FilesAtRiksOwnershipThreshold)
                 {
                     yield return new SimulatedAbondonedFile()
                     {
@@ -636,20 +592,18 @@ namespace RelationalGit.Commands
             }
         }
 
-        private bool IsFileSavedByReview(string filePath,ReviewBasedKnowledgeMap reviewBasedKnowledgeMap,Period period)
+        private bool IsFileSavedByReview(string filePath, ReviewBasedKnowledgeMap reviewBasedKnowledgeMap, Period period)
         {
             var reviewers = reviewBasedKnowledgeMap.GetReviewsOfFile(filePath);
-            
-            if(reviewers == null)
+
+            if (reviewers == null)
             {
                 return false;
             }
 
-            var reviewsDetails = reviewers.Values;
-
-            foreach(var reviewDetail in reviewsDetails)
+            foreach (var reviewDetail in reviewers.Values)
             {
-                if(reviewDetail.Periods.Min(q => q.Id) <= period.Id && reviewDetail.Developer.LastParticipationPeriodId > period.Id)
+                if (reviewDetail.Periods.Min(q => q.Id) <= period.Id && reviewDetail.Developer.LastParticipationPeriodId > period.Id)
                 {
                     return true;
                 }
@@ -657,6 +611,5 @@ namespace RelationalGit.Commands
 
             return false;
         }
-
     }
 }

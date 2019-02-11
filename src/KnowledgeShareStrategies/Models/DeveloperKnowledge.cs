@@ -3,11 +3,17 @@
     public class DeveloperKnowledge
     {
         public int NumberOfTouchedFiles { get; set; }
+
         public int NumberOfReviewedFiles { get; set; }
+
         public int NumberOfCommittedFiles { get; set; }
+
         public int NumberOfCommits { get; set; }
+
         public int NumberOfReviews { get; set; }
+
         public string DeveloperName { get; set; }
+
         public int NumberOfAuthoredLines { get; set; }
 
         /// <summary>
@@ -16,4 +22,3 @@
         public double Score { get; set; }
     }
 }
-

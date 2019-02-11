@@ -19,6 +19,14 @@
         public int KnowledgeSaveReviewerFirstPeriod { get; set; }
 
         public string SelectedReviewersType { get; set; }
+
+        public string[] LgtmTerms { get; set; }
+
+        public int? MinimumActualReviewersLength { get; set; }
+
+        public string PullRequestReviewerSelectionStrategy { get; set; }
+
+        public int? NumberOfPeriodsForCalculatingProbabilityOfStay { get; set; }
+        public bool? AddOnlyToUnsafePullrequests { get; internal set; }
     }
 }
-

@@ -14,23 +14,17 @@ namespace RelationalGit
         {
             var folderLevelOwners = GetFolderLevelOweners(pullRequestContext);
 
-            var availableDevs = folderLevelOwners
+            return folderLevelOwners
             .Where(q => q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName &&
             IsDeveloperAvailable(pullRequestContext, q.DeveloperName) &&
             !IsDevelperAmongActualReviewers(pullRequestContext, q.DeveloperName) &&
             IsCoreDeveloper(pullRequestContext, q.DeveloperName))
             .ToArray();
-
-            return availableDevs;
         }
 
-        internal override PullRequestKnowledgeDistribution GetBestDistribution(List<RelationalGit.PullRequestKnowledgeDistribution> simulationResults)
+        internal override double ComputeScore(PullRequestContext pullRequestContext, PullRequestKnowledgeDistributionFactors pullRequestKnowledgeDistributionFactors)
         {
-            simulationResults.Sort();
-
-            var recommendedSet = simulationResults[simulationResults.Count - 1];
-
-            return recommendedSet;
+            return (double) pullRequestKnowledgeDistributionFactors.AddedKnowledge / (pullRequestKnowledgeDistributionFactors.FilesAtRisk + 1.0);
         }
 
         internal override IEnumerable<(string[] Reviewers, DeveloperKnowledge SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs, PullRequestKnowledgeDistribution prereviewKnowledgeDistribution)
@@ -62,23 +56,16 @@ namespace RelationalGit
 
         private DeveloperKnowledge[] GetFixedReviewers(PullRequestContext pullRequestContext)
         {
-            var fixedDevelopers = pullRequestContext.ActualReviewers
+            return pullRequestContext.ActualReviewers
                 .OrderBy(q => pullRequestContext.Developers[q.DeveloperName].TotalCommits + pullRequestContext.Developers[q.DeveloperName].TotalReviews)
                 .TakeLast(1)
                 .ToArray();
-
-            return fixedDevelopers;
-        }
-
-        internal override bool ShouldRecommend(PullRequestContext pullRequestContext)
-        {
-            return pullRequestContext.ActualReviewers.Length > 1;      
         }
 
         private DeveloperKnowledge[] GetFolderLevelOweners(PullRequestContext pullRequestContext)
         {
             var pullRequestFiles = pullRequestContext.PullRequestFiles;
-            var blameSnapshot = pullRequestContext.KnowledgeMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(pullRequestContext.Period.Id);
+            var blameSnapshot = pullRequestContext.KnowledgeMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(pullRequestContext.PullRequestPeriod.Id);
 
             var relatedFiles = new HashSet<string>();
 
@@ -117,10 +104,10 @@ namespace RelationalGit
 
             var folderLevelKnowlegeables = developersKnowledge.Values.Where(q => pullRequestContext.AvailableDevelopers.Any(d => d.NormalizedName == q.DeveloperName)).ToArray();
             // some members of AvailablePRKnowledgeables are not among folderLevelKnowlegeables because folderLevelKnowlegeables contains only the files that we care about their extensions.
-            var prKnowledgeables = pullRequestContext.PRKnowledgeables.Where(q => folderLevelKnowlegeables.All(f => f.DeveloperName != q.DeveloperName));
+            var prKnowledgeables = pullRequestContext.PullRequestKnowledgeables.Where(q => folderLevelKnowlegeables.All(f => f.DeveloperName != q.DeveloperName));
 
             return folderLevelKnowlegeables.Concat(prKnowledgeables).ToArray();
         }
+
     }
-  
 }

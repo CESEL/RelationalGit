@@ -6,7 +6,7 @@ namespace RelationalGit.Commands
 {
     public class GetIssuesEventsCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetIssuesEventsCommand(ILogger logger)
         {
@@ -18,7 +18,7 @@ namespace RelationalGit.Commands
             using (var dbContext = new GitRepositoryDbContext())
             {
                 var loadedIssues = dbContext.Issue.ToArray();
-                var githubExtractor = new GithubDataFetcher(token, agenName,_logger);
+                var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
                 var issueEvents = await githubExtractor.GetIssueEvents(owner, repo, loadedIssues);
                 dbContext.AddRange(issueEvents);
                 dbContext.SaveChanges();

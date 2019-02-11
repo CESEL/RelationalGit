@@ -4,17 +4,16 @@ namespace RelationalGit
 {
     public class FileUtility
     {
+        private static readonly string[] _buildExtensions = new [] {".ps1", ".sh", ".make", ".cmake", ".cmd"};
+        private static readonly string[] _configExtensions = new [] {".yml", ".conf", ".config", ".json", ".txt"};
+        private static readonly string[] _implementationExtensions = new [] {".cs", ".php", ".java", ".c", ".cpp", ".h", ".py", ".js", ".ts", ".r", ".vb", ".il", ".go", ".rb"};
+        private static readonly string[] _interfaceExtensions = new [] {".css", ".html", ".jsx"};
 
-        private static string[] _buildExtensions = new [] {".ps1",".sh",".make",".cmake",".cmd"};
-        private static string[] _configExtensions = new [] {".yml",".conf",".config",".json",".txt"};
-        private static string[] _implementationExtensions = new [] {".cs",".php",".java",".c",".cpp",".h",".py",".js",".ts",".r",".vb",".il",".go",".rb"};
-        private static string[] _interfaceExtensions = new [] {".css",".html",".jsx"};
-        
         internal static string GetExtension(string path)
         {
             var lastDotIndex = path.LastIndexOf('.');
 
-            if(lastDotIndex == -1)
+            if (lastDotIndex == -1)
             {
                 return null;
             }
@@ -25,8 +24,8 @@ namespace RelationalGit
         internal static string GetFileType(string path)
         {
             var extention = GetExtension(path);
-            
-            if(extention == null)
+
+            if (extention == null)
             {
                 return FileType.Unknown.ToString();
             }

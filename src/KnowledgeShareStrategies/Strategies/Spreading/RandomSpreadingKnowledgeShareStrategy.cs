@@ -5,9 +5,9 @@ namespace RelationalGit
 {
     public class RandomSpreadingKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
-        private Random _random = new Random();
+        private readonly Random _random = new Random();
 
-        public RandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) 
+        public RandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
             : base(knowledgeSaveReviewerReplacementType)
         {
         }
@@ -15,7 +15,7 @@ namespace RelationalGit
         protected override DeveloperKnowledge[] GetCandidates(PullRequestContext pullRequestContext)
         {
             var availableDevelopers = pullRequestContext.AvailableDevelopers.Where(q => q.NormalizedName == pullRequestContext.PRSubmitterNormalizedName && (q.TotalCommits > 10 || q.TotalReviews > 10)).ToArray();
-            var experiencedDevelopers = pullRequestContext.PRKnowledgeables;
+            var experiencedDevelopers = pullRequestContext.PullRequestKnowledgeables;
 
             return availableDevelopers.Where(q => experiencedDevelopers.Any(e => e.DeveloperName == q.NormalizedName)).Select(q => new DeveloperKnowledge()
                 {

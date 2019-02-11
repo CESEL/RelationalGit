@@ -18,7 +18,7 @@ namespace RelationalGit
             var configurationOption = GetConfiguration(args);
             var logger = GetLogger();
 
-            logger.LogInformation("{datetime} operation {command} has started",DateTime.Now,configurationOption.Command);
+            logger.LogInformation("{datetime} operation {command} has started", DateTime.Now, configurationOption.Command);
 
             InitDatabase();
 
@@ -47,21 +47,17 @@ namespace RelationalGit
             };*/
 
             //var arguments = Parser.Default.FormatCommandLine(userInput);
-            
+
             await new CommandFactory().Execute(configurationOption, logger);
 
-
-
             logger.LogInformation("{datetime} operation {command} has finished", DateTime.Now, configurationOption.Command);
-
         }
 
         private static InputOption GetConfiguration(string[] args)
         {
             var consoleConfigurationOption = GetConsoleConfigurationOption(args);
             var fileConfigurationOption = GetFileConfigurationOption(consoleConfigurationOption.AppsettingsPath);
-            var configurationOption = consoleConfigurationOption.Override(fileConfigurationOption);
-            return configurationOption;
+            return consoleConfigurationOption.Override(fileConfigurationOption);
         }
 
         private static InputOption GetConsoleConfigurationOption(string[] args)
@@ -96,8 +92,7 @@ namespace RelationalGit
         {
             var loggerFactory = new LoggerFactory();
             loggerFactory.AddConsole().AddDebug();
-            var logger = loggerFactory.CreateLogger("RelationalGit.Logger");
-            return logger;
+            return loggerFactory.CreateLogger("RelationalGit.Logger");
         }
 
         private static void InitDatabase()
@@ -109,5 +104,3 @@ namespace RelationalGit
         }
     }
 }
-
-

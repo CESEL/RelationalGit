@@ -11,7 +11,7 @@ namespace RelationalGit
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers,null);
+            return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, null);
         }
     }
 }

@@ -19,11 +19,5 @@ namespace RelationalGit
                 yield return (reviewers.Concat( new[] { availableDevs[i].DeveloperName }).ToArray(), availableDevs[i]);
             }
         }
-
-        internal override bool ShouldRecommend(PullRequestContext pullRequestContext)
-        {
-            return pullRequestContext.ActualReviewers.Length > 0;      
-        }
     }
-  
 }

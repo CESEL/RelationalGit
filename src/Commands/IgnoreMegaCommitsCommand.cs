@@ -9,19 +9,18 @@ namespace RelationalGit.Commands
 {
     public class IgnoreMegaCommitsCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public IgnoreMegaCommitsCommand(ILogger logger)
         {
             _logger = logger;
         }
 
-        public async Task Execute(int megaCommitSize,IEnumerable<string> developerNames)
+        public async Task Execute(int megaCommitSize, IEnumerable<string> developerNames)
         {
-
             var developerNamesSet = "( " + developerNames
             .Select(q => $"'{q}'")
-            .Aggregate((a,b) =>  $"{a},{b}") + " )";
+            .Aggregate((a, b) => $"{a},{b}") + " )";
 
             using (var dbContext = new GitRepositoryDbContext(false))
             {
@@ -38,7 +37,7 @@ namespace RelationalGit.Commands
                 INNER JOIN (select CommitSha from CommittedChanges group by CommitSha having count(*)>={megaCommitSize}) as t
                 On AuthorCommitSha=t.CommitSha";
 
-                await dbContext.Database.ExecuteSqlCommandAsync(query);  
+                await dbContext.Database.ExecuteSqlCommandAsync(query);
             }
         }
     }

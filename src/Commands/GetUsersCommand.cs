@@ -7,7 +7,7 @@ namespace RelationalGit.Commands
 {
     public class GetUsersCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetUsersCommand(ILogger logger)
         {
@@ -28,7 +28,7 @@ namespace RelationalGit.Commands
                             select distinct(UserLogin) from PullRequestReviewerComments WHERE UserLogin IS NOT null) AS Temp")
                             .ToArray();
 
-                var githubExtractor = new GithubDataFetcher(token, agentName,_logger);
+                var githubExtractor = new GithubDataFetcher(token, agentName, _logger);
                 await githubExtractor.GetUsers(unknownUsers);
 
                 dbContext.AddRange(unknownUsers);

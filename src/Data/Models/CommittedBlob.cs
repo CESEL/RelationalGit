@@ -6,9 +6,13 @@ namespace RelationalGit
     public class CommittedBlob
     {
         public long Id { get; set; }
+
         public string CommitSha { get; set; }
+
         public string CanonicalPath { get; set; }
+
         public string Path { get; set; }
+
         public int NumberOfLines { get; set; }
 
         [NotMapped]

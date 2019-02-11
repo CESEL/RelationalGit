@@ -8,7 +8,7 @@ namespace RelationalGit.Commands
 {
     public class ApplyNameAliasingCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public ApplyNameAliasingCommand(ILogger logger)
         {
@@ -19,8 +19,7 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-
-                _logger.LogInformation("{datetime}: applying normalization on commits.",DateTime.Now);
+                _logger.LogInformation("{datetime}: applying normalization on commits.", DateTime.Now);
 
                 await dbContext
                .Database

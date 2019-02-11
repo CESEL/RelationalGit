@@ -7,7 +7,7 @@ namespace RelationalGit.Commands
 {
     public class GetPullRequestFilesCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetPullRequestFilesCommand(ILogger logger)
         {
@@ -20,7 +20,7 @@ namespace RelationalGit.Commands
             {
                 var loadedPullRequests = await dbContext.PullRequests.ToArrayAsync();
 
-                var githubExtractor = new GithubDataFetcher(token, agenName,_logger);
+                var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
                 var files = await githubExtractor.FetchFilesOfPullRequests(owner, repo, loadedPullRequests);
 
                 _logger.LogInformation("{datetime}: saving {count} pull request files into database.", DateTime.Now, files.Length);
@@ -29,7 +29,6 @@ namespace RelationalGit.Commands
                 await dbContext.SaveChangesAsync();
 
                 _logger.LogInformation("{datetime}: pull request files have been saved successfully.", DateTime.Now, loadedPullRequests.Length);
-
             }
         }
     }

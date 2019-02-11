@@ -8,7 +8,7 @@ namespace RelationalGit.Commands
 {
     public class PeriodizeGitCommits
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public PeriodizeGitCommits(ILogger logger)
         {
@@ -23,12 +23,11 @@ namespace RelationalGit.Commands
             {
                 var commits = dbContext.Commits.OrderBy(m => m.AuthorDateTime).ToArray();
 
-                _logger.LogInformation("{datetime}: trying to periodize all the {count} commits. Period Type: {type}, Period Length: {length}"
-                    , DateTime.Now, commits.Count(),periodType,periodLength);
+                _logger.LogInformation("{datetime}: trying to periodize all the {count} commits. Period Type: {type}, Period Length: {length}",
+                    DateTime.Now, commits.Count(), periodType, periodLength);
 
                 var beginDatetime = commits.Min(m => m.AuthorDateTime);
-                var qaurterMonth = GetQaurterMonth(beginDatetime);
-                beginDatetime = new DateTime(beginDatetime.Year, qaurterMonth, 1);
+                beginDatetime = new DateTime(beginDatetime.Year, beginDatetime.Month, 1);
                 var endDatetime = commits.Max(m => m.AuthorDateTime);
 
                 var periods = GetPeriods(periodType, periodLength, beginDatetime, endDatetime);
@@ -62,17 +61,11 @@ namespace RelationalGit.Commands
 
                 periods[currentPeriodIndex].LastCommitSha = commits[commits.Length - 1].Sha;
 
-
                 _logger.LogInformation("{datetime}: trying to save {count} periods.", DateTime.Now, periods.Count());
                 dbContext.Periods.AddRange(periods);
                 await dbContext.SaveChangesAsync();
                 _logger.LogInformation("{datetime}: periods has been saved successfully.", DateTime.Now);
             }
-        }
-
-        private static int GetQaurterMonth(DateTime beginDatetime)
-        {
-            return (int)Math.Ceiling(beginDatetime.Month / 3.0) * 3 - 2;
         }
 
         private Period[] GetPeriods(string periodType, int periodLength, DateTime beginDatetime, DateTime endDatetime)
@@ -85,17 +78,16 @@ namespace RelationalGit.Commands
             {
                 periods.Add(new Period()
                 {
-                    Id = ++periodId,                    
+                    Id = ++periodId,
                     FromDateTime = pinDatetime,
-                    ToDateTime = periodType == PeriodType.Month 
+                    ToDateTime = periodType == PeriodType.Month
                     ? pinDatetime.AddMonths(periodLength)
                     : pinDatetime.AddDays(periodLength),
                 });
 
-                pinDatetime = periodType == PeriodType.Month 
+                pinDatetime = periodType == PeriodType.Month
                 ? pinDatetime.AddMonths(periodLength)
                 : pinDatetime.AddDays(periodLength);
-
             }
 
             return periods.ToArray();

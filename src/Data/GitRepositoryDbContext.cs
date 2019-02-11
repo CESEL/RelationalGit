@@ -12,16 +12,17 @@ namespace RelationalGit
     public class GitRepositoryDbContext:DbContext
     {
         internal static string AppSettingsPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "relationalgit.json");
+
         public GitRepositoryDbContext()
         {
-
         }
 
-        public GitRepositoryDbContext(bool autoDetectChangesEnabled = true,int commandTimeout = 150000)
+        public GitRepositoryDbContext(bool autoDetectChangesEnabled = true, int commandTimeout = 150000)
         {
             Database.SetCommandTimeout(commandTimeout);
             ChangeTracker.AutoDetectChangesEnabled = autoDetectChangesEnabled;
         }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var builder = new ConfigurationBuilder()
@@ -33,6 +34,7 @@ namespace RelationalGit
 
             optionsBuilder.UseSqlServer(Configuration.GetConnectionString("RelationalGit"));
         }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new PullRequestRecommendationResultEntityTypeConfiguration());
@@ -53,36 +55,61 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new IssueCommentEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
-
         }
 
         public DbSet<IssueComment> IssueComments { get; set; }
+
         public DbSet<IssueEvent> IssueEvents { get; set; }
+
         public DbSet<Issue> Issue { get; set; }
+
         public DbSet<PullRequestFile> PullRequestFiles { get; set; }
+
         public DbSet<CommitRelationship> CommitRelationships { get; set; }
+
         public DbSet<Commit> Commits { get; set; }
+
         public DbSet<CommittedChange> CommittedChanges { get; set; }
+
         public DbSet<CommittedBlob> CommittedBlob { get; set; }
+
         public DbSet<CommitBlobBlame> CommitBlobBlames { get; set; }
+
         public DbSet<Period> Periods { get; set; }
+
         public DbSet<PullRequestReviewer> PullRequestReviewers { get; set; }
+
         public DbSet<PullRequestReviewerComment> PullRequestReviewerComments { get; set; }
+
         public DbSet<PullRequest> PullRequests { get; set; }
+
         public DbSet<User> Users { get; set; }
+
         public DbSet<AliasedDeveloperName> AliasedDeveloperNames { get; set; }
+
         public DbSet<Developer> Developers { get; set; }
+
         public DbSet<DeveloperContribution> DeveloperContributions { get; set; }
+
         public DbSet<GitHubGitUser> GitHubGitUsers { get; set; }
+
         public DbSet<LossSimulation> LossSimulations { get; set; }
+
         public DbSet<FileTouch> FileTouches { get; set; }
+
         public DbSet<FileKnowledgeable> FileKnowledgeables { get; set; }
+
         public DbSet<RecommendedPullRequestReviewer> RecommendedPullRequestReviewers { get; set; }
+
         public DbSet<SimulatedAbondonedFile> SimulatedAbondonedFiles { get; set; }
+
         public DbSet<SimulatedLeaver> SimulatedLeavers { get; set; }
+
         public DbSet<PullRequestRecommendationResult> PullRequestRecommendationResults { get; set; }
 
         public DbQuery<PeriodReviewerCountQuery> PeriodReviewerCountQuery {get;set;}
+
+        public DbQuery<ReviewersParticipationDateTimeQuery> ReviewersParticipationDateTimeQuery { get; set; }
 
         public Dictionary<string, string> GetCanonicalPaths()
         {
@@ -108,21 +135,21 @@ namespace RelationalGit
             return canonicalDictionary;
         }
 
-        public Dictionary<string, Dictionary<long,int>> GetPeriodReviewerCounts()
+        public Dictionary<string, Dictionary<long, int>> GetPeriodReviewerCounts()
         {
-            var query = @"select Commits.PeriodId,reviewers.UserLogin as GitHubUserLogin,count(*) as Count from PullRequests
+            var query = @"select Commits.PeriodId,reviewers.UserLogin as GitHubUserLogin,count(*) as Count, MIN(reviewers.MergedAtDateTime), MAX(reviewers.MergedAtDateTime) from PullRequests
             INNER JOIN Commits On Commits.Sha=PullRequests.MergeCommitSha
             INNER JOIN ( 
-                SELECT distinct PullRequestNumber,PullRequestReviewers.UserLogin FROM PullRequestReviewers
+                SELECT distinct PullRequestNumber,PullRequestReviewers.UserLogin,MergedAtDateTime FROM PullRequestReviewers
                 INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewers.PullRequestNumber
                 where PullRequestReviewers.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewers.UserLogin and Merged=1 and State!='DISMISSED'
                     UNION 
-                SELECT distinct PullRequestNumber,PullRequestReviewerComments.UserLogin FROM PullRequestReviewerComments
+                SELECT distinct PullRequestNumber,PullRequestReviewerComments.UserLogin,MergedAtDateTime FROM PullRequestReviewerComments
                 INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewerComments.PullRequestNumber
                 where PullRequestReviewerComments.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewerComments.UserLogin 
                 AND PullRequestReviewerComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1
                     UNION            
-                SELECT distinct IssueNumber, IssueComments.UserLogin FROM dbo.IssueComments
+                SELECT distinct IssueNumber, IssueComments.UserLogin,MergedAtDateTime FROM dbo.IssueComments
 				INNER JOIN PullRequests on PullRequests.Number=IssueComments.IssueNumber
 				where IssueComments.UserLogin is not null and PullRequests.UserLogin!=IssueComments.UserLogin 
 				AND IssueComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1
@@ -130,6 +157,11 @@ namespace RelationalGit
                 (Body LIKE '%looks good%') OR
                 (Body LIKE '%its good%') OR
                 (Body LIKE '%look good%') OR
+                (Body LIKE '%seems good%') OR
+                (Body LIKE '%seem good%') OR
+                (Body LIKE '%sounds good%') OR
+                (Body LIKE '%sound good%') OR
+                (Body LIKE '%r+%') OR
                 (Body LIKE '%good job%')) as reviewers
             on reviewers.PullRequestNumber=PullRequests.Number
             group by Commits.PeriodId,reviewers.UserLogin";
@@ -137,25 +169,78 @@ namespace RelationalGit
             var reviewersInPeriods = this.PeriodReviewerCountQuery.FromSql(query);
             var githubGitMapper = this.GitHubGitUsers.ToArray();
 
-            var dic = new Dictionary<string, Dictionary<long,int>>();
+            var dic = new Dictionary<string, Dictionary<long, int>>();
 
-            foreach(var reviewerInPeriod in reviewersInPeriods)
+            foreach (var reviewerInPeriod in reviewersInPeriods)
             {
                 // we don't drop a reviewer if we couldn't find the corresponding normalized name. Instead we use the GitHub Login directly.
                 var normalizedName = githubGitMapper.FirstOrDefault(q => q.GitHubUsername == reviewerInPeriod.GitHubUserLogin)
                 ?.GitNormalizedUsername ?? "UnmatchedGithubLogin-" + reviewerInPeriod.GitHubUserLogin;
 
-                if(normalizedName == null)
+                if (normalizedName == null)
                 {
                     continue;
                 }
 
                 if (!dic.ContainsKey(normalizedName))
                 {
-                    dic[normalizedName] = new Dictionary<long,int>();
+                    dic[normalizedName] = new Dictionary<long, int>();
                 }
 
                 dic[normalizedName][reviewerInPeriod.PeriodId] = reviewerInPeriod.Count;
+            }
+
+            return dic;
+        }
+
+        public Dictionary<string, (DateTime? FirstReviewDateTime, DateTime? LastReviewDateTime)> GetReviewersParticipationDates()
+        {
+            var query = @"select reviewers.UserLogin as GitHubUserLogin, MIN(reviewers.MergedAtDateTime) as FirstReviewDateTime, MAX(reviewers.MergedAtDateTime) as LastReviewDateTime from PullRequests
+            INNER JOIN Commits On Commits.Sha=PullRequests.MergeCommitSha
+            INNER JOIN ( 
+                SELECT distinct PullRequestNumber,PullRequestReviewers.UserLogin,MergedAtDateTime FROM PullRequestReviewers
+                INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewers.PullRequestNumber
+                where PullRequestReviewers.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewers.UserLogin and Merged=1 and State!='DISMISSED'
+                    UNION 
+                SELECT distinct PullRequestNumber,PullRequestReviewerComments.UserLogin,MergedAtDateTime FROM PullRequestReviewerComments
+                INNER JOIN PullRequests on PullRequests.Number=PullRequestReviewerComments.PullRequestNumber
+                where PullRequestReviewerComments.UserLogin is not null and PullRequests.UserLogin!=PullRequestReviewerComments.UserLogin 
+                AND PullRequestReviewerComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1
+                    UNION            
+                SELECT distinct IssueNumber, IssueComments.UserLogin,MergedAtDateTime FROM dbo.IssueComments
+				INNER JOIN PullRequests on PullRequests.Number=IssueComments.IssueNumber
+				where IssueComments.UserLogin is not null and PullRequests.UserLogin!=IssueComments.UserLogin 
+				AND IssueComments.CreatedAtDateTime <= PullRequests.MergedAtDateTime and Merged=1
+                AND        (Body LIKE '%lgtm%') OR
+                (Body LIKE '%looks good%') OR
+                (Body LIKE '%its good%') OR
+                (Body LIKE '%look good%') OR
+                (Body LIKE '%seems good%') OR
+                (Body LIKE '%seem good%') OR
+                (Body LIKE '%sounds good%') OR
+                (Body LIKE '%sound good%') OR
+                (Body LIKE '%r+%') OR
+                (Body LIKE '%good job%')) as reviewers
+            on reviewers.PullRequestNumber=PullRequests.Number
+			GROUP BY reviewers.UserLogin";
+
+            var reviewersParticipations = ReviewersParticipationDateTimeQuery.FromSql(query);
+            var githubGitMapper = GitHubGitUsers.ToArray();
+
+            var dic = new Dictionary<string, (DateTime? FirstReviewDateTime, DateTime? LastReviewDateTime)>();
+
+            foreach (var reviewersParticipation in reviewersParticipations)
+            {
+                // we don't drop a reviewer if we couldn't find the corresponding normalized name. Instead we use the GitHub Login directly.
+                var normalizedName = githubGitMapper.FirstOrDefault(q => q.GitHubUsername == reviewersParticipation.GitHubUserLogin)
+                ?.GitNormalizedUsername ?? "UnmatchedGithubLogin-" + reviewersParticipation.GitHubUserLogin;
+
+                if (normalizedName == null)
+                {
+                    continue;
+                }
+
+                dic[normalizedName] = (reviewersParticipation.FirstReviewDateTime, reviewersParticipation.LastReviewDateTime);
             }
 
             return dic;
@@ -203,7 +288,7 @@ namespace RelationalGit
 
             configuration
                 .HasIndex(b => b.PeriodId);
-            
+
             configuration
                 .HasIndex(b => b.TouchType);
         }
@@ -220,7 +305,6 @@ namespace RelationalGit
                 .HasIndex(b => b.UserLogin);
         }
     }
-
 
     class RecommendedPullRequestReviewerEntityTypeConfiguration : IEntityTypeConfiguration<RecommendedPullRequestReviewer>
     {
@@ -253,7 +337,6 @@ namespace RelationalGit
             configuration.HasIndex(b => b.NormalizedAuthorName);
 
             configuration.HasIndex(b => b.Ignore);
-
         }
     }
 
@@ -288,7 +371,6 @@ namespace RelationalGit
     {
         public void Configure(EntityTypeBuilder<CommitBlobBlame> configuration)
         {
-
             configuration.HasIndex(b => b.NormalizedDeveloperIdentity);
 
             configuration.HasIndex(b => b.DeveloperIdentity);
@@ -298,9 +380,9 @@ namespace RelationalGit
             configuration.HasIndex(b => b.CanonicalPath);
 
             configuration.HasIndex(b => b.Ignore);
-
         }
     }
+
     class CommittedBlobEntityTypeConfiguration : IEntityTypeConfiguration<CommittedBlob>
     {
         public void Configure(EntityTypeBuilder<CommittedBlob> configuration)
@@ -338,6 +420,7 @@ namespace RelationalGit
             configuration.HasIndex(b => b.BaseSha);
         }
     }
+
     class IssueEntityTypeConfiguration : IEntityTypeConfiguration<Issue>
     {
         public void Configure(EntityTypeBuilder<Issue> configuration)
@@ -355,7 +438,6 @@ namespace RelationalGit
             configuration.HasIndex(b => b.CommitId);
 
             configuration.HasIndex(b => b.State);
-
         }
     }
 

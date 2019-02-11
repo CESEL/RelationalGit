@@ -30,7 +30,14 @@ namespace RelationalGit
 
         public string SelectedReviewersType { get; internal set; }
 
+        public int? MinimumActualReviewersLength { get; set; }
 
+        public string PullRequestReviewerSelectionStrategy { get; set; }
+
+        public bool? AddOnlyToUnsafePullrequests { get; set; }
+        
+        public int? NumberOfPeriodsForCalculatingProbabilityOfStay { get; set; }
+
+        public string LgtmTerms { get; set; }
     }
-
 }

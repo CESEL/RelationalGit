@@ -6,14 +6,12 @@ using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
-
-
     /// <summary>
     /// Based on Bird's approach
     /// </summary>
     public class PullRequestEffortKnowledgeMap
     {
-        private Dictionary<string, Dictionary<string, (int TotalComments,HashSet<string> Workdays)>> _map = new Dictionary<string, Dictionary<string, (int TotalComments, HashSet<string> Workdays)>>();
+        private readonly Dictionary<string, Dictionary<string, (int TotalComments, HashSet<string> Workdays)>> _map = new Dictionary<string, Dictionary<string, (int TotalComments, HashSet<string> Workdays)>>();
 
         public void Add(string filePath,  Developer developer, DateTime reviewDate)
         {
@@ -40,7 +38,7 @@ namespace RelationalGit
             _map[filePath][developer.NormalizedName] = (totalComments, workdays);
         }
 
-        public (int TotalComments,int TotalWorkDays, DateTime? RecentWorkDay) GetFileExpertise(string filePath)
+        public (int TotalComments, int TotalWorkDays, DateTime? RecentWorkDay) GetFileExpertise(string filePath)
         {
             var reviewersExpertise = _map.GetValueOrDefault(filePath);
 
@@ -52,15 +50,15 @@ namespace RelationalGit
             var totalComments = reviewersExpertise.Sum(q => q.Value.TotalComments);
             var totalWorkDays = reviewersExpertise.SelectMany(q => q.Value.Workdays.ToArray()).Distinct().Count();
             var recentWorkday = reviewersExpertise.Max(q => q.Value.Workdays.Max());
-            
+
             return (totalComments, totalWorkDays, DateTime.Parse(recentWorkday));
         }
 
-        public (int TotalComments, int TotalWorkDays, DateTime? RecentWorkDay) GetReviewerExpertise(string filePath,string reviewerName)
+        public (int TotalComments, int TotalWorkDays, DateTime? RecentWorkDay) GetReviewerExpertise(string filePath, string reviewerName)
         {
             var reviewerExpertise = _map.GetValueOrDefault(filePath)?.GetValueOrDefault(reviewerName);
 
-            if (reviewerExpertise == null || reviewerExpertise == (0,null))
+            if (reviewerExpertise == null || reviewerExpertise == (0, null))
             {
                 return (0, 0, null);
             }
@@ -71,7 +69,5 @@ namespace RelationalGit
 
             return (totalComments, totalWorkDays, DateTime.Parse(recentWorkday));
         }
-
     }
 }
-

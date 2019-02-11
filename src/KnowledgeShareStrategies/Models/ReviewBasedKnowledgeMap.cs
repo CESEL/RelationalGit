@@ -8,7 +8,7 @@ namespace RelationalGit
 {
     public class ReviewBasedKnowledgeMap
     {
-        private Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> _map = new Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>>();
+        private readonly Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> _map = new Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>>();
 
         public Dictionary<string, DeveloperFileReveiewDetail> this[string filePath]
         {
@@ -45,9 +45,8 @@ namespace RelationalGit
 
         private void AssignKnowledgeToReviewer(PullRequest pullRequest, Developer reviewer, Period period, string filePath)
         {
-
             var reviewerName = reviewer.NormalizedName;
-            
+
             if (!_map[filePath].ContainsKey(reviewerName))
             {
                 _map[filePath][reviewerName] = new DeveloperFileReveiewDetail()
@@ -71,4 +70,3 @@ namespace RelationalGit
         }
     }
 }
-

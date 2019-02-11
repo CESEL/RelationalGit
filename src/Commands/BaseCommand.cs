@@ -4,7 +4,7 @@ namespace RelationalGit.Commands
 {
     internal abstract class BaseCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public BaseCommand(ILogger logger)
         {

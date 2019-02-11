@@ -7,7 +7,7 @@ namespace RelationalGit.Commands
 {
     public class GetPullRequestMergeEventsCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetPullRequestMergeEventsCommand(ILogger logger)
         {
@@ -23,12 +23,11 @@ namespace RelationalGit.Commands
 
                 _logger.LogInformation("{datetime}: there are {count} pull requests with no corresponding merged commit", DateTime.Now, loadedPullRequests.Length);
 
-                var githubExtractor = new GithubDataFetcher(token, agenName,_logger);
+                var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
                 await githubExtractor.MergeEvents(owner, repo, loadedPullRequests);
 
                 await dbContext.SaveChangesAsync();
                 _logger.LogInformation("{datetime}: corresponding merged commits has been resolved and saved.", DateTime.Now);
-
             }
         }
     }

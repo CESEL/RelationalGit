@@ -29,7 +29,7 @@
                         continue;
                     }
 
-                    var reviewerExpertise = pullRequestContext.KnowledgeMap.PullRequestEffortKnowledgeMap.GetReviewerExpertise(canonicalPath,candidate.DeveloperName);
+                    var reviewerExpertise = pullRequestContext.KnowledgeMap.PullRequestEffortKnowledgeMap.GetReviewerExpertise(canonicalPath, candidate.DeveloperName);
 
                     if (reviewerExpertise == (0, 0, null))
                     {
@@ -46,7 +46,6 @@
                     candidate.Score += score;
                 }
             }
-
 
             return candidates.OrderBy(q => q.Score).ToArray();
         }

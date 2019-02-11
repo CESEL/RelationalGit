@@ -9,7 +9,7 @@ namespace RelationalGit
         {
         }
 
-        protected override DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext,DeveloperKnowledge[] candidates)
+        protected override DeveloperKnowledge[] SortCandidates(PullRequestContext pullRequestContext, DeveloperKnowledge[] candidates)
         {
             return candidates
             .OrderBy(q => q.NumberOfAuthoredLines)

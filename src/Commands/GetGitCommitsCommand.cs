@@ -8,7 +8,7 @@ namespace RelationalGit.Commands
 {
     public class GetGitCommitsCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetGitCommitsCommand(ILogger logger)
         {
@@ -19,7 +19,7 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                var gitRepository = new GitRepository(repoPath,_logger);
+                var gitRepository = new GitRepository(repoPath, _logger);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
                 var relationships = orderedCommits.SelectMany(q => q.CommitRelationship).ToArray();
                 _logger.LogInformation("{datetime}: trying to save {count} commits into database.", DateTime.Now, orderedCommits.Count());

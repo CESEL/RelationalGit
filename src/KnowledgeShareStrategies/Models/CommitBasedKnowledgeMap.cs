@@ -6,11 +6,9 @@ using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
-
-
     public class CommitBasedKnowledgeMap
     {
-        private Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> _map = new Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>>();
+        private readonly Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>> _map = new Dictionary<string, Dictionary<string, DeveloperFileCommitDetail>>();
 
         public Dictionary<string, DeveloperFileCommitDetail> this[string filePath]
         {
@@ -21,12 +19,13 @@ namespace RelationalGit
         }
 
         public IEnumerable<DeveloperFileCommitDetail> Details => _map.Values.SelectMany(q => q.Values);
+
         internal IEnumerable<DeveloperFileCommitDetail> GetCommittersOfPeriod(long periodId)
         {
             return _map.Values.SelectMany(q => q.Values.Where(c => c.Periods.Any(p => p.Id == periodId)));
         }
 
-        public void Add(string filePath,ChangeKind changeKind, Developer developer, Commit commit,Period period)
+        public void Add(string filePath, ChangeKind changeKind, Developer developer, Commit commit, Period period)
         {
             var developerName = developer?.NormalizedName;
 
@@ -54,7 +53,7 @@ namespace RelationalGit
                 _map[filePath][developerName].CommitDetails.Add(new CommitDetail(commit, period, changeKind));
                 _map[filePath][developerName].Commits.Add(commit);
             }
-            
+
             if (!_map[filePath][developerName].Periods.Any(q => q.Id == period.Id))
             {
                 _map[filePath][developerName].Periods.Add(period);
@@ -82,4 +81,3 @@ namespace RelationalGit
         }
     }
 }
-

@@ -1,6 +1,5 @@
 ﻿namespace RelationalGit
 {
-
     public static class SelectedReviewersType
     {
         public static string Core => "core";

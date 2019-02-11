@@ -8,7 +8,7 @@ namespace RelationalGit.Commands
 {
     public class MapGitHubGitNamesCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public MapGitHubGitNamesCommand(ILogger logger)
         {
@@ -29,16 +29,16 @@ namespace RelationalGit.Commands
 
                 _logger.LogInformation("{datetime}: fetching corresponding GitHub user of {count} git authors.", DateTime.Now, commitAuthors.Length);
 
-                var github = new GithubDataFetcher(token, agenName,_logger);
+                var github = new GithubDataFetcher(token, agenName, _logger);
 
                 foreach (var commitAuthor in commitAuthors)
                 {
-                    var commit = await github.GetCommit(owner,repo,commitAuthor.Sha);
+                    var commit = await github.GetCommit(owner, repo, commitAuthor.Sha);
 
                     // Github does not return the author for some of the old Commits
                     dbContext.Add(new GitHubGitUser
                     {
-                        GitUsername =  commitAuthor.AuthorName,
+                        GitUsername = commitAuthor.AuthorName,
                         GitHubUsername = commit.Author?.Login,
                         GitNormalizedUsername = commitAuthor.NormalizedAuthorName
                     });

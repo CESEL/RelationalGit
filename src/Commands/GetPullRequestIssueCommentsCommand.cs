@@ -8,7 +8,7 @@ namespace RelationalGit.Commands
 {
     public class GetPullRequestIssueCommentsCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetPullRequestIssueCommentsCommand(ILogger logger)
         {
@@ -20,7 +20,7 @@ namespace RelationalGit.Commands
             using (var dbContext = new GitRepositoryDbContext(false))
             {
                 dbContext.Database.ExecuteSqlCommand($"TRUNCATE TABLE IssueComments");
-                var githubExtractor = new GithubDataFetcher(token, agenName,_logger);
+                var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
                 var pullRequests = await dbContext.PullRequests.ToArrayAsync();
                 var issueComments = await githubExtractor.FetchPullRequestIssueCommentsFromRepository(owner, repo, pullRequests);
 
@@ -32,7 +32,6 @@ namespace RelationalGit.Commands
                 await dbContext.SaveChangesAsync();
 
                 _logger.LogInformation("{datetime}: {count} issue comments have been saved into database.", DateTime.Now, issueCommentCount);
-
             }
         }
     }

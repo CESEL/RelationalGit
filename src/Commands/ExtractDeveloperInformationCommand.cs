@@ -10,30 +10,30 @@ namespace RelationalGit.Commands
 {
     public class ExtractDeveloperInformationCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public ExtractDeveloperInformationCommand(ILogger logger)
         {
             _logger = logger;
         }
 
-        public async Task Execute(double coreDeveloperThreshold,string coreDeveloperCalculationType)
+        public async Task Execute(double coreDeveloperThreshold, string coreDeveloperCalculationType)
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
                 _logger.LogInformation("{datetime}: extracting developer statistics for each period.", DateTime.Now);
 
-                var reviewersDic = dbContext.GetPeriodReviewerCounts();
-                await ExtractDevelopersInformation(reviewersDic,dbContext);
-                await ExctractContributionsPerPeriod(coreDeveloperThreshold,coreDeveloperCalculationType,reviewersDic, dbContext);
-                await dbContext.SaveChangesAsync();
+                var reviewersPeriodsDic = dbContext.GetPeriodReviewerCounts();
+                var reviewersParticipationDic = dbContext.GetReviewersParticipationDates();
+                await ExtractDevelopersInformation(reviewersPeriodsDic, reviewersParticipationDic, dbContext).ConfigureAwait(false);
+                await ExctractContributionsPerPeriod(coreDeveloperThreshold, coreDeveloperCalculationType, reviewersPeriodsDic, dbContext).ConfigureAwait(false);
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: developer information has been extracted and saved.", DateTime.Now);
-
             }
         }
 
-        private  async Task ExctractContributionsPerPeriod(double coreDeveloperThreshold, string coreDeveloperCalculationType, Dictionary<string,Dictionary<long,int>> reviewersInPeriods, GitRepositoryDbContext dbContext)
+        private async Task ExctractContributionsPerPeriod(double coreDeveloperThreshold, string coreDeveloperCalculationType, Dictionary<string, Dictionary<long, int>> reviewersInPeriods, GitRepositoryDbContext dbContext)
         {
             var commits = await dbContext.Commits
             .Where(q => !q.Ignore)
@@ -46,9 +46,7 @@ namespace RelationalGit.Commands
             })
             .ToArrayAsync();
 
-            var periods = dbContext.Periods.ToArray();
-
-            foreach (var period in periods)
+            foreach (var period in dbContext.Periods.ToArray())
             {
                 var commitSha = period.LastCommitSha;
 
@@ -80,7 +78,7 @@ namespace RelationalGit.Commands
 
                     dbContext.Add(new DeveloperContribution()
                     {
-                        IsCore =  IsCore(knowledgePortions,ownershipPercentage,dev.DeveloperKnowledge,coreDeveloperThreshold,coreDeveloperCalculationType),
+                        IsCore = IsCore(knowledgePortions, ownershipPercentage, dev.DeveloperKnowledge, coreDeveloperThreshold, coreDeveloperCalculationType),
                         NormalizedName = dev.DeveloperName,
                         TotalLines = dev.DeveloperKnowledge,
                         PeriodId = period.Id,
@@ -89,11 +87,9 @@ namespace RelationalGit.Commands
                         TotalReviews = totalReviews
                     });
                 }
-                
-                var reviewersOfPeriod = reviewersInPeriods.Keys.Where(q => reviewersInPeriods[q].ContainsKey(period.Id));
-                var soleReviewers = reviewersOfPeriod.Where(q => !blames.Any(d => d.DeveloperName == q));
 
-                foreach (var soleReviewer in soleReviewers)
+                var reviewersOfPeriod = reviewersInPeriods.Keys.Where(q => reviewersInPeriods[q].ContainsKey(period.Id));
+                foreach (var soleReviewer in reviewersOfPeriod.Where(q => !blames.Any(d => d.DeveloperName == q)))
                 {
                     var totalReviews = reviewersInPeriods[soleReviewer][period.Id];
 
@@ -111,46 +107,70 @@ namespace RelationalGit.Commands
             }
         }
 
-        private bool IsCore(double knowledgePortions, double authorshipPercentage,int authoredLines, double threshold, string coreDeveloperCalculationType)
+        private bool IsCore(double knowledgePortions, double authorshipPercentage, int authoredLines, double threshold, string coreDeveloperCalculationType)
         {
-            if(coreDeveloperCalculationType == CoreDeveloperCalculationType.AuthorshipQuantile){
+            if (coreDeveloperCalculationType == CoreDeveloperCalculationType.AuthorshipQuantile)
+            {
                  return knowledgePortions <= threshold;
             }
             else if (coreDeveloperCalculationType == CoreDeveloperCalculationType.AuthoredLinesPercentage)
-            {   
+            {
                 return authorshipPercentage >= threshold;
             }
             else if (coreDeveloperCalculationType == CoreDeveloperCalculationType.AuthoredLines)
-            {   
+            {
                 return authoredLines >= threshold;
             }
 
             throw new ArgumentException($"Undefined {nameof(coreDeveloperCalculationType)}");
         }
 
-        private  async Task ExtractDevelopersInformation(Dictionary<string,Dictionary<long,int>> reviewersInPeriods, GitRepositoryDbContext dbContext)
+        private async Task ExtractDevelopersInformation(Dictionary<string, Dictionary<long, int>> reviewersInPeriods, Dictionary<string, (DateTime? FirstReviewDateTime, DateTime? LastReviewDateTime)> reviewersParticipationDic, GitRepositoryDbContext dbContext)
         {
-            var commitsGroupByNormalizedName = await dbContext
-            .Commits
+
+            var commitsDateTime = new Dictionary<string,(DateTime? FirstCommitDateTime,DateTime? LastCommitDateTime)>();
+            var commits = await dbContext.Commits.OrderBy(q => q.AuthorDateTime).ToArrayAsync().ConfigureAwait(false);
+
+            foreach (var commit in commits)
+            {
+                if (!commitsDateTime.ContainsKey(commit.NormalizedAuthorName))
+                {
+                    commitsDateTime[commit.NormalizedAuthorName] = (null, null);
+                }
+
+                if (!commitsDateTime[commit.NormalizedAuthorName].FirstCommitDateTime.HasValue)
+                {
+                    commitsDateTime[commit.NormalizedAuthorName] = (commit.AuthorDateTime,null);
+                }
+
+                commitsDateTime[commit.NormalizedAuthorName] = (commitsDateTime[commit.NormalizedAuthorName].FirstCommitDateTime, commit.AuthorDateTime);
+            }
+
+            var commitsGroupByNormalizedName = commits
             .Where(q => !q.Ignore)
             .Select(q => new { q.NormalizedAuthorName, q.PeriodId })
-            .GroupBy(q => q.NormalizedAuthorName)
-            .ToArrayAsync();
+            .GroupBy(q => q.NormalizedAuthorName);
 
             foreach (var group in commitsGroupByNormalizedName)
             {
                 var totalReviews = 0;
                 long? firstReviewPeriodId = null;
                 long? lastReviewPeriodId = null;
-                var allReviewPeriods = "";
+                string allReviewPeriods = null;
+
+                DateTime? firstReviewDateTime = reviewersParticipationDic.ContainsKey(group.Key)
+                    ? reviewersParticipationDic[group.Key].FirstReviewDateTime : null;
+                DateTime? lastReviewDateTime = reviewersParticipationDic.ContainsKey(group.Key)
+                    ? reviewersParticipationDic[group.Key].LastReviewDateTime : null;
+
                 var allReviews = reviewersInPeriods.GetValueOrDefault(group.Key);
 
-                if(allReviews != null)
+                if (allReviews != null)
                 {
                     totalReviews = allReviews.Sum(q => q.Value);
                     firstReviewPeriodId = allReviews.Min(q => q.Key);
                     lastReviewPeriodId = allReviews.Max(q => q.Key);
-                    allReviewPeriods = allReviews.Keys.Select(q => q.ToString()).Aggregate((a, b) => (a + "," + b)).ToString();
+                    allReviewPeriods = allReviews.Keys.Select(q => q.ToString()).Aggregate((a, b) => (a + "," + b));
                 }
 
                 dbContext.Add(new Developer()
@@ -161,26 +181,33 @@ namespace RelationalGit.Commands
                     .Select(q => q.PeriodId.ToString())
                     .Distinct()
                     .OrderBy(q => q)
-                    .Aggregate((a, b) => (a + "," + b)).ToString(),
+                    .Aggregate((a, b) => a + "," + b),
                     LastCommitPeriodId = group.Max(q => q.PeriodId),
                     FirstCommitPeriodId = group.Min(q => q.PeriodId),
                     TotalReviews = totalReviews,
                     FirstReviewPeriodId = firstReviewPeriodId,
                     LastReviewPeriodId = lastReviewPeriodId,
-                    AllReviewPeriods = allReviewPeriods
+                    AllReviewPeriods = allReviewPeriods,
+                    FirstCommitDateTime = commitsDateTime[group.Key].FirstCommitDateTime,
+                    LastCommitDateTime = commitsDateTime[group.Key].LastCommitDateTime,
+                    FirstReviewDateTime = firstReviewDateTime,
+                    LastReviewDateTime = lastReviewDateTime
                 });
             }
 
-            var soleReviewers = reviewersInPeriods.Keys.Where(q => !commitsGroupByNormalizedName.Any(d => d.Key == q));
-
-            foreach (var soleReviewer in soleReviewers)
+            foreach (var soleReviewer in reviewersInPeriods.Keys.Where(q => !commitsGroupByNormalizedName.Any(d => d.Key == q)))
             {
                 var allReviews = reviewersInPeriods.GetValueOrDefault(soleReviewer);
 
                 var totalReviews = allReviews.Sum(q => q.Value);
                 var firstReviewPeriodId = allReviews.Min(q => q.Key);
                 var lastReviewPeriodId = allReviews.Max(q => q.Key);
-                var allReviewPeriods = allReviews.Keys.Select(q => q.ToString()).Aggregate((a, b) => (a + "," + b)).ToString();
+                var allReviewPeriods = allReviews.Keys.Select(q => q.ToString()).Aggregate((a, b) => a + "," + b);
+
+                DateTime? firstReviewDateTime = reviewersParticipationDic.ContainsKey(soleReviewer)
+                    ? reviewersParticipationDic[soleReviewer].FirstReviewDateTime : null;
+                DateTime? lastReviewDateTime = reviewersParticipationDic.ContainsKey(soleReviewer)
+                    ? reviewersParticipationDic[soleReviewer].LastReviewDateTime : null;
 
                 dbContext.Add(new Developer()
                 {
@@ -192,7 +219,9 @@ namespace RelationalGit.Commands
                     TotalReviews = totalReviews,
                     FirstReviewPeriodId = firstReviewPeriodId,
                     LastReviewPeriodId = lastReviewPeriodId,
-                    AllReviewPeriods = allReviewPeriods
+                    AllReviewPeriods = allReviewPeriods,
+                    FirstReviewDateTime = firstReviewDateTime,
+                    LastReviewDateTime = lastReviewDateTime
                 });
             }
         }

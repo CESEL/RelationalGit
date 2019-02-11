@@ -6,11 +6,10 @@ using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
-
     public class BlameSnapshot
     {
-        private Dictionary<string, Dictionary<string, FileBlame>> _map = new Dictionary<string, Dictionary<string, FileBlame>>();
-        private Dictionary<string, string> _canonicalToActualPathMapper = new Dictionary<string, string>();
+        private readonly Dictionary<string, Dictionary<string, FileBlame>> _map = new Dictionary<string, Dictionary<string, FileBlame>>();
+        private readonly Dictionary<string, string> _canonicalToActualPathMapper = new Dictionary<string, string>();
 
         public BlameSnapshot()
         {
@@ -19,7 +18,6 @@ namespace RelationalGit
 
         public void Add(Period period, string filePath, string developerName, CommitBlobBlame commitBlobBlame)
         {
-
             if (!_map.ContainsKey(filePath))
             {
                 _map[filePath] = new Dictionary<string, FileBlame>();
@@ -55,14 +53,14 @@ namespace RelationalGit
 
         public IEnumerable<string> FilePaths => _map.Keys;
 
-        public Dictionary<string, FileBlame>  this[string filePath]
+        public Dictionary<string, FileBlame> this[string filePath]
         {
             get
             {
                 return _map.GetValueOrDefault(filePath);
             }
         }
-        
+
         public string GetActualPath(string canonicalPath)
         {
             return _canonicalToActualPathMapper.GetValueOrDefault(canonicalPath);
@@ -71,4 +69,3 @@ namespace RelationalGit
         public DirectoryTrie Trie { get; }
     }
 }
-

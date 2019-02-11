@@ -19,4 +19,3 @@ namespace RelationalGit
         public PullRequestEffortKnowledgeMap PullRequestEffortKnowledgeMap { get; internal set; }
     }
 }
-

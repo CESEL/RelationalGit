@@ -5,11 +5,10 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
 {
     public class DirectoryTrie
     {
-        private DirectoryTrieNode _root = new DirectoryTrieNode(".");
+        private readonly DirectoryTrieNode _root = new DirectoryTrieNode(".");
 
         public DirectoryTrie()
         {
-
         }
 
         public void Add(string filePath)
@@ -28,23 +27,22 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
                 return new string[] { filePath };
             }
 
-            return _root.GetFiles(pathParts,0);
+            return _root.GetFiles(pathParts, 0);
         }
-
     }
 
     public class DirectoryTrieNode
     {
-        private Dictionary<string, DirectoryTrieNode> _children = new Dictionary<string, DirectoryTrieNode>();
-        private List<string> _files = new List<string>();
-        private string _identifier = null;
+        private readonly Dictionary<string, DirectoryTrieNode> _children = new Dictionary<string, DirectoryTrieNode>();
+        private readonly List<string> _files = new List<string>();
+        private readonly string _identifier = null;
 
         public DirectoryTrieNode(string identifier)
         {
             _identifier = identifier;
         }
 
-        public void Add(string[] pathParts,int indexPart, string filePath)
+        public void Add(string[] pathParts, int indexPart, string filePath)
         {
             var currentNode = this;
 
@@ -60,8 +58,6 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
                 currentNode = currentNode._children[pathParts[indexPart]];
                 indexPart++;
             }
-
-            
         }
 
         internal string[] GetFiles(string[] pathParts, int indexPart)
@@ -79,7 +75,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
                 return currentNode._files.ToArray();
             }
 
-            return new string[0];
+            return System.Array.Empty<string>();
         }
     }
 }

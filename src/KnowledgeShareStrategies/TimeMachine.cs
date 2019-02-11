@@ -13,30 +13,47 @@ namespace RelationalGit
     {
         #region Fields
         private Commit[] SortedCommits { get; set; }
+
         public BlameBasedKnowledgeMap BlameBasedKnowledgeMap { get; private set; }
+
         private Dictionary<string, Commit> CommitsDic { get; set; }
+
         private Dictionary<string, Developer> DevelopersDic { get; set; }
+
         private DeveloperContribution[] DevelopersContributions { get; set; }
+
         private Dictionary<string, List<CommittedChange>> CommittedChangesDic { get; set; }
+
         private Dictionary<int, PullRequest> PullRequestsDic { get; set; }
+
         public PullRequestEffortKnowledgeMap PullRequestEffortKnowledgeMap { get; private set; }
+
         private Dictionary<long, List<PullRequestFile>> PullRequestFilesDic { get; set; }
+
         private Dictionary<long, List<string>> PullRequestReviewersDic { get; set; }
+
         private Dictionary<long, PullRequestRecommendationResult> PullRequestSimulatedRecommendationDic { get; set; } = new Dictionary<long, PullRequestRecommendationResult>();
+
         private PullRequestReviewerComment[] PullRequestReviewComments { get; set; }
+
         private Dictionary<string, string> CanononicalPathMapper { get; set; }
+
         private UsernameRepository UsernameRepository { get; set; }
+
         private Dictionary<long, Period> PeriodsDic { get; set; }
 
-        private CommitBasedKnowledgeMap CommitBasedKnowledgeMap = new CommitBasedKnowledgeMap();
+        private readonly CommitBasedKnowledgeMap CommitBasedKnowledgeMap = new CommitBasedKnowledgeMap();
 
-        private ReviewBasedKnowledgeMap ReviewBasedKnowledgeMap = new ReviewBasedKnowledgeMap();
+        private readonly ReviewBasedKnowledgeMap ReviewBasedKnowledgeMap = new ReviewBasedKnowledgeMap();
 
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
-        private KnowledgeShareStrategy KnowledgeShareStrategy;
+        private readonly KnowledgeShareStrategy KnowledgeShareStrategy;
         private int _firstSimulationPeriod;
         private string _selectedReviewersType;
+        private int _minimumActualReviewersLength;
+        private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
+        private bool? _addOneReviewerToUnsafePullRequests;
 
         #endregion
 
@@ -45,10 +62,11 @@ namespace RelationalGit
             _logger = logger;
             KnowledgeShareStrategy = knowledgeShareStrategy;
         }
+
         public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
-        CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles,IssueComment[] issueComments,
+        CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles, IssueComment[] issueComments,
          PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
-         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod,string selectedReviewersType)
+         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod, string selectedReviewersType, int? minimumActualReviewersLength)
         {
             _logger.LogInformation("{datetime}: Trying to initialize TimeMachine.", DateTime.Now);
 
@@ -72,15 +90,15 @@ namespace RelationalGit
             BlameBasedKnowledgeMap = GetBlameBasedKnowledgeMap(commitBlobBlames);
             CommittedChangesDic = GetCommittedChangesDictionary(committedChanges);
             PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
-            PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments,issueComments);
+            PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments, issueComments);
 
             GetCommitsPullRequests(pullRequests);
 
             _firstSimulationPeriod = firstPeriod;
             _selectedReviewersType = selectedReviewersType;
+            _minimumActualReviewersLength = minimumActualReviewersLength ?? 0;
 
             _logger.LogInformation("{datetime}: TimeMachine is initialized.", DateTime.Now);
-
         }
 
         private void UpdatePullRequestEffortKnowledgeMap(IEnumerable<PullRequestReviewerComment> pullRequestReviewComments)
@@ -90,8 +108,7 @@ namespace RelationalGit
                 PullRequestEffortKnowledgeMap.Add(
                         CanononicalPathMapper.GetValueOrDefault(pullRequestReviewComment.Path),
                         UsernameRepository.GetByGitHubLogin(pullRequestReviewComment.UserLogin),
-                        pullRequestReviewComment.CreatedAtDateTime
-                    );
+                        pullRequestReviewComment.CreatedAtDateTime);
             }
         }
 
@@ -123,7 +140,6 @@ namespace RelationalGit
 
         private void UpdateReviewBasedKnowledgeMap(KnowledgeDistributionMap knowledgeMap, Commit commit, PullRequest pullRequest)
         {
-            
             if (pullRequest != null)
             {
                 AddProposedChangesToPrSubmitterKnowledge(pullRequest, commit);
@@ -143,11 +159,10 @@ namespace RelationalGit
                 var pullRequestContext = GetPullRequestContext(pullRequest, knowledgeMap);
 
                 var periodOfPullRequest = GetPeriodOfPullRequest(pullRequest).Id;
-                
-                if(periodOfPullRequest >= _firstSimulationPeriod)
+
+                if (periodOfPullRequest >= _firstSimulationPeriod && pullRequestContext.ActualReviewers.Length >= _minimumActualReviewersLength)
                 {
-                    var recommendationResult = KnowledgeShareStrategy.Recommend(pullRequestContext);
-                    PullRequestSimulatedRecommendationDic[pullRequest.Number] = recommendationResult;
+                    PullRequestSimulatedRecommendationDic[pullRequest.Number] = KnowledgeShareStrategy.Recommend(pullRequestContext);
                 }
                 else
                 {
@@ -158,19 +173,16 @@ namespace RelationalGit
                         IsSimulated = false
                     };
                 }
-
-
             }
         }
 
         private PullRequestContext GetPullRequestContext(PullRequest pullRequest, KnowledgeDistributionMap knowledgeMap)
         {
-           
             var pullRequestFiles = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>()).ToArray();
 
             var period = GetPeriodOfPullRequest(pullRequest);
 
-            var availableDevelopers = GetAvailableDevelopersOfPeriod(period).ToArray();
+            var availableDevelopers = GetAvailableDevelopersOfPeriod(period,pullRequest).ToArray();
 
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
 
@@ -188,12 +200,12 @@ namespace RelationalGit
                 PullRequest = pullRequest,
                 KnowledgeMap = knowledgeMap,
                 CanononicalPathMapper = CanononicalPathMapper,
-                Period = period,
+                PullRequestPeriod = period,
+                Periods = this.PeriodsDic,
                 Developers = new ReadOnlyDictionary<string, Developer>(DevelopersDic),
                 Blames = BlameBasedKnowledgeMap.GetSnapshopOfPeriod(period.Id),
-                PRKnowledgeables = pullRequestKnowledgeableDevelopers
+                PullRequestKnowledgeables = pullRequestKnowledgeableDevelopers
             };
-
         }
 
         private IEnumerable<DeveloperKnowledge> GetKnowledgeOfActualReviewers(List<string> subset, DeveloperKnowledge[] superset)
@@ -214,13 +226,13 @@ namespace RelationalGit
 
             foreach (var file in pullRequestFiles)
             {
-                AddFileOwnership(knowledgeDistributionMap,blameSnapshot, developersKnowledge, file.FileName, CanononicalPathMapper);
+                AddFileOwnership(knowledgeDistributionMap, blameSnapshot, developersKnowledge, file.FileName, CanononicalPathMapper);
             }
 
             return developersKnowledge.Values.ToArray();
         }
 
-        internal static void AddFileOwnership(KnowledgeDistributionMap knowledgeDistributionMap,BlameSnapshot blameSnapshot, Dictionary<string, DeveloperKnowledge> developersKnowledge, string filePath, Dictionary<string,string> canononicalPathMapper)
+        internal static void AddFileOwnership(KnowledgeDistributionMap knowledgeDistributionMap, BlameSnapshot blameSnapshot, Dictionary<string, DeveloperKnowledge> developersKnowledge, string filePath, Dictionary<string, string> canononicalPathMapper)
         {
             var canonicalPath = canononicalPathMapper[filePath];
 
@@ -310,16 +322,16 @@ namespace RelationalGit
             developersKnowledge[developerName].NumberOfAuthoredLines += totalAuditedLines;
         }
 
-        private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period)
+        private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period, PullRequest pullRequest)
         {
-            return DevelopersDic.Values.Where(dev => dev.FirstParticipationPeriodId <= period.Id && dev.LastParticipationPeriodId >= period.Id);
+            return DevelopersDic.Values.Where(dev => dev.FirstParticipationDateTime <= pullRequest.MergedAtDateTime
+                && dev.LastParticipationDateTime >= pullRequest.MergedAtDateTime);
         }
 
         private Period GetPeriodOfPullRequest(PullRequest pullRequest)
         {
             var mergeCommitd = CommitsDic[pullRequest.MergeCommitSha];
-            var period = PeriodsDic[mergeCommitd.PeriodId.Value];
-            return period;
+            return PeriodsDic[mergeCommitd.PeriodId.Value];
         }
 
         private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
@@ -329,9 +341,7 @@ namespace RelationalGit
 
             // some of the pull requests have no modified files strangely
             // for example, https://github.com/dotnet/coreclr/pull/13534
-            var filesOfPullRequest = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>());
-
-            foreach (var file in filesOfPullRequest)
+            foreach (var file in PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>()))
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
                 ReviewBasedKnowledgeMap.Add(canonicalPath, reviewersNamesOfPullRequest, pullRequest, period);
@@ -362,7 +372,7 @@ namespace RelationalGit
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin)?.NormalizedName;
 
             // we have ignored mega developers
-            if(prSubmitter == null)
+            if (prSubmitter == null)
             {
                 return;
             }
@@ -372,11 +382,11 @@ namespace RelationalGit
             foreach (var file in pullRequestFiles)
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                AssignKnowledgeToDeveloper(prMergedCommit, file.ChangeKind ,prSubmitter, period, canonicalPath);
+                AssignKnowledgeToDeveloper(prMergedCommit, file.ChangeKind, prSubmitter, period, canonicalPath);
             }
         }
 
-        private void AssignKnowledgeToDeveloper(Commit commit,ChangeKind changeKind, string developerName, Period period, string filePath)
+        private void AssignKnowledgeToDeveloper(Commit commit, ChangeKind changeKind, string developerName, Period period, string filePath)
         {
             if (filePath == null || developerName == null)
             {
@@ -391,7 +401,7 @@ namespace RelationalGit
             }
             else if (changeKind != ChangeKind.Renamed) // if it's Added or Modified
             {
-                CommitBasedKnowledgeMap.Add(filePath,changeKind, developer, commit, period);
+                CommitBasedKnowledgeMap.Add(filePath, changeKind, developer, commit, period);
             }
         }
 
@@ -486,23 +496,23 @@ namespace RelationalGit
             return result;
         }
 
-        private Dictionary<long, List<string>> GetPullRequestReviewersDictionary(PullRequestReviewer[] pullRequestReviewers,PullRequestReviewerComment[] pullRequestReviewComments,IssueComment[] issueComments)
+        private Dictionary<long, List<string>> GetPullRequestReviewersDictionary(PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments, IssueComment[] issueComments)
         {
             var result = new Dictionary<long, List<string>>();
 
             for (var i = 0; i < pullRequestReviewers.Length; i++)
             {
                 var prNumber = (int)pullRequestReviewers[i].PullRequestNumber; // what a bullshit cast!! :(
-                AssignReviewerToPullRequest(pullRequestReviewers[i].UserLogin,  prNumber,result);
+                AssignReviewerToPullRequest(pullRequestReviewers[i].UserLogin,  prNumber, result);
             }
 
             for (var i = 0; i < pullRequestReviewComments.Length; i++)
             {
                 var prNumber = pullRequestReviewComments[i].PullRequestNumber;
 
-                if(ShouldConsiderComment(prNumber,pullRequestReviewComments[i]))
+                if (ShouldConsiderComment(prNumber, pullRequestReviewComments[i]))
                 {
-                    AssignReviewerToPullRequest(pullRequestReviewComments[i].UserLogin,  prNumber,result);
+                    AssignReviewerToPullRequest(pullRequestReviewComments[i].UserLogin,  prNumber, result);
                 }
             }
 
@@ -551,7 +561,7 @@ namespace RelationalGit
             return true;
         }
 
-        private void AssignReviewerToPullRequest(string reviewerName, int prNumber,Dictionary<long, List<string>> prReviewers)
+        private void AssignReviewerToPullRequest(string reviewerName, int prNumber, Dictionary<long, List<string>> prReviewers)
         {
             var prSubmitter = PullRequestsDic[prNumber].UserLogin;
 

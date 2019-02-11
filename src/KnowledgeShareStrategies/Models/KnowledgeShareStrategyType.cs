@@ -35,11 +35,15 @@ namespace RelationalGit
         public static string FolderLevelSpreading => "folder-level-spreading-knowledge";
 
         public static string MostTouchedFiles => "most-touched-files";
-        
+
         public static string LeastTouchedFiles => "least-touched-files";
 
         public static string FolderLevelSpreadingPlusOne => "folder-level-spreading-knowledge-plus-one";
 
         public static string Bird => "bird";
+
+        public static string FolderLevelProbabilityBasedSpreading => "folder-level-probability-based-spreading-knowledge";
+
+        public static string FileLevelProbabilityBasedSpreading => "file-level-probability-based-spreading-knowledge";
     }
 }

@@ -5,7 +5,7 @@ namespace RelationalGit
 {
     public class RealisticRandomSpreadingKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        private Random _random = new Random();
+        private readonly Random _random = new Random();
 
         public RealisticRandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
             : base(knowledgeSaveReviewerReplacementType)
@@ -43,6 +43,5 @@ namespace RelationalGit
 
             return null;
         }
-
     }
 }

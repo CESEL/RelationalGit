@@ -15,7 +15,7 @@ namespace RelationalGit
             ReviewerReplacementStrategyType = knowledgeSaveReviewerReplacementType;
         }
 
-        public static KnowledgeShareStrategy Create(string knowledgeShareStrategyType, string knowledgeSaveReviewerReplacementType)
+        public static KnowledgeShareStrategy Create(string knowledgeShareStrategyType, string knowledgeSaveReviewerReplacementType, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
         {
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Nothing)
             {
@@ -81,7 +81,14 @@ namespace RelationalGit
             {
                 return new BirdKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
             }
-
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FolderLevelProbabilityBasedSpreading)
+            {
+                return new FolderLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
+            }
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileLevelProbabilityBasedSpreading)
+            {
+                return new FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
+            }
 
             throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");
         }
@@ -90,14 +97,15 @@ namespace RelationalGit
         {
             var pullRequestRecommendationResult = RecommendReviewers(pullRequestContext);
 
-            pullRequestRecommendationResult.ActualReviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray();
+            // we sort the names alphabetically. Helps when analyzing the results later.
+            pullRequestRecommendationResult.ActualReviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).OrderBy(q => q).ToArray();
+            pullRequestRecommendationResult.SelectedReviewers = pullRequestRecommendationResult.SelectedReviewers?.OrderBy(q => q).ToArray();
             pullRequestRecommendationResult.PullRequestNumber = pullRequestContext.PullRequest.Number;
             pullRequestRecommendationResult.IsSimulated = true;
 
             CalculateMetrics(pullRequestRecommendationResult);
 
             return pullRequestRecommendationResult;
-
         }
 
         private void CalculateMetrics(PullRequestRecommendationResult result)
@@ -119,7 +127,6 @@ namespace RelationalGit
             {
                 result.MeanReciprocalRank = 0;
             }
-
         }
 
         protected abstract PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext);
@@ -131,8 +138,8 @@ namespace RelationalGit
                 return true;
             }
 
-            return pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.Period.Id)?.TotalCommits > 20
-                            || pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.Period.Id)?.TotalReviews > 5;
+            return pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.PullRequestPeriod.Id)?.TotalCommits > 20
+                            || pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.PullRequestPeriod.Id)?.TotalReviews > 5;
         }
 
         protected static bool IsDevelperAmongActualReviewers(PullRequestContext pullRequestContext, string developerName)
@@ -144,8 +151,5 @@ namespace RelationalGit
         {
             return pullRequestContext.AvailableDevelopers.Any(d => d.NormalizedName == developerName);
         }
-
     }
-
-
 }

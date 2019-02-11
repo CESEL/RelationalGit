@@ -8,7 +8,7 @@ namespace RelationalGit.Commands
 {
     public class GetPullRequestReviewersCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public GetPullRequestReviewersCommand(ILogger logger)
         {
@@ -26,8 +26,8 @@ namespace RelationalGit.Commands
                     .ToArrayAsync();
 
                 _logger.LogInformation("{datetime}: trying to fetch all the assigned reviewers for all {count} pull requests.", DateTime.Now, pullRequests.Length);
-                
-                var githubExtractor = new GithubDataFetcher(token, agenName,_logger);
+
+                var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
                 var pullRequestReviews = await githubExtractor.FetchReviewersOfPullRequests(owner, repo, pullRequests);
 
                 _logger.LogInformation("{datetime}: trying to save {count} reviewers into database.", DateTime.Now, pullRequestReviews.Length);
@@ -36,7 +36,6 @@ namespace RelationalGit.Commands
                 await dbContext.SaveChangesAsync();
 
                 _logger.LogInformation("{datetime}: reviewers has been save successfully.", DateTime.Now, pullRequestReviews.Length);
-
             }
         }
     }

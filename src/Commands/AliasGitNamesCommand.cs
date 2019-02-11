@@ -11,7 +11,7 @@ namespace RelationalGit.Commands
 {
     public class AliasGitNamesCommand
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public AliasGitNamesCommand(ILogger logger)
         {
@@ -36,21 +36,21 @@ namespace RelationalGit.Commands
                 foreach (var author in authors)
                 {
                     var normalizedEmail = author.AuthorEmail
-                        .Replace(" ",string.Empty)
+                        .Replace(" ", string.Empty)
                         .ToLower()
                         .Trim()
                         .RemoveDiacritics();
-                    
+
                     var normalizedName = author.AuthorName
-                        .Replace(" ",string.Empty)
+                        .Replace(" ", string.Empty)
                         .Trim()
                         .ToLower()
                         .RemoveDiacritics();
 
                     // we remove () [] '' "" and all the text in between
                     string regex = "(\\[.*\\])|(\".*\")|('.*')|(\\(.*\\))";
-                    normalizedName = Regex.Replace(normalizedName, regex,string.Empty);
-                    
+                    normalizedName = Regex.Replace(normalizedName, regex, string.Empty);
+
                     if (authorsPlace.ContainsKey(normalizedName))
                     {
                         var uniqueId = authorsPlace[normalizedName];
@@ -59,8 +59,8 @@ namespace RelationalGit.Commands
                             authorsPlace[normalizedEmail] != uniqueId)
                         {
                             var oldUniqueId = authorsPlace[normalizedEmail];
-                            
-                            foreach(var dev in normalizedDevelopers.Where(q => q.NormalizedName == oldUniqueId))
+
+                            foreach (var dev in normalizedDevelopers.Where(q => q.NormalizedName == oldUniqueId))
                             {
                                 dev.NormalizedName = uniqueId;
                             }
@@ -70,8 +70,7 @@ namespace RelationalGit.Commands
                     }
                     else if (authorsPlace.ContainsKey(normalizedEmail))
                     {
-                        var uniqueId = authorsPlace[normalizedEmail];
-                        authorsPlace[normalizedName] = uniqueId;
+                        authorsPlace[normalizedName] = authorsPlace[normalizedEmail];
                     }
                     else
                     {
@@ -79,7 +78,7 @@ namespace RelationalGit.Commands
                         authorsPlace[normalizedEmail] = normalizedName;
                     }
 
-                    normalizedDevelopers.Add(new AliasedDeveloperName(){
+                    normalizedDevelopers.Add(new AliasedDeveloperName() {
                         Email = author.AuthorEmail,
                         Name = author.AuthorName,
                         NormalizedName = authorsPlace[normalizedName]
@@ -90,26 +89,25 @@ namespace RelationalGit.Commands
                 normalizedDevelopers = normalizedDevelopers.OrderBy(q => q.NormalizedName)
                 .ToList();
 
-                for(var i = 0;i < normalizedDevelopers.Count - 1;i++)
+                for (var i = 0;i < normalizedDevelopers.Count - 1;i++)
                 {
                     var firstDev = normalizedDevelopers[i];
                     var secondDev = normalizedDevelopers[i + 1];
                     var distance = damerauDistanceAlgorithm.Distance(firstDev.NormalizedName, secondDev.NormalizedName);
-                    
-                    if(distance == 1)
+
+                    if (distance == 1)
                     {
-                        secondDev.NormalizedName = firstDev.NormalizedName;        
+                        secondDev.NormalizedName = firstDev.NormalizedName;
                     }
                 }
 
-                _logger.LogInformation("{datetime}: after normalization, there are {count} unique authors have been found.", 
+                _logger.LogInformation("{datetime}: after normalization, there are {count} unique authors have been found.",
                     DateTime.Now, normalizedDevelopers.Select(q => q.NormalizedName).Distinct().Count());
-
 
                 dbContext.AddRange(normalizedDevelopers);
                 await dbContext.SaveChangesAsync();
 
-                _logger.LogInformation("{datetime}: aliased results have been saves successfully.",DateTime.Now);
+                _logger.LogInformation("{datetime}: aliased results have been saves successfully.", DateTime.Now);
             }
         }
     }

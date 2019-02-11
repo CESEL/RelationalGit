@@ -13,15 +13,18 @@ namespace RelationalGit.Commands
         {
             _logger = logger;
         }
-        public async Task Execute(string repoPath,string branchName,string commitSha,string[] validExtensions, string[] excludedBlamePaths)
+
+        public async Task Execute(string repoPath, string branchName, string commitSha, string[] validExtensions, string[] excludedBlamePaths)
         {
+            /*
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                _logger.LogInformation("{datetime}: Extracting Blames of {Commitsha}",DateTime.Now,commitSha);
+                
+                _logger.LogInformation("{datetime}: Extracting Blames of {Commitsha}", DateTime.Now, commitSha);
 
                 var canonicalDic = dbContext.GetCanonicalPaths();
 
-                var gitRepository = new GitRepository(repoPath,_logger);
+                var gitRepository = new GitRepository(repoPath, _logger);
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
 
                 var commit = orderedCommits.Single(q => q.Sha == commitSha);
@@ -31,7 +34,8 @@ namespace RelationalGit.Commands
                 dbContext.CommitBlobBlames.AddRange(commit.Blobs.SelectMany(m => m.CommitBlobBlames));
 
                 await dbContext.SaveChangesAsync();
-            }
+            
+             }*/
         }
     }
 }

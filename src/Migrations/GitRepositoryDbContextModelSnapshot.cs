@@ -252,11 +252,19 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("AllReviewPeriods");
 
+                    b.Property<DateTime?>("FirstCommitDateTime");
+
                     b.Property<long?>("FirstCommitPeriodId");
+
+                    b.Property<DateTime?>("FirstReviewDateTime");
 
                     b.Property<long?>("FirstReviewPeriodId");
 
+                    b.Property<DateTime?>("LastCommitDateTime");
+
                     b.Property<long?>("LastCommitPeriodId");
+
+                    b.Property<DateTime?>("LastReviewDateTime");
 
                     b.Property<long?>("LastReviewPeriodId");
 
@@ -488,6 +496,8 @@ namespace RelationalGit.Migrations
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<bool?>("AddOnlyToUnsafePullrequests");
+
                     b.Property<DateTime>("EndDateTime");
 
                     b.Property<double>("FileAbandoningThreshold");
@@ -506,7 +516,15 @@ namespace RelationalGit.Migrations
 
                     b.Property<string>("LeaversType");
 
+                    b.Property<string>("LgtmTerms");
+
                     b.Property<int>("MegaPullRequestSize");
+
+                    b.Property<int?>("MinimumActualReviewersLength");
+
+                    b.Property<int?>("NumberOfPeriodsForCalculatingProbabilityOfStay");
+
+                    b.Property<string>("PullRequestReviewerSelectionStrategy");
 
                     b.Property<string>("SelectedReviewersType");
 

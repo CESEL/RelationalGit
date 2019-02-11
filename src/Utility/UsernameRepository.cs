@@ -4,8 +4,8 @@ namespace RelationalGit
 {
     public class UsernameRepository
     {
-        private GitHubGitUser[] _githubGitUsers;
-        private Developer[] _developers;
+        private readonly GitHubGitUser[] _githubGitUsers;
+        private readonly Developer[] _developers;
 
         public UsernameRepository(GitHubGitUser[] githubGitUsers, Developer[] developers)
         {

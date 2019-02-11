@@ -8,8 +8,9 @@ namespace RelationalGit
 {
     public class BlameBasedKnowledgeMap
     {
-        private Dictionary<long, BlameSnapshot> map = new Dictionary<long, BlameSnapshot>();
-        public void Add(Period period,string filePath, string developerName, CommitBlobBlame commitBlobBlame)
+        private readonly Dictionary<long, BlameSnapshot> map = new Dictionary<long, BlameSnapshot>();
+
+        public void Add(Period period, string filePath, string developerName, CommitBlobBlame commitBlobBlame)
         {
             var periodId = period.Id;
 
@@ -35,4 +36,3 @@ namespace RelationalGit
         }
     }
 }
-
