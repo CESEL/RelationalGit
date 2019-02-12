@@ -16,6 +16,7 @@ namespace RelationalGit
         internal Developer[] AvailableDevelopers;
 
         private bool? _isSafe;
+
         private static Dictionary<string, (int TotalReviews, int TotalCommits)> _contributionsDic = new Dictionary<string, (int TotalReviews, int TotalCommits)>();
 
         public DeveloperKnowledge[] ActualReviewers { get; internal set; }
@@ -173,13 +174,7 @@ namespace RelationalGit
             var numberOfContributedPeriodsSoFar = Developers[reviewer].AllCommitsPeriodsId.Where(q => q <= currentPeriodId && q >= lastYearPeriodId)
                 .Union(Developers[reviewer].AllReviewsPeriodsId.Where(q => q <= currentPeriodId && q >= lastYearPeriodId)).Count();
 
-            return numberOfContributedPeriodsSoFar / numberOfPeriodsForCalculatingProbabilityOfStay;
-        }
-
-        public double GetSpecializedKnowledge(string reviewer)
-        {
-            var knowledgeable = PullRequestKnowledgeables.SingleOrDefault(q => q.DeveloperName == reviewer);
-            return (knowledgeable?.NumberOfTouchedFiles ?? 0.5) / (double) PullRequestFiles.Length;
+            return numberOfContributedPeriodsSoFar / (double) numberOfPeriodsForCalculatingProbabilityOfStay;
         }
 
         private (int TotalReviews, int TotalCommits) GetTotalContributionsOfPeriod(long periodId)

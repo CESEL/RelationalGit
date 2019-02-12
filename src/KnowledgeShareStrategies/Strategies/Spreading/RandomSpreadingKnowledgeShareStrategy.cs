@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 
 namespace RelationalGit
@@ -7,8 +8,8 @@ namespace RelationalGit
     {
         private readonly Random _random = new Random();
 
-        public RandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
-            : base(knowledgeSaveReviewerReplacementType)
+        public RandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
+            : base(knowledgeSaveReviewerReplacementType, logger)
         {
         }
 

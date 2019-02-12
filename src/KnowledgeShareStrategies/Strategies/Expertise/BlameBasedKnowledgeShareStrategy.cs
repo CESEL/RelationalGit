@@ -1,11 +1,12 @@
-﻿using System.Linq;
+﻿using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace RelationalGit
 {
     public class BlameBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
-        public BlameBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType) 
-            : base(knowledgeSaveReviewerReplacementType)
+        public BlameBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger) 
+            : base(knowledgeSaveReviewerReplacementType,  logger)
         {
         }
 

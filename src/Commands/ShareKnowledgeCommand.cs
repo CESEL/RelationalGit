@@ -329,7 +329,7 @@ namespace RelationalGit.Commands
 
             _logger.LogInformation("{datetime}: initializing the Time Machine.", DateTime.Now);
 
-            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(
+            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(_logger,
                 lossSimulation.KnowledgeShareStrategyType,
                 lossSimulation.KnowledgeSaveReviewerReplacementType,
                 lossSimulation.NumberOfPeriodsForCalculatingProbabilityOfStay,

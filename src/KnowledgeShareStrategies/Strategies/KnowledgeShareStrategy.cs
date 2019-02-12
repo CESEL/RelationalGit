@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.Extensions.Logging;
 using RelationalGit.KnowledgeShareStrategies.Models;
 using RelationalGit.KnowledgeShareStrategies.Strategies.Spreading;
 using System;
@@ -10,84 +11,68 @@ namespace RelationalGit
     {
         protected string ReviewerReplacementStrategyType { get; private set; }
 
-        public KnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
+        public KnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
         {
             ReviewerReplacementStrategyType = knowledgeSaveReviewerReplacementType;
         }
 
-        public static KnowledgeShareStrategy Create(string knowledgeShareStrategyType, string knowledgeSaveReviewerReplacementType, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
+        public static KnowledgeShareStrategy Create(ILogger logger,string knowledgeShareStrategyType, string knowledgeSaveReviewerReplacementType, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
         {
             if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Nothing)
             {
-                return new NothingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new NothingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ActualReviewers)
             {
-                return new ActualKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new ActualKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Ideal)
             {
-                return new IdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new IdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RealisticIdeal)
             {
-                return new RealisticIdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new RealisticIdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedExpertiseReviewers)
             {
-                return new CommitBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileLevelSpreading)
-            {
-                return new FileLevelSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileLevelSpreadingReplaceAll)
-            {
-                return new FileLevelSpreadingKnowledgeReplaceAllShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new CommitBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedSpreadingReviewers)
             {
-                return new BlameBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new BlameBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ReviewBasedSpreadingReviewers)
             {
-                return new ReviewBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new ReviewBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RendomReviewers)
             {
-                return new RandomKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new RandomKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RandomSpreading)
             {
-                return new RandomSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FolderLevelSpreading)
-            {
-                return new FolderLevelSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FolderLevelSpreadingPlusOne)
-            {
-                return new FolderLevelSpreadingPlusOneKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new RandomSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.LeastTouchedFiles)
             {
-                return new LeastTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new LeastTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.MostTouchedFiles)
             {
-                return new MostTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new MostTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Bird)
             {
-                return new BirdKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType);
+                return new BirdKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FolderLevelProbabilityBasedSpreading)
             {
-                return new FolderLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
+                return new FolderLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
             else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileLevelProbabilityBasedSpreading)
             {
-                return new FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
+                return new FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
 
             throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");

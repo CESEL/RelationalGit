@@ -28,17 +28,9 @@ namespace RelationalGit
 
         public static string ReviewBasedSpreadingReviewers => "reviewers-expertise-review";
 
-        public static string FileLevelSpreading => "file-level-spreading-knowledge";
-
-        public static string FileLevelSpreadingReplaceAll => "file-level-spreading-knowledge-replace-all";
-
-        public static string FolderLevelSpreading => "folder-level-spreading-knowledge";
-
         public static string MostTouchedFiles => "most-touched-files";
 
         public static string LeastTouchedFiles => "least-touched-files";
-
-        public static string FolderLevelSpreadingPlusOne => "folder-level-spreading-knowledge-plus-one";
 
         public static string Bird => "bird";
 

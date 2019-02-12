@@ -127,8 +127,13 @@ namespace RelationalGit
 
             foreach (var commit in SortedCommits)
             {
+                _logger.LogInformation("{datetime}: Trying To Analayze the Commit {commit} and Pull Request {PullRequesyNumber}.",
+                    DateTime.Now, commit.Sha, commit.MergedPullRequest?.Number.ToString() ?? "-");
+
                 UpdateCommitBasedKnowledgeMap(commit);
                 UpdateReviewBasedKnowledgeMap(knowledgeMap, commit, commit.MergedPullRequest);
+
+                _logger.LogInformation("{datetime}: Analyzed is finished", DateTime.Now);
             }
 
             _logger.LogInformation("{datetime}: flying in time has finished.", DateTime.Now);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,15 +7,17 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 {
     public class FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy : SpreadingKnowledgeShareStrategyBase
     {
+        private ILogger _logger;
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private bool? _addOnlyToUnsafePullrequests;
         private readonly PullRequestReviewerSelectionStrategy[] _pullRequestReviewerSelectionStrategies;
         private readonly PullRequestReviewerSelectionStrategy _pullRequestReviewerSelectionDefaultStrategy;
         private static Dictionary<string, int[][]> _combinationDic = new Dictionary<string, int[][]>();
 
-        public FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
-            : base(knowledgeSaveReviewerReplacementType)
+        public FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
+            : base(knowledgeSaveReviewerReplacementType, logger)
         {
+            _logger = logger;
             _numberOfPeriodsForCalculatingProbabilityOfStay = numberOfPeriodsForCalculatingProbabilityOfStay;
             _pullRequestReviewerSelectionStrategies = ParsePullRequestReviewerSelectionStrategy(pullRequestReviewerSelectionStrategy);
             _pullRequestReviewerSelectionDefaultStrategy = _pullRequestReviewerSelectionStrategies.Single(q => q.ActualReviewerCount == "-");
@@ -51,21 +54,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
             foreach (var reviewer in pullRequestKnowledgeDistributionFactors.Reviewers)
             {
-                var isSafe = pullRequestContext.PullRequestFilesAreSafe;
-                var reviewerImportance = pullRequestContext.IsHoarder(reviewer) ? 0.7 : 1;
-                var probabilityOfStay = pullRequestContext.GetProbabilityOfStay(reviewer, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
-                var effort = pullRequestContext.GetEffort(reviewer,_numberOfPeriodsForCalculatingProbabilityOfStay.Value);
-                var specializedKnowledge = pullRequestContext.GetSpecializedKnowledge(reviewer);
-                var score = 0.0;
-
-                if (!isSafe)
-                {
-                    score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.5) * (1 - specializedKnowledge);
-                }
-                else
-                {
-                    score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.7) * (1 - specializedKnowledge);
-                }
+                double score = reviewer.Score == 0 ? ComputeReviewerScore(pullRequestContext, reviewer) : reviewer.Score;
 
                 scores.Add(score);
             }
@@ -73,98 +62,136 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
             return scores.Aggregate((a, b) => a + b);
         }
 
-        internal override IEnumerable<(string[] Reviewers, DeveloperKnowledge SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs, PullRequestKnowledgeDistribution prereviewKnowledgeDistribution)
+        private double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
         {
+            var isSafe = pullRequestContext.PullRequestFilesAreSafe;
+            var reviewerImportance = pullRequestContext.IsHoarder(reviewer.DeveloperName) ? 0.7 : 1;
+            var probabilityOfStay = pullRequestContext.GetProbabilityOfStay(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
+            var effort = pullRequestContext.GetEffort(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
+            var specializedKnowledge = (reviewer.NumberOfTouchedFiles == 0 ? 0.5 : reviewer.NumberOfTouchedFiles) / (double)pullRequestContext.PullRequestFiles.Length;
+
+            var score = 0.0;
+
+            if (!isSafe)
+            {
+                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.5) * (1 - specializedKnowledge);
+            }
+            else
+            {
+                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.7) * (1 - specializedKnowledge);
+            }
+
+            return score;
+        }
+
+        internal override IEnumerable<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
+        {
+            _logger.LogInformation("{datetime} Finding the best set of reviwers for Pull Request {pullrequest} with {ActualReviewersLength} Reviewers and {availableDevsLength} Candidates"
+                , DateTime.Now, pullRequestContext.PullRequest.Number, pullRequestContext.ActualReviewers.Length, availableDevs.Length);
+
             var strategy = _pullRequestReviewerSelectionStrategies
                 .SingleOrDefault(q => q.ActualReviewerCount == pullRequestContext.ActualReviewers.Length.ToString());
 
-            if ((!_addOnlyToUnsafePullrequests.HasValue || !_addOnlyToUnsafePullrequests.Value ||
-                (_addOnlyToUnsafePullrequests.Value && !pullRequestContext.PullRequestFilesAreSafe))
-                && ((strategy != null && strategy.Action == "add")
-                || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "add")))
+            ComputeAllReviewerScores(pullRequestContext, availableDevs);
+
+            availableDevs = availableDevs.OrderByDescending(q => q.Score).ToArray();
+
+            var actualReviewersLength = pullRequestContext.ActualReviewers.Length;
+
+            if (ShouldAddReviewer(pullRequestContext, strategy))
             {
-                var reviewerSet = new HashSet<string>();
-                var count = int.Parse(strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument);
-                var candidateReviewersCombination = GetNextCombination(availableDevs.Length, Math.Min(availableDevs.Length, count));
-                foreach (var candidateReviewers in candidateReviewersCombination)
-                {
-                    var candidates = new List<DeveloperKnowledge>(10);
+                var selectedCandidatesLength = int.Parse(strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument);
+                var selectedCandidates = GetTopCandidates(availableDevs, selectedCandidatesLength, pullRequestContext.ActualReviewers);
+                var newReviewerSet = pullRequestContext.ActualReviewers.Concat(selectedCandidates).ToArray();
 
-                    for (int i = 0; i < count; i++)
-                    {
-                        candidates.Add(availableDevs[candidateReviewers[i]]);
-                    }
-
-                    var newReviewerSet = pullRequestContext.ActualReviewers.Concat(candidates).Select(q => q.DeveloperName)
-                        .OrderBy(q => q).ToArray();
-
-                    if (newReviewerSet.GroupBy(q => q).Any(g => g.Count() > 1))
-                    {
-                        continue;
-                    }
-
-                    var newReviewerSetKey = newReviewerSet.Aggregate((a, b) => a + "," + b);
-
-                    if (!reviewerSet.Contains(newReviewerSetKey))
-                    {
-                        reviewerSet.Add(newReviewerSetKey);
-                        yield return (newReviewerSet, null);
-                    }
-                }
+                yield return (newReviewerSet, selectedCandidates);
             }
-            else if (pullRequestContext.ActualReviewers.Length >= 1
-                && ((strategy != null && strategy.Action == "replace")
-                || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "replace")))
+            else if (ShouldReplaceReviewer(pullRequestContext, strategy))
             {
-                var count = int.Parse(strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument);
-                var numberOfReplacements = Math.Min(availableDevs.Length, count);
-                numberOfReplacements = Math.Min(pullRequestContext.ActualReviewers.Length, numberOfReplacements);
+                yield return (pullRequestContext.ActualReviewers, null);
 
-                var changeableReviewersBase = (string[])pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray().Clone();
+                var selectedCandidatesLength = int.Parse(strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument);
+                var numberOfReplacements = Math.Min(availableDevs.Length, selectedCandidatesLength);
+                numberOfReplacements = Math.Min(actualReviewersLength, numberOfReplacements);
 
-                yield return ((string[] Reviewers, DeveloperKnowledge SelectedCandidateKnowledge))(changeableReviewersBase.ToArray().Clone(), null);
-
-                var actualReviewersCombination = GetNextCombination(changeableReviewersBase.Length, numberOfReplacements);
-                var candidateReviewersCombination = GetNextCombination(availableDevs.Length, numberOfReplacements);
+                var actualReviewersCombination = GetNextCombination(actualReviewersLength, numberOfReplacements);
 
                 var reviewerSet = new HashSet<string>();
 
                 foreach (var selectedActualCombination in actualReviewersCombination)
                 {
-                    var selectedActualReviewers = new string[numberOfReplacements];
+                    var fixedReviewers = new List<DeveloperKnowledge>(numberOfReplacements);
 
-                    for (int i = 0; i < numberOfReplacements; i++) // memorizing the actual state
+                    for (int i = 0; i < actualReviewersLength; i++)
                     {
-                        selectedActualReviewers[i] = changeableReviewersBase[selectedActualCombination[i]];
-                    }
-
-                    foreach (var selectedCandidateCombination in candidateReviewersCombination)
-                    {
-                        for (int i = 0; i < numberOfReplacements; i++)
+                        if (selectedActualCombination.All(q => q != i))
                         {
-                            changeableReviewersBase[selectedActualCombination[i]] = availableDevs[selectedCandidateCombination[i]].DeveloperName;
-                        }
-
-                        if (changeableReviewersBase.GroupBy(q => q).Any(g => g.Count() > 1))
-                        {
-                            continue;
-                        }
-
-                        var newReviewerSet = ((string[])changeableReviewersBase.ToArray().Clone()).OrderBy(q => q).ToArray();
-                        var newReviewerSetKey = newReviewerSet.Aggregate((a,b) => a + "," + b);
-
-                        if (!reviewerSet.Contains(newReviewerSetKey))
-                        {
-                            reviewerSet.Add(newReviewerSetKey);
-                            yield return (newReviewerSet, null);
+                            fixedReviewers.Add(pullRequestContext.ActualReviewers[i]);
                         }
                     }
 
-                    for (int i = 0; i < numberOfReplacements; i++) // restoring to the actual state
+                    var selectedCandidates = GetTopCandidates(availableDevs, numberOfReplacements, fixedReviewers);
+
+                    if (selectedCandidates.Count() == 0)
                     {
-                        changeableReviewersBase[selectedActualCombination[i]] = selectedActualReviewers[i];
+                        continue;
+                    }
+
+                    var newReviewerSet = fixedReviewers.Concat(selectedCandidates);
+                    var newReviewerSetKey = newReviewerSet.Select(q => q.DeveloperName).OrderBy(q => q).Aggregate((a, b) => a + "," + b);
+
+                    if (!reviewerSet.Contains(newReviewerSetKey))
+                    {
+                        reviewerSet.Add(newReviewerSetKey);
+                        yield return (newReviewerSet, selectedCandidates);
                     }
                 }
+            }
+
+            _logger.LogInformation("{datetime} All the sets have been calculated", DateTime.Now);
+        }
+
+        private IEnumerable<DeveloperKnowledge> GetTopCandidates(DeveloperKnowledge[] candidates, int count, IEnumerable<DeveloperKnowledge> fixedReviewers)
+        {
+            var selectedCandidates = new List<DeveloperKnowledge>();
+            var index = 0;
+
+            while (selectedCandidates.Count < count && index < candidates.Length)
+            {
+                var selectedCandidate = candidates[index];
+
+                if (!fixedReviewers.Any(q => q?.DeveloperName == selectedCandidate.DeveloperName))
+                {
+                    selectedCandidates.Add(selectedCandidate);
+                }
+
+                index++;
+            }
+
+            return selectedCandidates;
+        }
+
+        private bool ShouldReplaceReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
+        {
+            return pullRequestContext.ActualReviewers.Length >= 1
+                            && ((strategy != null && strategy.Action == "replace")
+                            || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "replace"));
+        }
+
+        private bool ShouldAddReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
+        {
+            return (!_addOnlyToUnsafePullrequests.HasValue || !_addOnlyToUnsafePullrequests.Value ||
+                            (_addOnlyToUnsafePullrequests.Value && !pullRequestContext.PullRequestFilesAreSafe))
+                            && ((strategy != null && strategy.Action == "add")
+                            || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "add"));
+        }
+
+        private void ComputeAllReviewerScores(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
+        {
+            foreach (var candidate in availableDevs)
+            {
+                var score = ComputeReviewerScore(pullRequestContext, candidate);
+                candidate.Score = score;
             }
         }
 

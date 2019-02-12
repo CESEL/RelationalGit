@@ -1,38 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RelationalGit
 {
     internal class PullRequestKnowledgeDistributionFactors : IComparable<PullRequestKnowledgeDistributionFactors>
     {
-        private readonly DeveloperKnowledge[] _availableDevs;
-
-        private DeveloperKnowledge _candidateReviewerKnowledge;
-
         private double? _score;
 
         private Func<PullRequestContext, PullRequestKnowledgeDistributionFactors, double> _scoreComputerFunc;
 
         public PullRequestKnowledgeDistributionFactors(
-            string[] reviewers,
-            DeveloperKnowledge candidateReviewerKnowledge,
+            IEnumerable<DeveloperKnowledge> reviewers,
             PullRequestContext pullRequestContext,
-            DeveloperKnowledge[] availableDevs,
             Func<PullRequestContext, PullRequestKnowledgeDistributionFactors, double> scoreComputerFunc)
         {
-            _availableDevs = availableDevs;
-            _candidateReviewerKnowledge = candidateReviewerKnowledge;
             Reviewers = reviewers;
             PullRequestContext = pullRequestContext;
             _scoreComputerFunc = scoreComputerFunc;
         }
 
-        public int FilesAtRisk { get; set; }
-
-        public int AddedKnowledge { get; set; }
-
-        public int TotalKnowledgeables { get; set; }
-
-        public string[] Reviewers { get; }
+        public IEnumerable<DeveloperKnowledge> Reviewers { get; }
 
         private PullRequestContext PullRequestContext { get; }
 

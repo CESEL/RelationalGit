@@ -1,4 +1,5 @@
-﻿using RelationalGit.KnowledgeShareStrategies.Models;
+﻿using Microsoft.Extensions.Logging;
+using RelationalGit.KnowledgeShareStrategies.Models;
 using System;
 
 namespace RelationalGit
@@ -7,8 +8,8 @@ namespace RelationalGit
     {
         private readonly Random _random = new Random();
 
-        public RealisticRandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
-            : base(knowledgeSaveReviewerReplacementType)
+        public RealisticRandomSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
+            : base(knowledgeSaveReviewerReplacementType, logger)
         {
         }
 

@@ -1,11 +1,12 @@
-﻿using System.Linq;
+﻿using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace RelationalGit
 {
     public class MostTouchedFilesKnowlegdeShareStrategy : BaseKnowledgeShareStrategy
     {
-        public MostTouchedFilesKnowlegdeShareStrategy(string knowledgeSaveReviewerReplacementType)
-            : base(knowledgeSaveReviewerReplacementType)
+        public MostTouchedFilesKnowlegdeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
+            : base(knowledgeSaveReviewerReplacementType, logger)
         {
         }
 

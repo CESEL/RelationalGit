@@ -1,11 +1,12 @@
-﻿using RelationalGit.KnowledgeShareStrategies.Models;
+﻿using Microsoft.Extensions.Logging;
+using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
 {
     public class NothingKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        public NothingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
-            : base(knowledgeSaveReviewerReplacementType)
+        public NothingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
+            : base(knowledgeSaveReviewerReplacementType, logger)
         {
         }
 

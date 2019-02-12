@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using RelationalGit.KnowledgeShareStrategies.Models;
 
 namespace RelationalGit
@@ -13,8 +14,8 @@ namespace RelationalGit
 
         public DeveloperKnowledge[] SortedActualReviewers { get; set; }
 
-        public BaseKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
-            : base(knowledgeSaveReviewerReplacementType)
+        public BaseKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
+            : base(knowledgeSaveReviewerReplacementType, logger)
         {
         }
 

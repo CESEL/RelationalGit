@@ -1,12 +1,13 @@
 ﻿namespace RelationalGit
 {
+    using Microsoft.Extensions.Logging;
     using System.Collections.Generic;
     using System.Linq;
 
     public class BirdKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
-        public BirdKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType)
-            : base(knowledgeSaveReviewerReplacementType)
+        public BirdKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
+            : base(knowledgeSaveReviewerReplacementType, logger)
         {
         }
 
