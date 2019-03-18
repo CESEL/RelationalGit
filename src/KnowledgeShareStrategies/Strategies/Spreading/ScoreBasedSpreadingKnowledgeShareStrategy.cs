@@ -5,23 +5,72 @@ using System.Linq;
 
 namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 {
-    public class FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy : SpreadingKnowledgeShareStrategyBase
+    public abstract class ScoreBasedSpreadingKnowledgeShareStrategy : SpreadingKnowledgeShareStrategyBase
     {
         private ILogger _logger;
-        private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private bool? _addOnlyToUnsafePullrequests;
         private readonly PullRequestReviewerSelectionStrategy[] _pullRequestReviewerSelectionStrategies;
         private readonly PullRequestReviewerSelectionStrategy _pullRequestReviewerSelectionDefaultStrategy;
         private static Dictionary<string, int[][]> _combinationDic = new Dictionary<string, int[][]>();
 
-        public FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
+        public ScoreBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
             : base(knowledgeSaveReviewerReplacementType, logger)
         {
             _logger = logger;
-            _numberOfPeriodsForCalculatingProbabilityOfStay = numberOfPeriodsForCalculatingProbabilityOfStay;
+
             _pullRequestReviewerSelectionStrategies = ParsePullRequestReviewerSelectionStrategy(pullRequestReviewerSelectionStrategy);
             _pullRequestReviewerSelectionDefaultStrategy = _pullRequestReviewerSelectionStrategies.Single(q => q.ActualReviewerCount == "-");
             _addOnlyToUnsafePullrequests = addOnlyToUnsafePullrequests;
+        }
+
+        private void ComputeAllReviewerScores(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
+        {
+            foreach (var candidate in availableDevs)
+            {
+                var score = ComputeReviewerScore(pullRequestContext, candidate);
+                candidate.Score = score;
+            }
+        }
+
+        internal override sealed DeveloperKnowledge[] AvailablePRKnowledgeables(PullRequestContext pullRequestContext)
+        {
+            var availableDevs = pullRequestContext.PullRequestKnowledgeables.Where(q =>
+                q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName &&
+                IsDeveloperAvailable(pullRequestContext, q.DeveloperName)).ToArray();
+
+            ComputeAllReviewerScores(pullRequestContext, availableDevs);
+
+            var depthToScanForReviewers = 0;
+
+            while (availableDevs.All(q => q.Score == 0) && depthToScanForReviewers < 5)
+            {
+                depthToScanForReviewers++;
+                var folderLevelOwners = GetFolderLevelOweners(depthToScanForReviewers, pullRequestContext)
+                    .Where(q => availableDevs.All(ad => q.DeveloperName != ad.DeveloperName));
+
+                availableDevs = availableDevs.Concat(folderLevelOwners
+                    .Where(q => q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName &&
+                    IsDeveloperAvailable(pullRequestContext, q.DeveloperName) &&
+                    IsCoreDeveloper(pullRequestContext, q.DeveloperName))).ToArray();
+
+                ComputeAllReviewerScores(pullRequestContext, availableDevs);
+            }
+
+            return availableDevs;
+        }
+
+        internal override sealed double ComputeScore(PullRequestContext pullRequestContext, PullRequestKnowledgeDistributionFactors pullRequestKnowledgeDistributionFactors)
+        {
+            var scores = new List<double>();
+
+            foreach (var reviewer in pullRequestKnowledgeDistributionFactors.Reviewers)
+            {
+                double score = reviewer.Score == 0 ? ComputeReviewerScore(pullRequestContext, reviewer) : reviewer.Score;
+
+                scores.Add(score);
+            }
+
+            return scores.Aggregate((a, b) => a + b);
         }
 
         private PullRequestReviewerSelectionStrategy[] ParsePullRequestReviewerSelectionStrategy(string pullRequestReviewerSelectionStrategy)
@@ -48,51 +97,13 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
             return strategies.ToArray();
         }
 
-        internal override double ComputeScore(PullRequestContext pullRequestContext, PullRequestKnowledgeDistributionFactors pullRequestKnowledgeDistributionFactors)
-        {
-            var scores = new List<double>();
-
-            foreach (var reviewer in pullRequestKnowledgeDistributionFactors.Reviewers)
-            {
-                double score = reviewer.Score == 0 ? ComputeReviewerScore(pullRequestContext, reviewer) : reviewer.Score;
-
-                scores.Add(score);
-            }
-
-            return scores.Aggregate((a, b) => a + b);
-        }
-
-        private double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
-        {
-            var isSafe = pullRequestContext.PullRequestFilesAreSafe;
-            var reviewerImportance = pullRequestContext.IsHoarder(reviewer.DeveloperName) ? 0.7 : 1;
-            var probabilityOfStay = pullRequestContext.GetProbabilityOfStay(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
-            var effort = pullRequestContext.GetEffort(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
-            var specializedKnowledge = (reviewer.NumberOfTouchedFiles == 0 ? 0.5 : reviewer.NumberOfTouchedFiles) / (double)pullRequestContext.PullRequestFiles.Length;
-
-            var score = 0.0;
-
-            if (!isSafe)
-            {
-                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.5) * (1 - specializedKnowledge);
-            }
-            else
-            {
-                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.7) * (1 - specializedKnowledge);
-            }
-
-            return score;
-        }
-
-        internal override IEnumerable<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
+        internal override sealed IEnumerable<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
         {
             _logger.LogInformation("{datetime} Finding the best set of reviwers for Pull Request {pullrequest} with {ActualReviewersLength} Reviewers and {availableDevsLength} Candidates"
                 , DateTime.Now, pullRequestContext.PullRequest.Number, pullRequestContext.ActualReviewers.Length, availableDevs.Length);
 
             var strategy = _pullRequestReviewerSelectionStrategies
                 .SingleOrDefault(q => q.ActualReviewerCount == pullRequestContext.ActualReviewers.Length.ToString());
-
-            ComputeAllReviewerScores(pullRequestContext, availableDevs);
 
             availableDevs = availableDevs.OrderByDescending(q => q.Score).ToArray();
 
@@ -114,7 +125,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
                 var numberOfReplacements = Math.Min(availableDevs.Length, selectedCandidatesLength);
                 numberOfReplacements = Math.Min(actualReviewersLength, numberOfReplacements);
 
-                var actualReviewersCombination = GetNextCombination(actualReviewersLength, numberOfReplacements);
+                var actualReviewersCombination = GetCombinations(actualReviewersLength, numberOfReplacements);
 
                 var reviewerSet = new HashSet<string>();
 
@@ -186,16 +197,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
                             || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "add"));
         }
 
-        private void ComputeAllReviewerScores(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
-        {
-            foreach (var candidate in availableDevs)
-            {
-                var score = ComputeReviewerScore(pullRequestContext, candidate);
-                candidate.Score = score;
-            }
-        }
-
-        private IEnumerable<int[]> GetNextCombination(int length, int n)
+        private IEnumerable<int[]> GetCombinations(int length, int n)
         {
             var combinationKey = length + "-" + n;
 
@@ -225,14 +227,6 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
                     }
                 }
             }
-        }
-
-        internal override DeveloperKnowledge[] AvailablePRKnowledgeables(PullRequestContext pullRequestContext)
-        {
-            return pullRequestContext.PullRequestKnowledgeables.Where(q => q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName &&
-              IsDeveloperAvailable(pullRequestContext, q.DeveloperName) &&
-             // !IsDevelperAmongActualReviewers(pullRequestContext, q.DeveloperName) &&
-              IsCoreDeveloper(pullRequestContext, q.DeveloperName)).ToArray();
         }
     }
 }

@@ -6,36 +6,20 @@ namespace RelationalGit
 
         public static string ActualReviewers => "reviewers-actual";
 
-        public static string BlameBasedExpertiseReviewers => "reviewers-expertise-blame";
+        public static string BlameBasedKnowledgeShare => "line";
 
-        public static string FileBasedExpertiseReviewers => "reviewers-expertise-file";
+        public static string CommitBasedKnowledgeShare => "commit";
 
-        public static string CommitBasedExpertiseReviewers => "reviewers-expertise-commit";
+        public static string BirdBasedKnowledgeShare => "bird";
 
-        public static string RendomReviewers => "reviewers-random";
+        public static string RandomBasedKnowledgeShare => "random";
 
-        public static string RandomSpreading => "random-spreading";
+        public static string PersistBasedKnowledgeShare => "persist";
 
-        public static string KnowledgeSharingReviewers => "reviewers-knowledge-sharing";
+        public static string SpreadingBasedKnowledgeShare => "spreading";
 
-        public static string Expertise => "reviewers-expertise";
+        public static string PersistSpreadingBasedKnowledgeShare => "persist-spreading";
 
-        public static string Ideal => "reviewers-ideal";
-
-        public static string RealisticIdeal => "reviewers-realistic-ideal";
-
-        public static string BlameBasedSpreadingReviewers => "reviewers-expertise-blame";
-
-        public static string ReviewBasedSpreadingReviewers => "reviewers-expertise-review";
-
-        public static string MostTouchedFiles => "most-touched-files";
-
-        public static string LeastTouchedFiles => "least-touched-files";
-
-        public static string Bird => "bird";
-
-        public static string FolderLevelProbabilityBasedSpreading => "folder-level-probability-based-spreading-knowledge";
-
-        public static string FileLevelProbabilityBasedSpreading => "file-level-probability-based-spreading-knowledge";
+        public static string ReviewBasedKnowledgeShare => "review";
     }
 }

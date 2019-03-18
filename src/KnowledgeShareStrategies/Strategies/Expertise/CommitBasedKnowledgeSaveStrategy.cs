@@ -5,7 +5,7 @@ namespace RelationalGit
 {
     public class CommitBasedKnowledgeShareStrategy : BaseKnowledgeShareStrategy
     {
-        public CommitBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
+        public CommitBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, string pullRequestReviewerSelectionStrategy)
             : base(knowledgeSaveReviewerReplacementType, logger)
         {
         }

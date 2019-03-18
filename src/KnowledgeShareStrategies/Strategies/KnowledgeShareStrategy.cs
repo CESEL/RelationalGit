@@ -1,7 +1,5 @@
-﻿
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using RelationalGit.KnowledgeShareStrategies.Models;
-using RelationalGit.KnowledgeShareStrategies.Strategies.Spreading;
 using System;
 using System.Linq;
 
@@ -26,53 +24,37 @@ namespace RelationalGit
             {
                 return new ActualKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Ideal)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedKnowledgeShare)
             {
-                return new IdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
+                return new KnowledgeShareStrategies.Strategies.Spreading.CommitBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RealisticIdeal)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedKnowledgeShare)
             {
-                return new RealisticIdealKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
+                return new KnowledgeShareStrategies.Strategies.Spreading.BlameBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedExpertiseReviewers)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BirdBasedKnowledgeShare)
             {
-                return new CommitBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
+                return new KnowledgeShareStrategies.Strategies.Spreading.BirdSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedSpreadingReviewers)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ReviewBasedKnowledgeShare)
             {
-                return new BlameBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
+                return new KnowledgeShareStrategies.Strategies.Spreading.ReviewBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ReviewBasedSpreadingReviewers)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.SpreadingBasedKnowledgeShare)
             {
-                return new ReviewBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
+                return new KnowledgeShareStrategies.Strategies.Spreading.SpreadingBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RendomReviewers)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.PersistBasedKnowledgeShare)
             {
-                return new RandomKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
+                return new KnowledgeShareStrategies.Strategies.Spreading.PersistBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RandomSpreading)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.PersistSpreadingBasedKnowledgeShare)
             {
-                return new RandomSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
+                return new KnowledgeShareStrategies.Strategies.Spreading.PersistSpreadingBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.LeastTouchedFiles)
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RandomBasedKnowledgeShare)
             {
-                return new LeastTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.MostTouchedFiles)
-            {
-                return new MostTouchedFilesKnowlegdeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Bird)
-            {
-                return new BirdKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FolderLevelProbabilityBasedSpreading)
-            {
-                return new FolderLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
-            }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.FileLevelProbabilityBasedSpreading)
-            {
-                return new FileLevelProbabilityBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
+                return new KnowledgeShareStrategies.Strategies.Spreading.RandomBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests);
             }
 
             throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");
