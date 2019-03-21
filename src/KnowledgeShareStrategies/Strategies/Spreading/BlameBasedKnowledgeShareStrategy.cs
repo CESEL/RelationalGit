@@ -13,6 +13,10 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         internal override double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
         {
             var totalLines = pullRequestContext.PullRequestKnowledgeables.Sum(q => q.NumberOfAuthoredLines);
+
+            if (totalLines == 0)
+                return 0;
+
             return reviewer.NumberOfAuthoredLines / (double)totalLines;
         }
     }

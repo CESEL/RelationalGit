@@ -14,8 +14,9 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
         internal override double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
         {
+            var probabilityOfStay = pullRequestContext.GetProbabilityOfStay(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
             var effort = pullRequestContext.GetEffort(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
-            return effort;
+            return effort * probabilityOfStay;
         }
     }
 }

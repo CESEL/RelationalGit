@@ -36,7 +36,7 @@ namespace RelationalGit
             }
 
             var bestPullRequestKnowledgeDistribution = GetBestDistribution(simulationResults);
-            return new PullRequestRecommendationResult(bestPullRequestKnowledgeDistribution.PullRequestKnowledgeDistributionFactors.Reviewers.ToArray());
+            return new PullRequestRecommendationResult(bestPullRequestKnowledgeDistribution.PullRequestKnowledgeDistributionFactors.Reviewers.ToArray(),availableDevs);
         }
 
         internal PullRequestKnowledgeDistribution GetBestDistribution(List<PullRequestKnowledgeDistribution> simulationResults)
