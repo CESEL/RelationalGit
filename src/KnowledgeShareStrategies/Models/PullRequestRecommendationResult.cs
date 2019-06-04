@@ -5,10 +5,13 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
 {
     public class PullRequestRecommendationResult
     {
+        private DeveloperKnowledge[] _selectedReviewersKnowledge;
+
         public PullRequestRecommendationResult(DeveloperKnowledge[] selectedReviewers, DeveloperKnowledge[] sortedCandidates = null)
         {
             SortedCandidates = sortedCandidates?.Select(q => q.DeveloperName).ToArray();
             SelectedReviewers = selectedReviewers.Select(q => q.DeveloperName).ToArray();
+            _selectedReviewersKnowledge = selectedReviewers;
         }
 
         public PullRequestRecommendationResult(string[] selectedReviewers, string[] sortedCandidates = null)
@@ -18,6 +21,8 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
         }
 
         public long PullRequestNumber { get; internal set; }
+
+        public double LossOfExpertise { get; internal set; }
 
         public string[] ActualReviewers { get; internal set; }
 
@@ -46,5 +51,10 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
         public double? MeanReciprocalRank { get; internal set; }
 
         public bool IsSimulated { get; internal set; }
+
+        public DeveloperKnowledge[] GetSelectedReviewersKnowledge()
+        {
+            return _selectedReviewersKnowledge;
+        }
     }
 }

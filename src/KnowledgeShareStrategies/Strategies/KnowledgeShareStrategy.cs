@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RelationalGit.KnowledgeShareStrategies.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RelationalGit
@@ -67,6 +68,15 @@ namespace RelationalGit
             // we sort the names alphabetically. Helps when analyzing the results later.
             pullRequestRecommendationResult.ActualReviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).OrderBy(q => q).ToArray();
             pullRequestRecommendationResult.SelectedReviewers = pullRequestRecommendationResult.SelectedReviewers?.OrderBy(q => q).ToArray();
+
+            var selectedReviewersKnowledge = pullRequestRecommendationResult.GetSelectedReviewersKnowledge();
+
+            pullRequestRecommendationResult.LossOfExpertise = pullRequestContext.ActualReviewers.Sum(q => q.NumberOfTouchedFiles)
+                - pullRequestContext // folder level knowledgeables need to be removed from the list;
+                .PullRequestKnowledgeables
+                .Where(q => selectedReviewersKnowledge.Contains(q))
+                .Sum(q => q.NumberOfTouchedFiles);
+
             pullRequestRecommendationResult.PullRequestNumber = pullRequestContext.PullRequest.Number;
             pullRequestRecommendationResult.IsSimulated = true;
 

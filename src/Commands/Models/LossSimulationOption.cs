@@ -1,4 +1,6 @@
-﻿namespace RelationalGit
+﻿using System.Collections.Generic;
+
+namespace RelationalGit
 {
     public class LossSimulationOption
     {
@@ -27,6 +29,9 @@
         public string PullRequestReviewerSelectionStrategy { get; set; }
 
         public int? NumberOfPeriodsForCalculatingProbabilityOfStay { get; set; }
+
         public bool? AddOnlyToUnsafePullrequests { get; internal set; }
+
+        public IEnumerable<string> MegaDevelopers { get; set; }
     }
 }

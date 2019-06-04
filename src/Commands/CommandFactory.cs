@@ -160,7 +160,8 @@ namespace RelationalGit.Commands
                     AddOnlyToUnsafePullrequests = options.AddOnlyToUnsafePullrequests,
                     LgtmTerms =options.LgtmTerms.ToArray(),
                     MinimumActualReviewersLength = options.MinimumActualReviewersLength,
-                    NumberOfPeriodsForCalculatingProbabilityOfStay = options.NumberOfPeriodsForCalculatingProbabilityOfStay
+                    NumberOfPeriodsForCalculatingProbabilityOfStay = options.NumberOfPeriodsForCalculatingProbabilityOfStay,
+                    MegaDevelopers = options.MegaDevelopers
                 };
 
                 await cmd.Execute(lossSimulationOption);

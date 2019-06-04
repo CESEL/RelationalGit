@@ -22,32 +22,6 @@ namespace RelationalGit
 
             InitDatabase();
 
-            /*var userInput = new InputOption()
-            {
-                AppsettingsPath = GitRepositoryDbContext.AppSettingsPath,
-                Command = CommandType.GetPullRequestRevieweComments,
-                KnowledgeSaveStrategyType = KnowledgeShareStrategyType.Ideal,
-                CoreDeveloperCalculationType = CoreDeveloperCalculationType.AuthoredLines,
-                LeaversType = LeaversType.All,
-                CoreDeveloperThreshold = 15000,
-                MegaPullRequestSize = 100,
-                FilesAtRiksOwnershipThreshold = 0.90,
-                LeaversOfPeriodExtendedAbsence = 4,
-                FilesAtRiksOwnersThreshold = 1,
-                MegaCommitSize = 200,
-                MegaDevelopers = new[] { "dotnetbot" },//,"dotnet-maestro-bot",
-                PeriodType = PeriodType.Month,
-                PeriodLength = 3,
-                GitHubOwner = "dotnet",
-                GitHubToken = "",
-                GitHubRepo = "corefx",
-                RepositoryPath = @"/home/ehsan/Documents/Repositories/corefx",
-                GitBranch = "master",
-                Extensions = ".cs,.vb,.ts,.js,.jsx,.sh,.yml,.tsx,.css,.json,.py,.c,.h,.cpp,.il,.make,.cmake,.ps1,.r,.cmd,.html,.conf".Split(',')
-            };*/
-
-            //var arguments = Parser.Default.FormatCommandLine(userInput);
-
             await new CommandFactory().Execute(configurationOption, logger);
 
             logger.LogInformation("{datetime} operation {command} has finished", DateTime.Now, configurationOption.Command);

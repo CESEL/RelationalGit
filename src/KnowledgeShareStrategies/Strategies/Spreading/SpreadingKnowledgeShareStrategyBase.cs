@@ -22,7 +22,7 @@ namespace RelationalGit
             }
 
             var simulationResults = new List<PullRequestKnowledgeDistribution>();
-            var simulator = new PullRequestReviewSimulator(pullRequestContext, availableDevs,ComputeScore);
+            var simulator = new PullRequestReviewSimulator(pullRequestContext, availableDevs, ComputeScore);
 
             foreach (var candidateSet in GetPossibleCandidateSets(pullRequestContext, availableDevs))
             {
@@ -36,7 +36,7 @@ namespace RelationalGit
             }
 
             var bestPullRequestKnowledgeDistribution = GetBestDistribution(simulationResults);
-            return new PullRequestRecommendationResult(bestPullRequestKnowledgeDistribution.PullRequestKnowledgeDistributionFactors.Reviewers.ToArray(),availableDevs);
+            return new PullRequestRecommendationResult(bestPullRequestKnowledgeDistribution.PullRequestKnowledgeDistributionFactors.Reviewers.ToArray(), availableDevs);
         }
 
         internal PullRequestKnowledgeDistribution GetBestDistribution(List<PullRequestKnowledgeDistribution> simulationResults)
@@ -86,6 +86,11 @@ namespace RelationalGit
             }
 
             var folderLevelKnowlegeables = developersKnowledge.Values.Where(q => pullRequestContext.AvailableDevelopers.Any(d => d.NormalizedName == q.DeveloperName)).ToArray();
+
+            foreach (var folderLevelKnowlegeable in folderLevelKnowlegeables)
+            {
+                folderLevelKnowlegeable.IsFolderLevel = true;
+            }
 
             return folderLevelKnowlegeables;
         }

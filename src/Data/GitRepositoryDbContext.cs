@@ -54,7 +54,7 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new PullRequestReviewerCommentEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new IssueCommentEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
-            modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new LossSimulationEntityTypeConfiguration());
         }
 
         public DbSet<IssueComment> IssueComments { get; set; }
@@ -303,6 +303,18 @@ namespace RelationalGit
 
             configuration
                 .HasIndex(b => b.UserLogin);
+        }
+    }
+
+    class LossSimulationEntityTypeConfiguration : IEntityTypeConfiguration<LossSimulation>
+    {
+        public void Configure(EntityTypeBuilder<LossSimulation> configuration)
+        {
+            configuration
+                .Property(e => e.MegaDevelopers)
+                .HasConversion(
+                    v => v.Aggregate((a, b) => a + "," + b),
+                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries));
         }
     }
 

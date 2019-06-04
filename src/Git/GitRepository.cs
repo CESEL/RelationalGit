@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace RelationalGit
 {
-    public class GitRepository : IDisposable
+    public class GitRepository
     {
         #region Fields
 
@@ -164,11 +164,11 @@ namespace RelationalGit
 
             if (gitCommit.Parents.Count() <= 1)
             {
-                committedChanges.AddRange(GetDiffOfTrees(_gitRepo, gitCommit.Parents.SingleOrDefault()?.Tree, gitCommit.Tree, compareOptions, fileOidHolder, pathFilesDic));
+                committedChanges.AddRange(GetDiffOfTrees(_gitRepo, gitCommit.Parents.SingleOrDefault()?.Tree, gitCommit.Tree, compareOptions, fileOidHolder));
             }
             else
             {
-                committedChanges.AddRange(GetDiffOfMergedTrees(_gitRepo, gitCommit.Parents, gitCommit.Tree, compareOptions, fileOidHolder, pathFilesDic));
+                committedChanges.AddRange(GetDiffOfMergedTrees(_gitRepo, gitCommit.Parents, gitCommit.Tree, compareOptions, fileOidHolder));
             }
 
             ReorderChanges(commit, fileOidHolder, pathFilesDic, committedChanges);
@@ -176,7 +176,7 @@ namespace RelationalGit
             commit.CommittedChanges = committedChanges;
         }
 
-        private static void ReorderChanges(Commit commit, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic, List<CommittedChange> committedChanges)
+        private void ReorderChanges(Commit commit, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic, List<CommittedChange> committedChanges)
         {
             foreach (var committedFile in committedChanges)
             {
@@ -220,16 +220,16 @@ namespace RelationalGit
             }
         }
 
-        private IEnumerable<CommittedChange> GetDiffOfMergedTrees(Repository gitRepo, IEnumerable<LibGit2Sharp.Commit> parents, Tree tree, CompareOptions compareOptions, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic)
+        private IEnumerable<CommittedChange> GetDiffOfMergedTrees(Repository gitRepo, IEnumerable<LibGit2Sharp.Commit> parents, Tree tree, CompareOptions compareOptions, Dictionary<string, string> fileOidHolder)
         {
             var firstParent = parents.ElementAt(0);
             var secondParent = parents.ElementAt(1);
 
             var copyOfFileOidHolder1 = new Dictionary<string, string>(fileOidHolder);
-            var firstChanges = GetDiffOfTrees(gitRepo, firstParent.Tree, tree, compareOptions, copyOfFileOidHolder1, pathFilesDic);
+            var firstChanges = GetDiffOfTrees(gitRepo, firstParent.Tree, tree, compareOptions, copyOfFileOidHolder1);
 
             var copyOfFileOidHolder2 = new Dictionary<string, string>(fileOidHolder);
-            var secondChanges = GetDiffOfTrees(gitRepo, secondParent.Tree, tree, compareOptions, copyOfFileOidHolder2, pathFilesDic);
+            var secondChanges = GetDiffOfTrees(gitRepo, secondParent.Tree, tree, compareOptions, copyOfFileOidHolder2);
 
             var changes = firstChanges.Where(c1 => secondChanges.Any(c2 => c2.Oid == c1.Oid));
 
@@ -331,7 +331,7 @@ namespace RelationalGit
         }
 
         private List<CommittedChange> GetDiffOfTrees(LibGit2Sharp.Repository repo, Tree oldTree,
-            Tree newTree, CompareOptions compareOptions, Dictionary<string, string> fileOidHolder, Dictionary<string, List<CommittedChange>> pathFilesDic)
+            Tree newTree, CompareOptions compareOptions, Dictionary<string, string> fileOidHolder)
         {
             var result = new List<CommittedChange>();
 
@@ -382,9 +382,5 @@ namespace RelationalGit
             return result;
         }
 
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

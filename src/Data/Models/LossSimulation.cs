@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RelationalGit
 {
@@ -39,5 +40,7 @@ namespace RelationalGit
         public int? NumberOfPeriodsForCalculatingProbabilityOfStay { get; set; }
 
         public string LgtmTerms { get; set; }
+
+        public IEnumerable<string> MegaDevelopers { get; internal set; }
     }
 }

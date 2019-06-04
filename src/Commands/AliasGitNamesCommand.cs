@@ -58,6 +58,13 @@ namespace RelationalGit.Commands
                         if (authorsPlace.ContainsKey(normalizedEmail) &&
                             authorsPlace[normalizedEmail] != uniqueId)
                         {
+
+                            /* it supports following edge case:
+                             * Occurence 1 ehsan,ehsan@gmail.com
+                             * Occurence 2 ali,ali@gmail.com
+                             * Occurence 3 ehsan,ali@gmail.com
+                            */
+
                             var oldUniqueId = authorsPlace[normalizedEmail];
 
                             foreach (var dev in normalizedDevelopers.Where(q => q.NormalizedName == oldUniqueId))

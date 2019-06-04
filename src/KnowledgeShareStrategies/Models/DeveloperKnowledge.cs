@@ -20,5 +20,7 @@
         /// Use this field when you want assign score to developers
         /// </summary>
         public double Score { get; set; }
+
+        public bool IsFolderLevel { get; set; }
     }
 }

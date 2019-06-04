@@ -89,11 +89,6 @@ namespace RelationalGit.Commands
 
             foreach (var result in results)
             {
-                if (!result.IsSimulated)
-                {
-                    continue;
-                }
-
                 bulkPullRequestSimulatedRecommendationResults.Add(new PullRequestRecommendationResult()
                 {
                     ActualReviewers = result.ActualReviewers?.Count() > 0 ? result.ActualReviewers?.Aggregate((a, b) => a + ", " + b) : null,
@@ -106,7 +101,8 @@ namespace RelationalGit.Commands
                     MeanReciprocalRank = result.MeanReciprocalRank,
                     TopFiveIsAccurate = result.TopFiveIsAccurate,
                     TopTenIsAccurate = result.TopTenIsAccurate,
-                    LossSimulationId = lossSimulation.Id
+                    LossSimulationId = lossSimulation.Id,
+                    LossOfExpertise = result.LossOfExpertise
                 });
             }
 
@@ -315,7 +311,8 @@ namespace RelationalGit.Commands
                 AddOnlyToUnsafePullrequests = lossSimulationOption.AddOnlyToUnsafePullrequests,
                 MinimumActualReviewersLength = lossSimulationOption.MinimumActualReviewersLength,
                 NumberOfPeriodsForCalculatingProbabilityOfStay = lossSimulationOption.NumberOfPeriodsForCalculatingProbabilityOfStay,
-                LgtmTerms = lossSimulationOption.LgtmTerms.Aggregate((a, b) => a + "," + b)
+                LgtmTerms = lossSimulationOption.LgtmTerms.Aggregate((a, b) => a + "," + b),
+                MegaDevelopers = lossSimulationOption.MegaDevelopers
             };
 
             _dbContext.Add(lossSimulation);
@@ -434,7 +431,8 @@ namespace RelationalGit.Commands
             _periods,
             lossSimulation.FirstPeriod,
             lossSimulation.SelectedReviewersType,
-            lossSimulation.MinimumActualReviewersLength);
+            lossSimulation.MinimumActualReviewersLength,
+            lossSimulation.MegaDevelopers);
 
             return timeMachine;
         }

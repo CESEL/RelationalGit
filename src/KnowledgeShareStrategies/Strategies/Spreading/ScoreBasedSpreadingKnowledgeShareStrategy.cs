@@ -13,7 +13,10 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         private readonly PullRequestReviewerSelectionStrategy _pullRequestReviewerSelectionDefaultStrategy;
         private static Dictionary<string, int[][]> _combinationDic = new Dictionary<string, int[][]>();
 
-        public ScoreBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, string pullRequestReviewerSelectionStrategy,bool? addOnlyToUnsafePullrequests)
+        public ScoreBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType,
+            ILogger logger, 
+            string pullRequestReviewerSelectionStrategy,
+            bool? addOnlyToUnsafePullrequests)
             : base(knowledgeSaveReviewerReplacementType, logger)
         {
             _logger = logger;

@@ -52,6 +52,7 @@ namespace RelationalGit
         private int _firstSimulationPeriod;
         private string _selectedReviewersType;
         private int _minimumActualReviewersLength;
+        private IEnumerable<string> _megaDevelopers;
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private bool? _addOneReviewerToUnsafePullRequests;
 
@@ -66,7 +67,7 @@ namespace RelationalGit
         public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
         CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles, IssueComment[] issueComments,
          PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
-         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod, string selectedReviewersType, int? minimumActualReviewersLength)
+         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod, string selectedReviewersType, int? minimumActualReviewersLength, IEnumerable<string> megaDevelopers)
         {
             _logger.LogInformation("{datetime}: Trying to initialize TimeMachine.", DateTime.Now);
 
@@ -97,6 +98,8 @@ namespace RelationalGit
             _firstSimulationPeriod = firstPeriod;
             _selectedReviewersType = selectedReviewersType;
             _minimumActualReviewersLength = minimumActualReviewersLength ?? 0;
+
+            _megaDevelopers = megaDevelopers;
 
             _logger.LogInformation("{datetime}: TimeMachine is initialized.", DateTime.Now);
         }
@@ -165,19 +168,15 @@ namespace RelationalGit
 
                 var periodOfPullRequest = GetPeriodOfPullRequest(pullRequest).Id;
 
-                if (periodOfPullRequest >= _firstSimulationPeriod && pullRequestContext.ActualReviewers.Length >= _minimumActualReviewersLength)
-                {
-                    PullRequestSimulatedRecommendationDic[pullRequest.Number] = KnowledgeShareStrategy.Recommend(pullRequestContext);
-                }
-                else
-                {
-                    PullRequestSimulatedRecommendationDic[pullRequest.Number] = new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, null)
-                    {
-                        ActualReviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray(),
-                        PullRequestNumber = pullRequest.Number,
-                        IsSimulated = false
-                    };
-                }
+                var shouldWeChangePast = periodOfPullRequest >= _firstSimulationPeriod && pullRequestContext.ActualReviewers.Length >= _minimumActualReviewersLength;
+
+                PullRequestSimulatedRecommendationDic[pullRequest.Number] = KnowledgeShareStrategy.Recommend(pullRequestContext);
+
+                PullRequestSimulatedRecommendationDic[pullRequest.Number].SelectedReviewers = shouldWeChangePast
+                    ? PullRequestSimulatedRecommendationDic[pullRequest.Number].SelectedReviewers
+                    : pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).ToArray();
+
+                PullRequestSimulatedRecommendationDic[pullRequest.Number].IsSimulated = shouldWeChangePast;
             }
         }
 
@@ -187,7 +186,9 @@ namespace RelationalGit
 
             var period = GetPeriodOfPullRequest(pullRequest);
 
-            var availableDevelopers = GetAvailableDevelopersOfPeriod(period,pullRequest).ToArray();
+            var availableDevelopers = GetAvailableDevelopersOfPeriod(period, pullRequest)
+                .Where(q => !_megaDevelopers.Contains(q.NormalizedName)) // remove mega devs
+                .ToArray();
 
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
 
