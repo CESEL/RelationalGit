@@ -101,6 +101,7 @@ namespace RelationalGit.Commands
                     MeanReciprocalRank = result.MeanReciprocalRank,
                     TopFiveIsAccurate = result.TopFiveIsAccurate,
                     TopTenIsAccurate = result.TopTenIsAccurate,
+                    IsSimulated = result.IsSimulated,
                     LossSimulationId = lossSimulation.Id,
                     LossOfExpertise = result.LossOfExpertise
                 });

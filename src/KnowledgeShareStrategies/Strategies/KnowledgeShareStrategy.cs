@@ -69,13 +69,19 @@ namespace RelationalGit
             pullRequestRecommendationResult.ActualReviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).OrderBy(q => q).ToArray();
             pullRequestRecommendationResult.SelectedReviewers = pullRequestRecommendationResult.SelectedReviewers?.OrderBy(q => q).ToArray();
 
-            var selectedReviewersKnowledge = pullRequestRecommendationResult.GetSelectedReviewersKnowledge();
+            var selectedReviewersKnowledge = pullRequestRecommendationResult.GetSelectedReviewersKnowledge()
+                .SelectMany(q => q.GetTouchedFiles())
+                .ToHashSet();
 
-            pullRequestRecommendationResult.LossOfExpertise = pullRequestContext.ActualReviewers.Sum(q => q.NumberOfTouchedFiles)
-                - pullRequestContext // folder level knowledgeables need to be removed from the list;
-                .PullRequestKnowledgeables
-                .Where(q => selectedReviewersKnowledge.Contains(q))
-                .Sum(q => q.NumberOfTouchedFiles);
+            var actualReviewersKnowledge = pullRequestContext.ActualReviewers
+                .SelectMany(q => q.GetTouchedFiles())
+                .ToHashSet();
+
+            var prFiles = pullRequestContext.PullRequestFiles
+                .Select(q => pullRequestContext.CanononicalPathMapper.GetValueOrDefault(q.FileName));
+
+            pullRequestRecommendationResult.LossOfExpertise = prFiles.Count(q => selectedReviewersKnowledge.Contains(q))
+                - prFiles.Count(q => actualReviewersKnowledge.Contains(q));
 
             pullRequestRecommendationResult.PullRequestNumber = pullRequestContext.PullRequest.Number;
             pullRequestRecommendationResult.IsSimulated = true;

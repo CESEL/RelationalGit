@@ -27,6 +27,6 @@
         public double LossOfExpertise { get; set; }
 
         public long LossSimulationId { get; internal set; }
-
+        public bool IsSimulated { get; internal set; }
     }
 }

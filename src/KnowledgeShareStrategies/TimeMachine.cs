@@ -278,17 +278,12 @@ namespace RelationalGit
                 foreach (var devReviewDetail in fileReviewDetails.Values)
                 {
                     var devName = devReviewDetail.Developer.NormalizedName;
-
-                    var hasCommittedThisFileBefore = knowledgeDistributionMap
-                        .CommitBasedKnowledgeMap.IsPersonHasCommittedThisFile
-                        (devName, canonicalPath);
-
-                    AddReviewOwnershipDetail(developersKnowledge, devReviewDetail, hasCommittedThisFileBefore);
+                    AddReviewOwnershipDetail(developersKnowledge, devReviewDetail);
                 }
             }
         }
 
-        private static void AddReviewOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileReveiewDetail developerFileReveiewDetail, bool hasCommittedThisFileBefore)
+        private static void AddReviewOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileReveiewDetail developerFileReveiewDetail)
         {
             var developerName = developerFileReveiewDetail.Developer.NormalizedName;
 
@@ -302,12 +297,7 @@ namespace RelationalGit
 
             developersKnowledge[developerName].NumberOfReviews += developerFileReveiewDetail.PullRequests.Count();
 
-            if (!hasCommittedThisFileBefore)
-            {
-                developersKnowledge[developerName].NumberOfTouchedFiles++;
-            }
-
-            developersKnowledge[developerName].NumberOfReviewedFiles++;
+            developersKnowledge[developerName].AddReviewedFile(developerFileReveiewDetail.FilePath);
         }
 
         private static void AddModificationOwnershipDetail(Dictionary<string, DeveloperKnowledge> developersKnowledge, DeveloperFileCommitDetail developerFileCommitsDetail, int totalAuditedLines)
@@ -323,9 +313,9 @@ namespace RelationalGit
             }
 
             developersKnowledge[developerName].NumberOfCommits += developerFileCommitsDetail.Commits.Count();
-            developersKnowledge[developerName].NumberOfTouchedFiles++;
-            developersKnowledge[developerName].NumberOfCommittedFiles++;
             developersKnowledge[developerName].NumberOfAuthoredLines += totalAuditedLines;
+
+            developersKnowledge[developerName].AddCommittedFile(developerFileCommitsDetail.FilePath);
         }
 
         private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period, PullRequest pullRequest)
