@@ -127,7 +127,8 @@ namespace RelationalGit.Commands
                 foreach (var filePath in blameSnapshot.FilePaths)
                 {
                     // we are counting all developers regardless of their owenership >0
-                    var committers = blameSnapshot[filePath].Where(q => q.Value.OwnedPercentage > 0).Select(q => q.Value.NormalizedDeveloperName).ToHashSet();
+                    var committers = blameSnapshot[filePath].Where(q => q.Value.OwnedPercentage > 0).Select(q => q.Value.NormalizedDeveloperName)
+                        .Where(q => !lossSimulation.MegaDevelopers.Contains(q)).ToHashSet();
 
                     var fileReviewDetails = knowledgeDistributioneMap.ReviewBasedKnowledgeMap[filePath]?.Where(q => q.Value.Periods.Any(p => p.Id <= period.Id));
 
@@ -307,7 +308,8 @@ namespace RelationalGit.Commands
                 MinimumActualReviewersLength = lossSimulationOption.MinimumActualReviewersLength,
                 NumberOfPeriodsForCalculatingProbabilityOfStay = lossSimulationOption.NumberOfPeriodsForCalculatingProbabilityOfStay,
                 LgtmTerms = lossSimulationOption.LgtmTerms.Aggregate((a, b) => a + "," + b),
-                MegaDevelopers = lossSimulationOption.MegaDevelopers
+                MegaDevelopers = lossSimulationOption.MegaDevelopers,
+                RecommenderOption = lossSimulationOption.RecommenderOption,
             };
 
             _dbContext.Add(lossSimulation);
@@ -326,7 +328,8 @@ namespace RelationalGit.Commands
                 lossSimulation.KnowledgeSaveReviewerReplacementType,
                 lossSimulation.NumberOfPeriodsForCalculatingProbabilityOfStay,
                 lossSimulation.PullRequestReviewerSelectionStrategy,
-                lossSimulation.AddOnlyToUnsafePullrequests);
+                lossSimulation.AddOnlyToUnsafePullrequests,
+                lossSimulation.RecommenderOption);
 
             var timeMachine = new TimeMachine(knowledgeShareStrategy, _logger);
 
@@ -347,8 +350,7 @@ namespace RelationalGit.Commands
             _pullRequests = _dbContext
             .PullRequests
             .FromSql($@"SELECT * FROM PullRequests 
-                    WHERE MergeCommitSha IS NOT NULL and Merged=1 AND
-                    MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND 
+                    WHERE MergeCommitSha IS NOT NULL and Merged=1 and MergeCommitSha is not null AND
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate}")
             .ToArray();
@@ -358,7 +360,7 @@ namespace RelationalGit.Commands
             _pullRequestFiles = _dbContext
             .PullRequestFiles
             .FromSql($@"SELECT * From PullRequestFiles Where PullRequestNumber in
-                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND 
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IS NOT NULL and Merged=1 and MergeCommitSha is not null AND 
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
@@ -368,7 +370,7 @@ namespace RelationalGit.Commands
             _pullRequestReviewers = _dbContext
             .PullRequestReviewers
             .FromSql($@"SELECT * From PullRequestReviewers Where PullRequestNumber in
-                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IS NOT NULL and Merged=1 and MergeCommitSha is not null AND
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .Where(q => q.State != "DISMISSED")
@@ -379,14 +381,14 @@ namespace RelationalGit.Commands
             _pullRequestReviewComments = _dbContext
             .PullRequestReviewerComments
             .FromSql($@"SELECT * From PullRequestReviewerComments Where PullRequestNumber in
-                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IS NOT NULL and Merged=1 and MergeCommitSha is not null AND
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<={latestCommitDate})")
             .ToArray();
 
             var lgtmTerms = lossSimulation.LgtmTerms.Split(',').Select(q => $"(Body LIKE '{q}')").Aggregate((a, b) => a + " OR " + b);
             var query = $@"SELECT * From IssueComments Where IssueNumber in
-                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IN (SELECT Sha FROM Commits WHERE Ignore=0) AND
+                    (SELECT Number FROM PullRequests WHERE MergeCommitSha IS NOT NULL and Merged=1 and MergeCommitSha is not null AND
                     Number NOT IN(select PullRequestNumber FROM PullRequestFiles GROUP BY PullRequestNumber having count(*)>{lossSimulation.MegaPullRequestSize})
                     AND MergedAtDateTime<='{latestCommitDate}') and ({lgtmTerms})";
 

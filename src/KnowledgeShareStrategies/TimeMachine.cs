@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 using RelationalGit.KnowledgeShareStrategies.Models;
+using RelationalGit.Data.Models;
 
 namespace RelationalGit
 {
@@ -32,12 +33,16 @@ namespace RelationalGit
 
         private Dictionary<long, List<string>> PullRequestReviewersDic { get; set; }
 
-        private Dictionary<long, PullRequestRecommendationResult> PullRequestSimulatedRecommendationDic { get; set; } = new Dictionary<long, PullRequestRecommendationResult>();
+        private Dictionary<long, KnowledgeShareStrategies.Models.PullRequestRecommendationResult> PullRequestSimulatedRecommendationDic { get; set; } = new Dictionary<long, KnowledgeShareStrategies.Models.PullRequestRecommendationResult>();
 
         private PullRequestReviewerComment[] PullRequestReviewComments { get; set; }
 
         private Dictionary<string, string> CanononicalPathMapper { get; set; }
 
+        private IEvent[] _events;
+
+        public Commit[] Commits { get; private set; }
+        public PullRequest[] PullRequests { get; private set; }
         private UsernameRepository UsernameRepository { get; set; }
 
         private Dictionary<long, Period> PeriodsDic { get; set; }
@@ -52,7 +57,7 @@ namespace RelationalGit
         private int _firstSimulationPeriod;
         private string _selectedReviewersType;
         private int _minimumActualReviewersLength;
-        private IEnumerable<string> _megaDevelopers;
+        private HashSet<string> _megaDevelopersSet;
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private bool? _addOneReviewerToUnsafePullRequests;
 
@@ -72,12 +77,11 @@ namespace RelationalGit
             _logger.LogInformation("{datetime}: Trying to initialize TimeMachine.", DateTime.Now);
 
             UsernameRepository = new UsernameRepository(githubGitUsers, developers);
-
-            SortedCommits = commits.OrderBy(q => q.AuthorDateTime).ToArray();
-
             DevelopersContributions = developersContributions;
             PullRequestReviewComments = pullRequestReviewComments;
             CanononicalPathMapper = canononicalPathMapper;
+
+            _events = GetSortedEvents(commits, pullRequests);
 
             CommitsDic = commits.ToDictionary(q => q.Sha);
             PeriodsDic = periods.ToDictionary(q => q.Id);
@@ -93,15 +97,30 @@ namespace RelationalGit
             PullRequestFilesDic = GetPullRequestFilesDictionary(pullRequestFiles);
             PullRequestReviewersDic = GetPullRequestReviewersDictionary(pullRequestReviewers, pullRequestReviewComments, issueComments);
 
-            GetCommitsPullRequests(pullRequests);
-
             _firstSimulationPeriod = firstPeriod;
             _selectedReviewersType = selectedReviewersType;
             _minimumActualReviewersLength = minimumActualReviewersLength ?? 0;
 
-            _megaDevelopers = megaDevelopers;
+            _megaDevelopersSet = megaDevelopers.ToHashSet();
 
             _logger.LogInformation("{datetime}: TimeMachine is initialized.", DateTime.Now);
+        }
+
+        private IEvent[] GetSortedEvents(Commit[] commits, PullRequest[] pullRequests)
+        {
+            var events = new List<IEvent>();
+
+            foreach (var commit in commits)
+            {
+                events.Add(commit);
+            }
+
+            foreach (var pullRequest in pullRequests)
+            {
+                events.Add(pullRequest);
+            }
+
+            return events.OrderBy(q => q.OccurrenceDateTime).ToArray();
         }
 
         private void UpdatePullRequestEffortKnowledgeMap(IEnumerable<PullRequestReviewerComment> pullRequestReviewComments)
@@ -128,15 +147,12 @@ namespace RelationalGit
                 PullRequestEffortKnowledgeMap = PullRequestEffortKnowledgeMap
             };
 
-            foreach (var commit in SortedCommits)
+            foreach (var @event in _events)
             {
-                _logger.LogInformation("{datetime}: Trying To Analayze the Commit {commit} and Pull Request {PullRequesyNumber}.",
-                    DateTime.Now, commit.Sha, commit.MergedPullRequest?.Number.ToString() ?? "-");
-
-                UpdateCommitBasedKnowledgeMap(commit);
-                UpdateReviewBasedKnowledgeMap(knowledgeMap, commit, commit.MergedPullRequest);
-
-                _logger.LogInformation("{datetime}: Analyzed is finished", DateTime.Now);
+                if(@event is Commit)
+                    UpdateCommitBasedKnowledgeMap(@event as Commit);
+                else if (@event is PullRequest)
+                    UpdateReviewBasedKnowledgeMap(knowledgeMap, @event as PullRequest);
             }
 
             _logger.LogInformation("{datetime}: flying in time has finished.", DateTime.Now);
@@ -146,18 +162,20 @@ namespace RelationalGit
 
         #region Private Methods
 
-        private void UpdateReviewBasedKnowledgeMap(KnowledgeDistributionMap knowledgeMap, Commit commit, PullRequest pullRequest)
+        private void UpdateReviewBasedKnowledgeMap(KnowledgeDistributionMap knowledgeMap, PullRequest pullRequest)
         {
-            if (pullRequest != null)
-            {
-                AddProposedChangesToPrSubmitterKnowledge(pullRequest, commit);
+            var submitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
 
-                ChangeThePastByRecommendingReviewers(knowledgeMap, pullRequest);
+            if (submitter==null || _megaDevelopersSet.Contains(submitter.NormalizedName))
+                return;
 
-                UpdateReviewBasedKnowledgeMap(pullRequest);
+            AddProposedChangesToPrSubmitterKnowledge(pullRequest);
 
-                UpdatePullRequestEffortKnowledgeMap(PullRequestReviewComments.Where(q => q.PullRequestNumber == pullRequest.Number));
-            }
+            ChangeThePastByRecommendingReviewers(knowledgeMap, pullRequest);
+
+            UpdateReviewBasedKnowledgeMap(pullRequest);
+
+            UpdatePullRequestEffortKnowledgeMap(PullRequestReviewComments.Where(q => q.PullRequestNumber == pullRequest.Number));
         }
 
         private void ChangeThePastByRecommendingReviewers(KnowledgeDistributionMap knowledgeMap, PullRequest pullRequest)
@@ -187,7 +205,6 @@ namespace RelationalGit
             var period = GetPeriodOfPullRequest(pullRequest);
 
             var availableDevelopers = GetAvailableDevelopersOfPeriod(period, pullRequest)
-                .Where(q => !_megaDevelopers.Contains(q.NormalizedName)) // remove mega devs
                 .ToArray();
 
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
@@ -321,13 +338,14 @@ namespace RelationalGit
         private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period, PullRequest pullRequest)
         {
             return DevelopersDic.Values.Where(dev => dev.FirstParticipationDateTime <= pullRequest.MergedAtDateTime
-                && dev.LastParticipationDateTime >= pullRequest.MergedAtDateTime);
+                && dev.LastParticipationDateTime >= pullRequest.MergedAtDateTime)
+                .Where(q => !_megaDevelopersSet.Contains(q.NormalizedName)); // remove mega devs;
         }
 
         private Period GetPeriodOfPullRequest(PullRequest pullRequest)
         {
-            var mergeCommitd = CommitsDic[pullRequest.MergeCommitSha];
-            return PeriodsDic[mergeCommitd.PeriodId.Value];
+            return PeriodsDic.Values
+                .Single(q=> q.FromDateTime<=pullRequest.CreatedAtDateTime && q.ToDateTime >= pullRequest.CreatedAtDateTime);
         }
 
         private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
@@ -344,19 +362,14 @@ namespace RelationalGit
             }
         }
 
-        private void AddProposedChangesToPrSubmitterKnowledge(PullRequest pullRequest, Commit prMergedCommit)
+        private void AddProposedChangesToPrSubmitterKnowledge(PullRequest pullRequest)
         {
             // we assume the PR submitter is the dev who has modified the files
             // however it's not the case always. for example https://github.com/dotnet/coreclr/pull/1
             // we assume all the proposed file changes are committed and owned by the main pull request's author
             // which may not be correct in rare scenarios
 
-            if (prMergedCommit == null || pullRequest == null)
-            {
-                return;
-            }
-
-            if (pullRequest.MergeCommitSha != prMergedCommit.Sha)
+            if (pullRequest == null)
             {
                 return;
             }
@@ -373,12 +386,12 @@ namespace RelationalGit
                 return;
             }
 
-            var period = GetPeriodOfCommit(prMergedCommit);
+            var period = GetPeriodOfPullRequest(pullRequest);
 
             foreach (var file in pullRequestFiles)
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                AssignKnowledgeToDeveloper(prMergedCommit, file.ChangeKind, prSubmitter, period, canonicalPath);
+                AssignKnowledgeToDeveloper(new Commit { NormalizedAuthorName= prSubmitter ,PeriodId=period.Id,Sha=pullRequest.MergeCommitSha}, file.ChangeKind, prSubmitter, period, canonicalPath);
             }
         }
 
@@ -403,6 +416,9 @@ namespace RelationalGit
 
         private void UpdateCommitBasedKnowledgeMap(Commit commit)
         {
+            if (_megaDevelopersSet.Contains(commit.NormalizedAuthorName))
+                return;
+
             // merged commits probably contain no changes
             var changes = CommittedChangesDic.GetValueOrDefault(commit.Sha, new List<CommittedChange>());
             var developerName = commit.NormalizedAuthorName;
@@ -441,19 +457,6 @@ namespace RelationalGit
             return blameBasedKnowledgeMap;
         }
 
-        private void GetCommitsPullRequests(PullRequest[] pullRequests)
-        {
-            foreach (var pullRequest in pullRequests)
-            {
-                // It's possible that two pull requests have the same merge commit
-                // it's a bug in github. We take only one of them in such a scenario.
-                // https://github.com/dotnet/coreclr/pull/9909
-                // https://github.com/dotnet/coreclr/pull/9379
-                var mergedCommit = CommitsDic.GetValueOrDefault(pullRequest.MergeCommitSha);
-                mergedCommit.MergedPullRequest = pullRequest;
-            }
-        }
-
         private Dictionary<long, List<PullRequestFile>> GetPullRequestFilesDictionary(PullRequestFile[] pullRequestFiles)
         {
             var result = new Dictionary<long, List<PullRequestFile>>();
@@ -461,6 +464,10 @@ namespace RelationalGit
 
             for (var i = 0; i < pullRequestFiles.Length; i++)
             {
+                // we remove this file, if there it is not recorded in the committedchanges dataset
+                if (!CanononicalPathMapper.ContainsKey(pullRequestFiles[i].FileName))
+                    continue;
+
                 key = pullRequestFiles[i].PullRequestNumber;
                 if (!result.ContainsKey(key))
                 {

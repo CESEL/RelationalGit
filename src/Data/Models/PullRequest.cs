@@ -32,6 +32,8 @@ namespace RelationalGit
 
         public string MergeCommitSha { get; internal set; }
 
-        public DateTime OccurrenceDateTime => CreatedAtDateTime;
+        public DateTime? OccurrenceDateTime => CreatedAtDateTime;
+
+        public string EventId => Number.ToString();
     }
 }

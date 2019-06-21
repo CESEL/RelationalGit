@@ -6,6 +6,8 @@ namespace RelationalGit.Data.Models
 {
     public interface IEvent
     {
-        DateTime OccurrenceDateTime { get; }
+        DateTime? OccurrenceDateTime { get; }
+
+        string EventId { get; }
     }
 }

@@ -48,7 +48,7 @@ namespace RelationalGit
                 };
             }
 
-            if (!_map[filePath][developerName].Commits.Any(q => q.Sha == commit.Sha))
+            if (!_map[filePath][developerName].Commits.Any(q => q.Sha == commit?.Sha))
             {
                 _map[filePath][developerName].CommitDetails.Add(new CommitDetail(commit, period, changeKind));
                 _map[filePath][developerName].Commits.Add(commit);

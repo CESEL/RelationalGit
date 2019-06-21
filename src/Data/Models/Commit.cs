@@ -49,9 +49,8 @@ namespace RelationalGit
         [NotMapped]
         public ICollection<CommittedBlob> Blobs { get; set; }
 
-        [NotMapped]
-        public PullRequest MergedPullRequest { get; internal set; }
+        public DateTime? OccurrenceDateTime => AuthorDateTime;
 
-        public DateTime OccurrenceDateTime => AuthorDateTime;
+        public string EventId => Sha;
     }
 }

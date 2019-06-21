@@ -107,8 +107,11 @@ namespace RelationalGit.CommandLine
         [Option("extract-blames")]
         public bool? ExtractBlames { get; set; }
 
+        [Option("recommender-option")]
+        public string RecommenderOption { get;  set; }
+
         [Option("add-only-to-unsafe-pullrequests")]
-        public bool? AddOnlyToUnsafePullrequests { get;  set; }
+        public bool? AddOnlyToUnsafePullrequests { get; set; }
 
         internal InputOption Override(InputOption fileConfigurationOption)
         {
@@ -151,6 +154,7 @@ namespace RelationalGit.CommandLine
             overridedInputOption.NumberOfPeriodsForCalculatingProbabilityOfStay = Override(NumberOfPeriodsForCalculatingProbabilityOfStay, fileConfigurationOption.NumberOfPeriodsForCalculatingProbabilityOfStay);
             overridedInputOption.MinimumActualReviewersLength = Override(MinimumActualReviewersLength, fileConfigurationOption.MinimumActualReviewersLength);
             overridedInputOption.AddOnlyToUnsafePullrequests = Override(AddOnlyToUnsafePullrequests, fileConfigurationOption.AddOnlyToUnsafePullrequests);
+            overridedInputOption.RecommenderOption = Override(RecommenderOption, fileConfigurationOption.RecommenderOption);
 
             return overridedInputOption;
         }

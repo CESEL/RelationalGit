@@ -6,8 +6,13 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
     {
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
 
-        public PersistBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy, bool? addOnlyToUnsafePullrequests)
-            : base(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests)
+        public PersistBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, 
+            ILogger logger, 
+            int? numberOfPeriodsForCalculatingProbabilityOfStay, 
+            string pullRequestReviewerSelectionStrategy, 
+            bool? addOnlyToUnsafePullrequests,
+            string recommenderOption)
+            : base(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests,recommenderOption)
         {
             _numberOfPeriodsForCalculatingProbabilityOfStay = numberOfPeriodsForCalculatingProbabilityOfStay;
         }

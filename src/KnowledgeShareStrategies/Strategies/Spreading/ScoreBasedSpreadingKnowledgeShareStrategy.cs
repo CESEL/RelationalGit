@@ -13,10 +13,13 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         private readonly PullRequestReviewerSelectionStrategy _pullRequestReviewerSelectionDefaultStrategy;
         private static Dictionary<string, int[][]> _combinationDic = new Dictionary<string, int[][]>();
 
+        protected string RrecommenderOption { get; private set; }
+
         public ScoreBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType,
             ILogger logger, 
             string pullRequestReviewerSelectionStrategy,
-            bool? addOnlyToUnsafePullrequests)
+            bool? addOnlyToUnsafePullrequests,
+            string recommenderOption)
             : base(knowledgeSaveReviewerReplacementType, logger)
         {
             _logger = logger;
@@ -24,6 +27,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
             _pullRequestReviewerSelectionStrategies = ParsePullRequestReviewerSelectionStrategy(pullRequestReviewerSelectionStrategy);
             _pullRequestReviewerSelectionDefaultStrategy = _pullRequestReviewerSelectionStrategies.Single(q => q.ActualReviewerCount == "-");
             _addOnlyToUnsafePullrequests = addOnlyToUnsafePullrequests;
+            RrecommenderOption = recommenderOption;
         }
 
         private void ComputeAllReviewerScores(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)

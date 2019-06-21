@@ -42,5 +42,6 @@ namespace RelationalGit
         public string LgtmTerms { get; set; }
 
         public IEnumerable<string> MegaDevelopers { get; internal set; }
+        public string RecommenderOption { get; internal set; }
     }
 }

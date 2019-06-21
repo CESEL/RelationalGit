@@ -33,7 +33,7 @@ namespace RelationalGit.Commands
                 await dbContext
                 .Database
                .ExecuteSqlCommandAsync(
-                   @"UPDATE CommitBlobBlames SET NormalizedDeveloperIdentity=Commits.NormalizedName.NormalizedAuthorName
+                   @"UPDATE CommitBlobBlames SET NormalizedDeveloperIdentity=Commits.NormalizedAuthorName
                     from Commits
                     where  CommitBlobBlames.AuthorCommitSha=Sha").ConfigureAwait(false);
 
