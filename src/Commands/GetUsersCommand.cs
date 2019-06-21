@@ -29,10 +29,10 @@ namespace RelationalGit.Commands
                             .ToArray();
 
                 var githubExtractor = new GithubDataFetcher(token, agentName, _logger);
-                await githubExtractor.GetUsers(unknownUsers);
+                await githubExtractor.GetUsers(unknownUsers).ConfigureAwait(false);
 
                 dbContext.AddRange(unknownUsers);
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
             }
         }
     }

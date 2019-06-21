@@ -37,19 +37,31 @@ namespace RelationalGit.Commands
                 {
                     var normalizedEmail = author.AuthorEmail
                         .Replace(" ", string.Empty)
+                        .Replace(".", string.Empty)
+                        .Replace("[", string.Empty)
+                        .Replace("]", string.Empty)
+                        .Replace("_", string.Empty)
+                        .Replace("-", string.Empty)
+                        .Replace("(", string.Empty)
+                        .Replace(")", string.Empty)
                         .ToLower()
                         .Trim()
                         .RemoveDiacritics();
 
                     var normalizedName = author.AuthorName
                         .Replace(" ", string.Empty)
+                        .Replace(".", string.Empty)
+                        .Replace("[", string.Empty)
+                        .Replace("]", string.Empty)
+                        .Replace("_", string.Empty)
+                        .Replace("-", string.Empty)
+                        .Replace("(", string.Empty)
+                        .Replace(")", string.Empty)
                         .Trim()
                         .ToLower()
                         .RemoveDiacritics();
 
                     // we remove () [] '' "" and all the text in between
-                    string regex = "(\\[.*\\])|(\".*\")|('.*')|(\\(.*\\))";
-                    normalizedName = Regex.Replace(normalizedName, regex, string.Empty);
 
                     if (authorsPlace.ContainsKey(normalizedName))
                     {
@@ -112,7 +124,7 @@ namespace RelationalGit.Commands
                     DateTime.Now, normalizedDevelopers.Select(q => q.NormalizedName).Distinct().Count());
 
                 dbContext.AddRange(normalizedDevelopers);
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: aliased results have been saves successfully.", DateTime.Now);
             }

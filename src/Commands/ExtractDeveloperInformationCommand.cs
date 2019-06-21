@@ -44,7 +44,7 @@ namespace RelationalGit.Commands
                 PeriodId = q.Key.PeriodId,
                 TotalCommits = q.Count(),
             })
-            .ToArrayAsync();
+            .ToArrayAsync().ConfigureAwait(false);
 
             foreach (var period in dbContext.Periods.ToArray())
             {
@@ -59,7 +59,7 @@ namespace RelationalGit.Commands
                     DeveloperKnowledge = q.Sum(l => l.AuditedLines)
                 })
                 .OrderByDescending(q => q.DeveloperKnowledge)
-                .ToArrayAsync();
+                .ToArrayAsync().ConfigureAwait(false);
 
                 var totalKnowledge = (double)blames.Sum(q => q.DeveloperKnowledge);
 

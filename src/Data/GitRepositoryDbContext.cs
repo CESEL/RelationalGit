@@ -55,6 +55,8 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new IssueCommentEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new LossSimulationEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new CommittedChangeBlameEntityTypeConfiguration());
+
         }
 
         public DbSet<IssueComment> IssueComments { get; set; }
@@ -96,6 +98,8 @@ namespace RelationalGit
         public DbSet<LossSimulation> LossSimulations { get; set; }
 
         public DbSet<FileTouch> FileTouches { get; set; }
+
+        public DbSet<CommittedChangeBlame> CommittedChangeBlames { get; set; }
 
         public DbSet<FileKnowledgeable> FileKnowledgeables { get; set; }
 
@@ -305,6 +309,21 @@ namespace RelationalGit
                 .HasIndex(b => b.UserLogin);
         }
     }
+    
+    class CommittedChangeBlameEntityTypeConfiguration : IEntityTypeConfiguration<CommittedChangeBlame>
+    {
+        public void Configure(EntityTypeBuilder<CommittedChangeBlame> configuration)
+        {
+            configuration
+                .HasIndex(b => b.CanonicalPath);
+
+            configuration
+                .HasIndex(b => b.CommitSha);
+
+            configuration
+                .HasIndex(b => b.NormalizedDeveloperIdentity);
+        }
+    }
 
     class LossSimulationEntityTypeConfiguration : IEntityTypeConfiguration<LossSimulation>
     {
@@ -337,7 +356,7 @@ namespace RelationalGit
             configuration
                 .HasIndex(b => b.AuthorEmail);
 
-              configuration
+            configuration
                 .HasIndex(b => b.AuthorName);
 
             configuration
@@ -352,7 +371,7 @@ namespace RelationalGit
         }
     }
 
-   class AliasedDeveloperNameEntityTypeConfiguration : IEntityTypeConfiguration<AliasedDeveloperName>
+    class AliasedDeveloperNameEntityTypeConfiguration : IEntityTypeConfiguration<AliasedDeveloperName>
     {
         public void Configure(EntityTypeBuilder<AliasedDeveloperName> configuration)
         {

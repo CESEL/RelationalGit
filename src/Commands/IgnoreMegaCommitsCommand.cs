@@ -37,7 +37,7 @@ namespace RelationalGit.Commands
                 INNER JOIN (select CommitSha from CommittedChanges group by CommitSha having count(*)>={megaCommitSize}) as t
                 On AuthorCommitSha=t.CommitSha";
 
-                await dbContext.Database.ExecuteSqlCommandAsync(query);
+                await dbContext.Database.ExecuteSqlCommandAsync(query).ConfigureAwait(false);
             }
         }
     }

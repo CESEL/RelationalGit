@@ -25,7 +25,7 @@ namespace RelationalGit.Commands
                 group by NormalizedAuthorName,AuthorName) as c2 on c1.AuthorDateTime=c2.AuthorDateTime
                 and c1.NormalizedAuthorName=c2.NormalizedAuthorName
                 and c1.AuthorName=c2.AuthorName")
-                .ToArrayAsync();
+                .ToArrayAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: fetching corresponding GitHub user of {count} git authors.", DateTime.Now, commitAuthors.Length);
 
@@ -33,7 +33,7 @@ namespace RelationalGit.Commands
 
                 foreach (var commitAuthor in commitAuthors)
                 {
-                    var commit = await github.GetCommit(owner, repo, commitAuthor.Sha);
+                    var commit = await github.GetCommit(owner, repo, commitAuthor.Sha).ConfigureAwait(false);
 
                     // Github does not return the author for some of the old Commits
                     dbContext.Add(new GitHubGitUser
@@ -44,7 +44,7 @@ namespace RelationalGit.Commands
                     });
                 }
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: corresponding GitHub users have been saved successfully.", DateTime.Now);
             }

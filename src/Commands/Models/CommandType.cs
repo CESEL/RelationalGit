@@ -20,7 +20,7 @@
 
         public static string ExtractBlameForEachPeriod => "get-git-commit-blames-for-periods";
 
-         public static string DoNameAliasing => "alias-git-names";
+        public static string DoNameAliasing => "alias-git-names";
 
         public static string ApplyNameAliasing => "apply-git-aliased";
 
@@ -35,5 +35,7 @@
         public static string GetPullRequestMergeEvents => "get-merge-events";
 
         public static string GetPullRequestIssueComments => "get-pullrequest-issue-comments";
+
+        public static string GetBlamesOfCommitedChanges => "get-committed-changes-blames";
     }
 }

@@ -22,7 +22,7 @@ namespace RelationalGit
 
             InitDatabase();
 
-            await new CommandFactory().Execute(configurationOption, logger);
+            await new CommandFactory().Execute(configurationOption, logger).ConfigureAwait(false);
 
             logger.LogInformation("{datetime} operation {command} has finished", DateTime.Now, configurationOption.Command);
         }

@@ -23,8 +23,8 @@ namespace RelationalGit.Commands
                 var orderedCommits = gitRepository.ExtractCommitsFromBranch(branchName);
                 var relationships = orderedCommits.SelectMany(q => q.CommitRelationship).ToArray();
                 _logger.LogInformation("{datetime}: trying to save {count} commits into database.", DateTime.Now, orderedCommits.Count());
-                await dbContext.BulkInsertAsync(orderedCommits);
-                await dbContext.BulkInsertAsync(relationships);
+                await dbContext.BulkInsertAsync(orderedCommits).ConfigureAwait(false);
+                await dbContext.BulkInsertAsync(relationships).ConfigureAwait(false);
                 _logger.LogInformation("{datetime}: commits has been saved successfully.", DateTime.Now);
             }
         }

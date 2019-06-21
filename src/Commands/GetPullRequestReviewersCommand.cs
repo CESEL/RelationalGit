@@ -23,17 +23,17 @@ namespace RelationalGit.Commands
 
                 var pullRequests = await dbContext.PullRequests.AsNoTracking()
                     .OrderBy(q => q.Number)
-                    .ToArrayAsync();
+                    .ToArrayAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: trying to fetch all the assigned reviewers for all {count} pull requests.", DateTime.Now, pullRequests.Length);
 
                 var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
-                var pullRequestReviews = await githubExtractor.FetchReviewersOfPullRequests(owner, repo, pullRequests);
+                var pullRequestReviews = await githubExtractor.FetchReviewersOfPullRequests(owner, repo, pullRequests).ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: trying to save {count} reviewers into database.", DateTime.Now, pullRequestReviews.Length);
 
                 dbContext.AddRange(pullRequestReviews);
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: reviewers has been save successfully.", DateTime.Now, pullRequestReviews.Length);
             }

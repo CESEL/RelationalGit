@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace RelationalGit
 {
@@ -27,6 +28,59 @@ namespace RelationalGit
             _gitRepo = new Repository(localRepositoryPath);
             _localClonePath = localRepositoryPath;
             _logger = logger;
+        }
+
+        public CommittedChangeBlame[] GetBlameOfChanges(string branchName, string[] validExtensions,
+            string[] excludedPaths, CommittedChange[] committedChanges)
+        {
+            var commitsDic = ExtractCommitsFromBranch(branchName).ToDictionary(q => q.Sha);
+            var blames = new ConcurrentBag<CommittedChangeBlame>();
+            var countOfScannedChanges = 0;
+
+            Parallel.ForEach(
+                committedChanges,
+                new ParallelOptions() { MaxDegreeOfParallelism = 1 },
+                GetPowerShellInstance,
+                (committedChange, _, powershellInstance) =>
+                {
+                    Interlocked.Increment(ref countOfScannedChanges);
+                    var shouldGetBlame = validExtensions.Any(f => committedChange.Path.EndsWith(f)) && excludedPaths.All(e => !Regex.IsMatch(committedChange.Path, e));
+
+                    if (shouldGetBlame && (committedChange.Status == (short)ChangeKind.Added || committedChange.Status == (short)ChangeKind.Modified))
+                    {
+                        var rawBlames = GetBlameFromPowerShell(powershellInstance, committedChange.CommitSha, committedChange.Path);
+                        var extractedBlames = ExtractBlames(rawBlames, committedChange, commitsDic[committedChange.CommitSha]);
+
+                        foreach (var extractedBlame in extractedBlames)
+                        {
+                            blames.Add(extractedBlame);
+                        }
+                    }
+                    else if (shouldGetBlame && committedChange.Status == (short)ChangeKind.Deleted)
+                    {
+                        blames.Add(new CommittedChangeBlame()
+                        {
+                            AuditedLines = -1,
+                            AuditedPercentage = -1,
+                            CanonicalPath = committedChange.CanonicalPath,
+                            AuthorDateTime = commitsDic[committedChange.CommitSha].AuthorDateTime,
+                            CommitSha = committedChange.CommitSha,
+                            Path = committedChange.Path,
+                            NormalizedDeveloperIdentity = commitsDic[committedChange.CommitSha].NormalizedAuthorName,
+                            Ignore = false
+                        });
+                    }
+
+                    if (countOfScannedChanges % 500 == 0)
+                    {
+                        _logger.LogInformation("{datetime} : Blames extraction from {currentCount} files out of {total} completed.", DateTime.Now, countOfScannedChanges, committedChanges.Length);
+                    }
+
+                    return powershellInstance;
+                },
+                (powerShellInstance) => powerShellInstance?.Dispose());
+
+            return blames.ToArray();
         }
 
         #region Public Interface
@@ -249,7 +303,7 @@ namespace RelationalGit
         {
             var blobBlames = new List<CommitBlobBlame>();
 
-            var developerLineOwnershipDictionary = new Dictionary<string, int>();
+            var developerLineOwnershipDictionary = new Dictionary<(string Sha, string Email), int>();
 
             foreach (var blameLine in blameLines)
             {
@@ -268,20 +322,18 @@ namespace RelationalGit
 
                 var email = commit.AuthorEmail;
 
-                var key = sha + email;
-
-                if (!developerLineOwnershipDictionary.ContainsKey(key))
+                if (!developerLineOwnershipDictionary.ContainsKey((sha, email)))
                 {
-                    developerLineOwnershipDictionary[key] = 0;
+                    developerLineOwnershipDictionary[(sha, email)] = 0;
                 }
 
-                developerLineOwnershipDictionary[key]++;
+                developerLineOwnershipDictionary[(sha, email)]++;
             }
 
             foreach (var developerLineOwnership in developerLineOwnershipDictionary)
             {
-                var authorSha = developerLineOwnership.Key.Substring(0, 40);
-                var email = developerLineOwnership.Key.Substring(40);
+                var authorSha = developerLineOwnership.Key.Sha;
+                var email = developerLineOwnership.Key.Email;
 
                 blobBlames.Add(new CommitBlobBlame()
                 {
@@ -298,10 +350,59 @@ namespace RelationalGit
             return blobBlames;
         }
 
+        private ICollection<CommittedChangeBlame> ExtractBlames(
+           string[] blameLines,
+           CommittedChange committedChange,
+           Commit commit)
+        {
+            var blames = new List<CommittedChangeBlame>();
+
+            var developerLineOwnershipDictionary = new Dictionary<(string Sha, string Email), int>();
+
+            foreach (var blameLine in blameLines)
+            {
+                if (blameLine.Length < 40)
+                {
+                    continue;
+                }
+
+                var sha = blameLine.Substring(0, 40);
+                var email = commit.AuthorEmail;
+
+                if (!developerLineOwnershipDictionary.ContainsKey((sha, email)))
+                {
+                    developerLineOwnershipDictionary[(sha, email)] = 0;
+                }
+
+                developerLineOwnershipDictionary[(sha, email)]++;
+            }
+
+            foreach (var developerLineOwnership in developerLineOwnershipDictionary)
+            {
+                var authorSha = developerLineOwnership.Key.Sha;
+                var email = developerLineOwnership.Key.Email;
+
+                blames.Add(new CommittedChangeBlame()
+                {
+                    Path = committedChange.Path,
+                    AuditedLines = developerLineOwnership.Value,
+                    AuditedPercentage = developerLineOwnership.Value / (double)blameLines.Length,
+                    CommitSha = committedChange.CommitSha,
+                    CanonicalPath = committedChange.CanonicalPath,
+                    DeveloperIdentity = email,
+                    NormalizedDeveloperIdentity = commit.NormalizedAuthorName,
+                    Ignore = false,
+                    AuthorDateTime = commit.AuthorDateTime
+                });
+            }
+
+            return blames;
+        }
+
         private string[] GetBlameFromPowerShell(PowerShell powerShellInstance, string commitSha, string blobPath)
         {
             powerShellInstance.Commands.Clear();
-            powerShellInstance.AddScript($@"git blame -l -w {commitSha} -- '{blobPath}'");
+            powerShellInstance.AddScript($@"git blame -l -e -w {commitSha} -- '{blobPath}'");
             return powerShellInstance.Invoke().Select(m => m.ToString()).ToArray();
         }
 

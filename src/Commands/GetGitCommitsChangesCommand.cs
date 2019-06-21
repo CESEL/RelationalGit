@@ -30,7 +30,7 @@ namespace RelationalGit.Commands
                     dbContext.BulkInsert(commit.CommittedChanges.ToArray());
                 }
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{dateTime}: committed changes have been saved successfully", DateTime.Now);
             }

@@ -19,7 +19,7 @@ namespace RelationalGit.Commands
             {
                 var loadedIssues = dbContext.Issue.ToArray();
                 var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
-                var issueEvents = await githubExtractor.GetIssueEvents(owner, repo, loadedIssues);
+                var issueEvents = await githubExtractor.GetIssueEvents(owner, repo, loadedIssues).ConfigureAwait(false);
                 dbContext.AddRange(issueEvents);
                 dbContext.SaveChanges();
             }

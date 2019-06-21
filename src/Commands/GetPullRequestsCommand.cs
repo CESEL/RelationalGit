@@ -20,7 +20,7 @@ namespace RelationalGit.Commands
             {
                 dbContext.Database.ExecuteSqlCommand($"TRUNCATE TABLE PullRequests");
                 var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
-                var pullRequests = await githubExtractor.FetchAllPullRequests(owner, repo, branch);
+                var pullRequests = await githubExtractor.FetchAllPullRequests(owner, repo, branch).ConfigureAwait(false);
                 _logger.LogInformation("{datetime}: trying to save {count} pull requests.", DateTime.Now, pullRequests.Length);
                 dbContext.AddRange(pullRequests);
                 dbContext.SaveChanges();

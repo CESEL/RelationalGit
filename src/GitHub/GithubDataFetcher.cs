@@ -38,7 +38,7 @@ namespace RelationalGit
 
             _logger.LogInformation("{datetime}: fetching comments of {authorGitHubLogin} from {owner}/{repo}.", DateTime.Now, authorGitHubLogin, owner, repo);
 
-           var result = (await _client.Repository.Commit.GetAll(owner, repo, new CommitRequest {Author = authorGitHubLogin }, new ApiOptions() { PageSize = 1000 })).ToArray();
+            var result = (await _client.Repository.Commit.GetAll(owner, repo, new CommitRequest {Author = authorGitHubLogin }, new ApiOptions() { PageSize = 1000 }).ConfigureAwait(false)).ToArray();
 
             _logger.LogInformation("{datetime}: {count} commits have been fetched.", DateTime.Now, result.Length);
 
@@ -62,7 +62,7 @@ namespace RelationalGit
 
             foreach (var pullRequest in pullRequests)
             {
-                var issueComments = await _client.Issue.Comment.GetAllForIssue(owner, repo, pullRequest.Number, new ApiOptions() { PageSize = 1000 });
+                var issueComments = await _client.Issue.Comment.GetAllForIssue(owner, repo, pullRequest.Number, new ApiOptions() { PageSize = 1000 }).ConfigureAwait(false);
                 allComments.AddRange(Mapper.Map<IssueComment[]>(issueComments.ToArray()));
             }
 
@@ -77,7 +77,7 @@ namespace RelationalGit
             Ensure.ArgumentNotNullOrEmptyString(repo, nameof(repo));
             Ensure.ArgumentNotNullOrEmptyString(repo, nameof(commitSha));
 
-            var commit = await _client.Repository.Commit.Get(owner, repo, commitSha);
+            var commit = await _client.Repository.Commit.Get(owner, repo, commitSha).ConfigureAwait(false);
             _logger.LogInformation("{datetime}: commit {commit} has been fetched successfully.", DateTime.Now, commitSha);
             return commit;
         }
@@ -95,7 +95,7 @@ namespace RelationalGit
                 var issueEvents = (await _client
                 .Issue
                 .Events
-                .GetAllForIssue(owner, repo, loadedIssues[i].Number))
+                .GetAllForIssue(owner, repo, loadedIssues[i].Number).ConfigureAwait(false))
                 .ToArray();
 
                 var mappedEvents = Mapper.Map<IssueEvent[]>(issueEvents);
@@ -125,7 +125,7 @@ namespace RelationalGit
                 SortProperty = PullRequestSort.Created
             };
 
-            var gitHubPullRequests = (await _client.PullRequest.GetAllForRepository(owner, repo, requestFilter, new ApiOptions() {PageSize = 1000}))
+            var gitHubPullRequests = (await _client.PullRequest.GetAllForRepository(owner, repo, requestFilter, new ApiOptions() {PageSize = 1000}).ConfigureAwait(false))
             .ToArray();
 
             var pullRequests = Mapper.Map<PullRequest[]>(gitHubPullRequests);
@@ -147,7 +147,7 @@ namespace RelationalGit
 
             for (int i = 0; i < pullRequests.Length; i++)
             {
-                allReviewers.AddRange(await GetReviewsOfPullRequest(owner, repo, pullRequests[i]));
+                allReviewers.AddRange(await GetReviewsOfPullRequest(owner, repo, pullRequests[i]).ConfigureAwait(false));
             }
 
             _logger.LogInformation("{datetime}: {count} reviewers have been fetched.", DateTime.Now, allReviewers.Count);
@@ -173,7 +173,7 @@ namespace RelationalGit
             var githubIssues = (await _client.Issue.GetAllForRepository(owner, repo, repositoryIssueRequest, new ApiOptions()
             {
                 PageSize = 500
-            }));
+            }).ConfigureAwait(false));
 
             return Mapper.Map<Issue[]>(githubIssues);
         }
@@ -197,7 +197,7 @@ namespace RelationalGit
                     .GetAllForRepository(owner, repo, requestFilter, new ApiOptions()
                     {
                         PageSize = 1000
-                    });
+                    }).ConfigureAwait(false);
 
             var reviewerComments = Mapper.Map<PullRequestReviewerComment[]>(reviewComments.ToArray());
 
@@ -224,7 +224,7 @@ namespace RelationalGit
                           .GetAllForIssue(owner, repo, pullRequests[i].Number, new ApiOptions()
                           {
                               PageSize = 1000
-                          }))
+                          }).ConfigureAwait(false))
                           .ToArray()
                           .LastOrDefault(m => m.Event.StringValue == "merged"); // some PRs have multiple merged events. we take the last one.
 
@@ -252,7 +252,7 @@ namespace RelationalGit
             {
                 var user = await _client
                     .User
-                    .Get(users[i].UserLogin);
+                    .Get(users[i].UserLogin).ConfigureAwait(false);
 
                 users[i].Email = user.Email;
                 users[i].Name = user.Name;
@@ -271,7 +271,7 @@ namespace RelationalGit
 
             for (int i = 0; i < pullRequests.Length; i++)
             {
-                var loadedFiles = await GetPullRequestsFiles(owner, repo, pullRequests[i]);
+                var loadedFiles = await GetPullRequestsFiles(owner, repo, pullRequests[i]).ConfigureAwait(false);
 
                 var mappedFiles = Mapper.Map<PullRequestFile[]>(loadedFiles);
 
@@ -299,7 +299,7 @@ namespace RelationalGit
                     Console.WriteLine(i + " - " + DateTime.Now);
                 }
 
-                var commits = await GetPullRequestsCommits(owner, repo, pullRequests[i]);
+                var commits = await GetPullRequestsCommits(owner, repo, pullRequests[i]).ConfigureAwait(false);
 
                 foreach (var commit in commits)
                 {
@@ -324,7 +324,7 @@ namespace RelationalGit
         {
             try
             {
-                return await (_client.PullRequest.Files(owner, repo, pullRequest.Number));
+                return await (_client.PullRequest.Files(owner, repo, pullRequest.Number).ConfigureAwait(false));
             }
             catch (Octokit.ApiException e) when (e.Message.Contains(" Sorry, there was a problem generating this diff. The repository may be missing relevant data"))
             {
@@ -336,7 +336,7 @@ namespace RelationalGit
         {
             return await (_client
                     .PullRequest
-                    .Commits(owner, repo, pullRequest.Number));
+                    .Commits(owner, repo, pullRequest.Number).ConfigureAwait(false));
         }
 
         private async Task<PullRequestReviewer[]> GetReviewsOfPullRequest(string owner, string repo, PullRequest pullRequest)
@@ -344,7 +344,7 @@ namespace RelationalGit
             var githubReviews = (await _client
                     .PullRequest
                     .Review
-                    .GetAll(owner, repo, pullRequest.Number, new ApiOptions() { PageSize = 1000 }))
+                    .GetAll(owner, repo, pullRequest.Number, new ApiOptions() { PageSize = 1000 }).ConfigureAwait(false))
                     .ToArray();
 
             var reviews = Mapper.Map<PullRequestReviewer[]>(githubReviews);

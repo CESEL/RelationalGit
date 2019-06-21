@@ -50,14 +50,8 @@ namespace RelationalGit.Commands
 
             using (var transaction = _dbContext.Database.BeginTransaction())
             {
-                //SaveLeaversAndFilesAtRisk(lossSimulation, knowledgeDistributioneMap, leavers);
-                //_logger.LogInformation("{datetime}: Leavers and FilesAtRisk are saved successfully.", DateTime.Now);
-
                 SavePullRequestReviewes(knowledgeDistributioneMap, lossSimulation);
                 _logger.LogInformation("{datetime}: RecommendedPullRequestReviewes are saved successfully.", DateTime.Now);
-
-                //SaveFileTouches(knowledgeDistributioneMap, lossSimulation);
-                //_logger.LogInformation("{datetime}: FileTouches are saved successfully.", DateTime.Now);
 
                 SaveOwnershipDistribution(knowledgeDistributioneMap, lossSimulation, leavers);
                 _logger.LogInformation("{datetime}: Ownership Distribution is saved Successfully.", DateTime.Now);
@@ -172,7 +166,7 @@ namespace RelationalGit.Commands
                         TotalPullRequests = totalPullRequests.GetValueOrDefault(0)
                     });
 
-                    bulkFileTouches.AddRange(availableCommitters.Select(q => new FileTouch()
+                    /*bulkFileTouches.AddRange(availableCommitters.Select(q => new FileTouch()
                     {
                         CanonicalPath = filePath,
                         LossSimulationId = lossSimulation.Id,
@@ -188,7 +182,7 @@ namespace RelationalGit.Commands
                         NormalizeDeveloperName = q,
                         PeriodId = period.Id,
                         TouchType = "review",
-                    }));
+                    }));*/
                 }
             }
 

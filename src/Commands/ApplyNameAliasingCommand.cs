@@ -26,16 +26,26 @@ namespace RelationalGit.Commands
                .ExecuteSqlCommandAsync(
                    @"UPDATE Commits SET NormalizedAuthorName=AliasedDeveloperNames.NormalizedName
                     from AliasedDeveloperNames
-                    where AliasedDeveloperNames.Email=Commits.AuthorEmail");
+                    where AliasedDeveloperNames.Email=Commits.AuthorEmail").ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: applying normalization on committed blob blames.", DateTime.Now);
 
                 await dbContext
                 .Database
                .ExecuteSqlCommandAsync(
-                   @"UPDATE CommitBlobBlames SET NormalizedDeveloperIdentity=AliasedDeveloperNames.NormalizedName
-                    from AliasedDeveloperNames
-                    where AliasedDeveloperNames.Email=CommitBlobBlames.DeveloperIdentity");
+                   @"UPDATE CommitBlobBlames SET NormalizedDeveloperIdentity=Commits.NormalizedName.NormalizedAuthorName
+                    from Commits
+                    where  CommitBlobBlames.AuthorCommitSha=Sha").ConfigureAwait(false);
+
+
+                _logger.LogInformation("{datetime}: applying normalization on committed changes blames.", DateTime.Now);
+
+                await dbContext
+                .Database
+               .ExecuteSqlCommandAsync(
+                   @"update CommittedChangeBlames SET NormalizedDeveloperIdentity=Commits.NormalizedAuthorName
+                    from Commits 
+                    where CommittedChangeBlames.CommitSha=Sha").ConfigureAwait(false);
             }
         }
     }

@@ -63,7 +63,7 @@ namespace RelationalGit.Commands
 
                 _logger.LogInformation("{datetime}: trying to save {count} periods.", DateTime.Now, periods.Count());
                 dbContext.Periods.AddRange(periods);
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
                 _logger.LogInformation("{datetime}: periods has been saved successfully.", DateTime.Now);
             }
         }

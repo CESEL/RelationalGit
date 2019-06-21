@@ -11,7 +11,7 @@ namespace RelationalGit
         public int Count { get; set; }
     }
 
-   public class ReviewersParticipationDateTimeQuery
+    public class ReviewersParticipationDateTimeQuery
     {
         public string GitHubUserLogin { get; set; }
 

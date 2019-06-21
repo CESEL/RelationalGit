@@ -18,15 +18,15 @@ namespace RelationalGit.Commands
         {
             using (var dbContext = new GitRepositoryDbContext(false))
             {
-                var loadedPullRequests = await dbContext.PullRequests.ToArrayAsync();
+                var loadedPullRequests = await dbContext.PullRequests.ToArrayAsync().ConfigureAwait(false);
 
                 var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
-                var files = await githubExtractor.FetchFilesOfPullRequests(owner, repo, loadedPullRequests);
+                var files = await githubExtractor.FetchFilesOfPullRequests(owner, repo, loadedPullRequests).ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: saving {count} pull request files into database.", DateTime.Now, files.Length);
 
                 dbContext.AddRange(files);
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: pull request files have been saved successfully.", DateTime.Now, loadedPullRequests.Length);
             }

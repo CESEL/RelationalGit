@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RelationalGit;
 
 namespace RelationalGit.Migrations
 {
     [DbContext(typeof(GitRepositoryDbContext))]
-    partial class GitRepositoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20190620033326_commit_change_blame")]
+    partial class commit_change_blame
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -219,8 +221,6 @@ namespace RelationalGit.Migrations
                     b.Property<string>("CanonicalPath");
 
                     b.Property<string>("CommitSha");
-
-                    b.Property<string>("DeveloperIdentity");
 
                     b.Property<bool>("Ignore");
 

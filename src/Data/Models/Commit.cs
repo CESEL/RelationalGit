@@ -1,11 +1,12 @@
-﻿using System;
+﻿using RelationalGit.Data.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RelationalGit
 {
-    public class Commit
+    public class Commit: IEvent
     {
         [Key]
         public string Sha { get; set; }
@@ -50,5 +51,7 @@ namespace RelationalGit
 
         [NotMapped]
         public PullRequest MergedPullRequest { get; internal set; }
+
+        public DateTime OccurrenceDateTime => AuthorDateTime;
     }
 }

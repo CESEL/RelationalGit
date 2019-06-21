@@ -18,6 +18,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         internal override double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
         {
             var reviewerImportance = pullRequestContext.IsHoarder(reviewer.DeveloperName) ? 0.7 : 1;
+            //reviewerImportance = 0.3;
             var probabilityOfStay = pullRequestContext.GetProbabilityOfStay(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
             var effort = pullRequestContext.GetEffort(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
             var specializedKnowledge = reviewer.NumberOfTouchedFiles / (double)pullRequestContext.PullRequestFiles.Length;
@@ -26,11 +27,11 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
             if (specializedKnowledge > 1) // if it's a folder level dev
             {
-                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.5);
+                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.2);
             }
             else
             {
-                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.5) * (1 - specializedKnowledge);
+                score = reviewerImportance * Math.Pow(probabilityOfStay * effort, 0.4) * Math.Pow(1 - specializedKnowledge, 1);
             }
 
             return score;

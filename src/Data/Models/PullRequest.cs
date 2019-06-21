@@ -1,9 +1,10 @@
-﻿using System;
+﻿using RelationalGit.Data.Models;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RelationalGit
 {
-    public class PullRequest
+    public class PullRequest:IEvent
     {
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
 
@@ -30,5 +31,7 @@ namespace RelationalGit
         public int Number { get; set; }
 
         public string MergeCommitSha { get; internal set; }
+
+        public DateTime OccurrenceDateTime => CreatedAtDateTime;
     }
 }

@@ -21,15 +21,15 @@ namespace RelationalGit.Commands
             {
                 dbContext.Database.ExecuteSqlCommand($"TRUNCATE TABLE IssueComments");
                 var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
-                var pullRequests = await dbContext.PullRequests.ToArrayAsync();
-                var issueComments = await githubExtractor.FetchPullRequestIssueCommentsFromRepository(owner, repo, pullRequests);
+                var pullRequests = await dbContext.PullRequests.ToArrayAsync().ConfigureAwait(false);
+                var issueComments = await githubExtractor.FetchPullRequestIssueCommentsFromRepository(owner, repo, pullRequests).ConfigureAwait(false);
 
                 var issueCommentCount = issueComments.Count();
 
                 _logger.LogInformation("{datetime}: saving {count} issue comments  into database.", DateTime.Now, issueCommentCount);
 
                 dbContext.AddRange(issueComments);
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("{datetime}: {count} issue comments have been saved into database.", DateTime.Now, issueCommentCount);
             }

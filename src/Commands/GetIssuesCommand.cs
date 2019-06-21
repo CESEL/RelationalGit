@@ -19,7 +19,7 @@ namespace RelationalGit.Commands
             {
                 dbContext.Database.ExecuteSqlCommand($"TRUNCATE TABLE Issue");
                 var githubExtractor = new GithubDataFetcher(token, agenName, _logger);
-                var issues = await githubExtractor.GetIssues(owner, repo, labels, state);
+                var issues = await githubExtractor.GetIssues(owner, repo, labels, state).ConfigureAwait(false);
                 dbContext.AddRange(issues);
                 dbContext.SaveChanges();
             }

@@ -66,8 +66,8 @@ namespace RelationalGit
 
         public void Initiate(Commit[] commits, CommitBlobBlame[] commitBlobBlames, Developer[] developers, DeveloperContribution[] developersContributions,
         CommittedChange[] committedChanges, PullRequest[] pullRequests, PullRequestFile[] pullRequestFiles, IssueComment[] issueComments,
-         PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
-         Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod, string selectedReviewersType, int? minimumActualReviewersLength, IEnumerable<string> megaDevelopers)
+        PullRequestReviewer[] pullRequestReviewers, PullRequestReviewerComment[] pullRequestReviewComments,
+        Dictionary<string, string> canononicalPathMapper, GitHubGitUser[] githubGitUsers, Period[] periods, int firstPeriod, string selectedReviewersType, int? minimumActualReviewersLength, IEnumerable<string> megaDevelopers)
         {
             _logger.LogInformation("{datetime}: Trying to initialize TimeMachine.", DateTime.Now);
 
