@@ -127,7 +127,7 @@ namespace RelationalGit.Commands
                 foreach (var filePath in blameSnapshot.FilePaths)
                 {
                     // we are counting all developers regardless of their owenership >0
-                    var committers = blameSnapshot[filePath].Where(q => q.Value.OwnedPercentage > 0).Select(q => q.Value.NormalizedDeveloperName)
+                    var committers = blameSnapshot[filePath].Where(q => q.Value.OwnedPercentage > lossSimulation.FilesAtRiksOwnershipThreshold).Select(q => q.Value.NormalizedDeveloperName)
                         .Where(q => !lossSimulation.MegaDevelopers.Contains(q)).ToHashSet();
 
                     var fileReviewDetails = knowledgeDistributioneMap.ReviewBasedKnowledgeMap[filePath]?.Where(q => q.Value.Periods.Any(p => p.Id <= period.Id));
@@ -490,7 +490,7 @@ namespace RelationalGit.Commands
                 {
                     extendedPeriodId = period.Id + i;
                     contribution = developersContributions.GetValueOrDefault(extendedPeriodId + "-" + extendedLeaversOfPeriod[j].NormalizedName);
-                    hasPariticipatedInExtendedPeriods = contribution?.TotalCommits + contribution?.TotalReviews > 0;
+                    hasPariticipatedInExtendedPeriods = (contribution?.TotalCommits ?? 0 + contribution?.TotalReviews ?? 0) > 0;
                 }
 
                 if (hasPariticipatedInExtendedPeriods)

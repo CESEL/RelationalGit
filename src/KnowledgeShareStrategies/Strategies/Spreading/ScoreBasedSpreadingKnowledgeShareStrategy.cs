@@ -106,9 +106,6 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
         internal override sealed IEnumerable<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
         {
-            //_logger.LogInformation("{datetime} Finding the best set of reviwers for Pull Request {pullrequest} with {ActualReviewersLength} Reviewers and {availableDevsLength} Candidates"
-               // , DateTime.Now, pullRequestContext.PullRequest.Number, pullRequestContext.ActualReviewers.Length, availableDevs.Length);
-
             var strategy = _pullRequestReviewerSelectionStrategies
                 .SingleOrDefault(q => q.ActualReviewerCount == pullRequestContext.ActualReviewers.Length.ToString());
 
@@ -165,8 +162,6 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
                     }
                 }
             }
-
-            //_logger.LogInformation("{datetime} All the sets have been calculated", DateTime.Now);
         }
 
         private IEnumerable<DeveloperKnowledge> GetTopCandidates(DeveloperKnowledge[] candidates, int count, IEnumerable<DeveloperKnowledge> fixedReviewers)

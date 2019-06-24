@@ -167,8 +167,7 @@ namespace RelationalGit.Commands
                     MinimumActualReviewersLength = options.MinimumActualReviewersLength,
                     NumberOfPeriodsForCalculatingProbabilityOfStay = options.NumberOfPeriodsForCalculatingProbabilityOfStay,
                     MegaDevelopers = options.MegaDevelopers,
-                    RecommenderOption = options.RecommenderOption
-                };
+                    RecommenderOption = options.RecommenderOption                };
 
                 await cmd.Execute(lossSimulationOption).ConfigureAwait(false);
             }
