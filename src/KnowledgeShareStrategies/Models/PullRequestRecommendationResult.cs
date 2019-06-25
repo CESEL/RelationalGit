@@ -14,12 +14,6 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
             _selectedReviewersKnowledge = selectedReviewers;
         }
 
-        public PullRequestRecommendationResult(string[] selectedReviewers, string[] sortedCandidates = null)
-        {
-            SortedCandidates = sortedCandidates;
-            SelectedReviewers = selectedReviewers;
-        }
-
         public long PullRequestNumber { get; internal set; }
 
         public double LossOfExpertise { get; internal set; }

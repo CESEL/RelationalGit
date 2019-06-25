@@ -143,7 +143,7 @@ namespace RelationalGit.Commands
 
                     var totalPullRequests = fileReviewDetails?
                         .SelectMany(q => q.Value.PullRequests
-                        .Where(pr => pr.MergedAtDateTime.Value < period.ToDateTime))
+                        .Where(pr => pr.CreatedAtDateTime.Value < period.ToDateTime))
                         .Select(q => q.Number)
                         .Distinct()
                         .Count();
