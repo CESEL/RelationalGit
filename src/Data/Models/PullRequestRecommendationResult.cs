@@ -24,7 +24,7 @@
 
         public double? MeanReciprocalRank { get; internal set; }
 
-        public double LossOfExpertise { get; set; }
+        public double Expertise { get; set; }
 
         public long LossSimulationId { get; internal set; }
         public bool IsSimulated { get; internal set; }

@@ -13,6 +13,10 @@ namespace RelationalGit
     {
         internal static string AppSettingsPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "relationalgit.json");
 
+        public GitRepositoryDbContext(DbContextOptions<GitRepositoryDbContext> options)
+       : base(options)
+        { }
+
         public GitRepositoryDbContext()
         {
         }

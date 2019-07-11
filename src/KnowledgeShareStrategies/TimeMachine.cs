@@ -337,8 +337,8 @@ namespace RelationalGit
 
         private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period, PullRequest pullRequest)
         {
-            return DevelopersDic.Values.Where(dev => dev.FirstParticipationDateTime <= pullRequest.MergedAtDateTime
-                && dev.LastParticipationDateTime >= pullRequest.MergedAtDateTime)
+            return DevelopersDic.Values.Where(dev => dev.FirstParticipationDateTime <= pullRequest.CreatedAtDateTime
+                && dev.LastParticipationDateTime >= pullRequest.CreatedAtDateTime)
                 .Where(q => !_megaDevelopersSet.Contains(q.NormalizedName)); // remove mega devs;
         }
 

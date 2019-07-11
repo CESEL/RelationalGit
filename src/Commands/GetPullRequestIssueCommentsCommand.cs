@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
@@ -28,8 +29,7 @@ namespace RelationalGit.Commands
 
                 _logger.LogInformation("{datetime}: saving {count} issue comments  into database.", DateTime.Now, issueCommentCount);
 
-                dbContext.AddRange(issueComments);
-                await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                dbContext.BulkInsert(issueComments.ToArray(), new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
 
                 _logger.LogInformation("{datetime}: {count} issue comments have been saved into database.", DateTime.Now, issueCommentCount);
             }

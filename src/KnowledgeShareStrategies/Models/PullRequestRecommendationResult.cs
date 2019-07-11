@@ -16,7 +16,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
 
         public long PullRequestNumber { get; internal set; }
 
-        public double LossOfExpertise { get; internal set; }
+        public double Expertise { get; internal set; }
 
         public string[] ActualReviewers { get; internal set; }
 

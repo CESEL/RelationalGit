@@ -7,6 +7,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 {
     public abstract class ScoreBasedSpreadingKnowledgeShareStrategy : SpreadingKnowledgeShareStrategyBase
     {
+        private static Random _rnd = new Random();
         private ILogger _logger;
         private bool? _addOnlyToUnsafePullrequests;
         private readonly PullRequestReviewerSelectionStrategy[] _pullRequestReviewerSelectionStrategies;
@@ -57,8 +58,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
                 availableDevs = availableDevs.Concat(folderLevelOwners
                     .Where(q => q.DeveloperName != pullRequestContext.PRSubmitterNormalizedName &&
-                    IsDeveloperAvailable(pullRequestContext, q.DeveloperName) &&
-                    IsCoreDeveloper(pullRequestContext, q.DeveloperName))).ToArray();
+                    IsDeveloperAvailable(pullRequestContext, q.DeveloperName))).ToArray();
 
                 ComputeAllReviewerScores(pullRequestContext, availableDevs);
             }
@@ -106,6 +106,8 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
         internal override sealed IEnumerable<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
         {
+            var result = new List<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)>();
+
             var strategy = _pullRequestReviewerSelectionStrategies
                 .SingleOrDefault(q => q.ActualReviewerCount == pullRequestContext.ActualReviewers.Length.ToString());
 
@@ -115,17 +117,17 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
             if (ShouldAddReviewer(pullRequestContext, strategy))
             {
-                var selectedCandidatesLength = int.Parse(strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument);
+                var selectedCandidatesLength = GetSelectedCandidatesLength(pullRequestContext,strategy);
                 var selectedCandidates = GetTopCandidates(availableDevs, selectedCandidatesLength, pullRequestContext.ActualReviewers);
                 var newReviewerSet = pullRequestContext.ActualReviewers.Concat(selectedCandidates).ToArray();
 
-                yield return (newReviewerSet, selectedCandidates);
+                result.Add((newReviewerSet, selectedCandidates));
             }
             else if (ShouldReplaceReviewer(pullRequestContext, strategy))
             {
-                yield return (pullRequestContext.ActualReviewers, null);
+                //result.Add((pullRequestContext.ActualReviewers, null));
 
-                var selectedCandidatesLength = int.Parse(strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument);
+                var selectedCandidatesLength = GetSelectedCandidatesLength(pullRequestContext, strategy);
                 var numberOfReplacements = Math.Min(availableDevs.Length, selectedCandidatesLength);
                 numberOfReplacements = Math.Min(actualReviewersLength, numberOfReplacements);
 
@@ -133,35 +135,80 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
                 var reviewerSet = new HashSet<string>();
 
-                foreach (var selectedActualCombination in actualReviewersCombination)
+                if (IsRandomReplacement(pullRequestContext, strategy))
                 {
-                    var fixedReviewers = new List<DeveloperKnowledge>(numberOfReplacements);
+                    var selectedActualCombination = actualReviewersCombination.ElementAt(_rnd.Next(0, actualReviewersCombination.Count()));
 
-                    for (int i = 0; i < actualReviewersLength; i++)
+                    var replacement = Replace(numberOfReplacements, actualReviewersLength, selectedActualCombination, pullRequestContext, availableDevs);
+
+                    if (replacement.SelectedCandidateKnowledge.Count() != 0)
                     {
-                        if (selectedActualCombination.All(q => q != i))
-                        {
-                            fixedReviewers.Add(pullRequestContext.ActualReviewers[i]);
-                        }
-                    }
-
-                    var selectedCandidates = GetTopCandidates(availableDevs, numberOfReplacements, fixedReviewers);
-
-                    if (selectedCandidates.Count() == 0)
-                    {
-                        continue;
-                    }
-
-                    var newReviewerSet = fixedReviewers.Concat(selectedCandidates);
-                    var newReviewerSetKey = newReviewerSet.Select(q => q.DeveloperName).OrderBy(q => q).Aggregate((a, b) => a + "," + b);
-
-                    if (!reviewerSet.Contains(newReviewerSetKey))
-                    {
-                        reviewerSet.Add(newReviewerSetKey);
-                        yield return (newReviewerSet, selectedCandidates);
+                        result.Add((replacement.Reviewers, replacement.SelectedCandidateKnowledge));
                     }
                 }
+                else
+                {
+                    foreach (var selectedActualCombination in actualReviewersCombination)
+                    {
+                        var replacement = Replace(numberOfReplacements, actualReviewersLength, selectedActualCombination, pullRequestContext, availableDevs);
+
+                        if (replacement.SelectedCandidateKnowledge.Count() == 0)
+                            continue;
+
+                        var newReviewerSet = replacement.Reviewers;
+                        var newReviewerSetKey = newReviewerSet.Select(q => q.DeveloperName).OrderBy(q => q).Aggregate((a, b) => a + "," + b);
+
+                        if (!reviewerSet.Contains(newReviewerSetKey))
+                        {
+                            reviewerSet.Add(newReviewerSetKey);
+                            result.Add((newReviewerSet, replacement.SelectedCandidateKnowledge));
+                        }
+                    }
+                }  
             }
+
+            return result;
+        }
+
+        private int GetSelectedCandidatesLength(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
+        {
+            var length =strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument;
+
+            if (length == "all")
+                return pullRequestContext.ActualReviewers.Length;
+
+            return int.Parse(length);
+        }
+
+        private bool IsRandomReplacement(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
+        {
+            return pullRequestContext.ActualReviewers.Length >= 1
+                            && ((strategy != null && strategy.Action == "replacerandom")
+                            || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "replacerandom"));
+        }
+
+        private (IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge) Replace(int numberOfReplacements, int actualReviewersLength, int[] selectedActualCombination, PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
+        {
+            var fixedReviewers = new List<DeveloperKnowledge>(numberOfReplacements);
+
+            for (int i = 0; i < actualReviewersLength; i++)
+            {
+                if (selectedActualCombination.All(q => q != i))
+                {
+                    fixedReviewers.Add(pullRequestContext.ActualReviewers[i]);
+                }
+            }
+
+            var selectedCandidates = GetTopCandidates(availableDevs, numberOfReplacements, fixedReviewers);
+
+            if (selectedCandidates.Count() == 0)
+            {
+                return (Array.Empty<DeveloperKnowledge>(), Array.Empty<DeveloperKnowledge>());
+            }
+
+            var newReviewerSet = fixedReviewers.Concat(selectedCandidates);
+
+            return (newReviewerSet,selectedCandidates);
         }
 
         private IEnumerable<DeveloperKnowledge> GetTopCandidates(DeveloperKnowledge[] candidates, int count, IEnumerable<DeveloperKnowledge> fixedReviewers)
@@ -187,8 +234,8 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         private bool ShouldReplaceReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
         {
             return pullRequestContext.ActualReviewers.Length >= 1
-                            && ((strategy != null && strategy.Action == "replace")
-                            || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "replace"));
+                            && ((strategy != null && (strategy.Action == "replace" || strategy.Action == "replacerandom"))
+                            || (strategy == null && (_pullRequestReviewerSelectionDefaultStrategy.Action == "replace" || _pullRequestReviewerSelectionDefaultStrategy.Action == "replacerandom")));
         }
 
         private bool ShouldAddReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)

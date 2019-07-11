@@ -97,11 +97,11 @@ namespace RelationalGit.Commands
                     TopTenIsAccurate = result.TopTenIsAccurate,
                     IsSimulated = result.IsSimulated,
                     LossSimulationId = lossSimulation.Id,
-                    LossOfExpertise = result.LossOfExpertise
+                    Expertise = result.Expertise
                 });
             }
 
-            _dbContext.BulkInsert(bulkPullRequestSimulatedRecommendationResults, new BulkConfig { BatchSize = 50000 });
+            _dbContext.BulkInsert(bulkPullRequestSimulatedRecommendationResults, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
         }
 
         private void SaveOwnershipDistribution(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)
@@ -187,8 +187,8 @@ namespace RelationalGit.Commands
                 }
             }
 
-            _dbContext.BulkInsert(bulkFileTouches, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = int.MaxValue });
-            _dbContext.BulkInsert(bulkFileKnowledgeable, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = int.MaxValue });
+            _dbContext.BulkInsert(bulkFileTouches, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
+            _dbContext.BulkInsert(bulkFileKnowledgeable, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
         }
 
         private void SaveLeaversAndFilesAtRisk(LossSimulation lossSimulation, KnowledgeDistributionMap knowledgeDistributioneMap, Dictionary<long, IEnumerable<SimulatedLeaver>> leavers)

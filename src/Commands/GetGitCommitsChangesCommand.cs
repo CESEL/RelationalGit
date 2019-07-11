@@ -25,12 +25,7 @@ namespace RelationalGit.Commands
 
                 _logger.LogInformation("{dateTime}: saving committed changes", DateTime.Now);
 
-                foreach (var commit in orderedCommits)
-                {
-                    dbContext.BulkInsert(commit.CommittedChanges.ToArray());
-                }
-
-                await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                dbContext.BulkInsert(orderedCommits.SelectMany(q=>q.CommittedChanges).ToArray(), new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
 
                 _logger.LogInformation("{dateTime}: committed changes have been saved successfully", DateTime.Now);
             }

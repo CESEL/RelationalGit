@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
@@ -25,8 +26,8 @@ namespace RelationalGit.Commands
 
                 _logger.LogInformation("{datetime}: saving {count} pull request files into database.", DateTime.Now, files.Length);
 
-                dbContext.AddRange(files);
-                await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                dbContext.BulkInsert(files, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
+
 
                 _logger.LogInformation("{datetime}: pull request files have been saved successfully.", DateTime.Now, loadedPullRequests.Length);
             }

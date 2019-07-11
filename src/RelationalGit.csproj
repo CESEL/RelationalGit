@@ -15,7 +15,7 @@
     <PackageTags>git;</PackageTags>
     <Description>RelationalGit extracts valuable information about commits, blames, changes, devs, and pull requests out of git's data structure and imports them to a relational database such as Microsoft SQL Server. These data can be a ground for further source code mining analysis.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>1.6.1</Version>
+    <Version>1.6.5</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

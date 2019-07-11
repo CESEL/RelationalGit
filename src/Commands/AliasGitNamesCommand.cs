@@ -61,8 +61,6 @@ namespace RelationalGit.Commands
                         .ToLower()
                         .RemoveDiacritics();
 
-                    // we remove () [] '' "" and all the text in between
-
                     if (authorsPlace.ContainsKey(normalizedName))
                     {
                         var uniqueId = authorsPlace[normalizedName];

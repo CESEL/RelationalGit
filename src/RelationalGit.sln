@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit", "RelationalGit.csproj", "{287B686C-31D4-4DBE-A70D-63412EC9E3FC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelationalGit.Calculation", "..\RelationalGit.Calculation\RelationalGit.Calculation.csproj", "{DC4915C7-3719-45D9-B964-847B08F1D3CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{287B686C-31D4-4DBE-A70D-63412EC9E3FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{287B686C-31D4-4DBE-A70D-63412EC9E3FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{287B686C-31D4-4DBE-A70D-63412EC9E3FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC4915C7-3719-45D9-B964-847B08F1D3CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC4915C7-3719-45D9-B964-847B08F1D3CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC4915C7-3719-45D9-B964-847B08F1D3CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC4915C7-3719-45D9-B964-847B08F1D3CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -80,8 +80,8 @@ namespace RelationalGit
             var prFiles = pullRequestContext.PullRequestFiles
                 .Select(q => pullRequestContext.CanononicalPathMapper.GetValueOrDefault(q.FileName));
 
-            pullRequestRecommendationResult.LossOfExpertise = prFiles.Count(q => selectedReviewersKnowledge.Contains(q))
-                - prFiles.Count(q => actualReviewersKnowledge.Contains(q));
+            if(prFiles.Count()> 0)
+                pullRequestRecommendationResult.Expertise = prFiles.Count(q => selectedReviewersKnowledge.Contains(q)) / (double)prFiles.Count();
 
             pullRequestRecommendationResult.PullRequestNumber = pullRequestContext.PullRequest.Number;
             pullRequestRecommendationResult.IsSimulated = true;
@@ -113,17 +113,6 @@ namespace RelationalGit
         }
 
         protected abstract PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext);
-
-        protected static bool IsCoreDeveloper(PullRequestContext pullRequestContext, string developerName)
-        {
-            if (pullRequestContext.SelectedReviewersType == SelectedReviewersType.All)
-            {
-                return true;
-            }
-
-            return pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.PullRequestPeriod.Id)?.TotalCommits > 20
-                            || pullRequestContext.Developers[developerName].GetContributionsOfPeriod(pullRequestContext.PullRequestPeriod.Id)?.TotalReviews > 5;
-        }
 
         protected static bool IsDevelperAmongActualReviewers(PullRequestContext pullRequestContext, string developerName)
         {
