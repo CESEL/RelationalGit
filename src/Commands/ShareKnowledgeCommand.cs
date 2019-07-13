@@ -80,14 +80,15 @@ namespace RelationalGit.Commands
         {
             var results = knowledgeDistributioneMap.PullRequestSimulatedRecommendationMap.Values;
             var bulkPullRequestSimulatedRecommendationResults = new List<PullRequestRecommendationResult>();
-
+            var bulkRecommendedPullRequestCandidatess = new List<RecommendedPullRequestCandidate>(results.Count()*5);
+            
             foreach (var result in results)
             {
                 bulkPullRequestSimulatedRecommendationResults.Add(new PullRequestRecommendationResult()
                 {
                     ActualReviewers = result.ActualReviewers?.Count() > 0 ? result.ActualReviewers?.Aggregate((a, b) => a + ", " + b) : null,
                     SelectedReviewers = result.SelectedReviewers?.Count() > 0 ? result.SelectedReviewers?.Aggregate((a, b) => a + ", " + b) : null,
-                    SortedCandidates = result.SortedCandidates?.Count() > 0 ? result.SortedCandidates?.Aggregate((a, b) => a + ", " + b) : null,
+                    SortedCandidates = result.SortedCandidates?.Count() > 0 ? result.SortedCandidates.Select(q => q.DeveloperName)?.Aggregate((a, b) => a + ", " + b) : null,
                     ActualReviewersLength = result.ActualReviewers.Length,
                     SelectedReviewersLength = result.SelectedReviewers.Length,
                     SortedCandidatesLength = result.SortedCandidates?.Length,
@@ -99,8 +100,19 @@ namespace RelationalGit.Commands
                     LossSimulationId = lossSimulation.Id,
                     Expertise = result.Expertise
                 });
+
+                for (int i = 0; i < result.SortedCandidates.Count(); i++)
+                {
+                    bulkRecommendedPullRequestCandidatess.Add(new RecommendedPullRequestCandidate(
+                        lossSimulationId: lossSimulation.Id, 
+                        rank:i+1,normalizedReviewerName: result.SortedCandidates[i].DeveloperName, 
+                        score: result.SortedCandidates[i].Score, 
+                        pullRequestNumber: result.PullRequestNumber));
+                }
+
             }
 
+            _dbContext.BulkInsert(bulkRecommendedPullRequestCandidatess, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
             _dbContext.BulkInsert(bulkPullRequestSimulatedRecommendationResults, new BulkConfig { BatchSize = 50000, BulkCopyTimeout = 0 });
         }
 

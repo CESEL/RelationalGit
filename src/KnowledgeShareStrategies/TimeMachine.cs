@@ -60,6 +60,7 @@ namespace RelationalGit
         private HashSet<string> _megaDevelopersSet;
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private bool? _addOneReviewerToUnsafePullRequests;
+        private static int _commit;
 
         #endregion
 
@@ -150,7 +151,10 @@ namespace RelationalGit
             foreach (var @event in _events)
             {
                 if(@event is Commit)
+                {
+                    _commit += 1;
                     UpdateCommitBasedKnowledgeMap(@event as Commit);
+                }
                 else if (@event is PullRequest)
                     UpdateReviewBasedKnowledgeMap(knowledgeMap, @event as PullRequest);
             }
@@ -391,7 +395,7 @@ namespace RelationalGit
             foreach (var file in pullRequestFiles)
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                AssignKnowledgeToDeveloper(new Commit { NormalizedAuthorName= prSubmitter ,PeriodId=period.Id,Sha=pullRequest.MergeCommitSha}, file.ChangeKind, prSubmitter, period, canonicalPath);
+                AssignKnowledgeToDeveloper(new Commit { NormalizedAuthorName= prSubmitter ,PeriodId=period.Id,Sha=pullRequest.MergeCommitSha,AuthorDateTime=pullRequest.MergedAtDateTime.Value}, file.ChangeKind, prSubmitter, period, canonicalPath);
             }
         }
 
@@ -406,7 +410,7 @@ namespace RelationalGit
 
             if (changeKind == ChangeKind.Deleted)
             {
-                CommitBasedKnowledgeMap.Remove(filePath);
+                CommitBasedKnowledgeMap.Remove(filePath,developer,commit,period);
             }
             else if (changeKind != ChangeKind.Renamed) // if it's Added or Modified
             {

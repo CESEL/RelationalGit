@@ -64,7 +64,7 @@ namespace RelationalGit
         internal PullRequestRecommendationResult Recommend(PullRequestContext pullRequestContext)
         {
             var pullRequestRecommendationResult = RecommendReviewers(pullRequestContext);
-
+            
             // we sort the names alphabetically. Helps when analyzing the results later.
             pullRequestRecommendationResult.ActualReviewers = pullRequestContext.ActualReviewers.Select(q => q.DeveloperName).OrderBy(q => q).ToArray();
             pullRequestRecommendationResult.SelectedReviewers = pullRequestRecommendationResult.SelectedReviewers?.OrderBy(q => q).ToArray();
@@ -98,13 +98,15 @@ namespace RelationalGit
                 return;
             }
 
-            result.TopFiveIsAccurate = result.SortedCandidates.TakeLast(5).Any(q => result.ActualReviewers.Any(a => a == q));
-            result.TopTenIsAccurate = result.SortedCandidates.TakeLast(10).Any(q => result.ActualReviewers.Any(a => a == q));
-            var firstCorretRecommendation = result.SortedCandidates.TakeLast(10).LastOrDefault(q => result.ActualReviewers.Any(a => a == q));
+            var sortedCandidatesNames = result.SortedCandidates.Select(q => q.DeveloperName);
+
+            result.TopFiveIsAccurate = sortedCandidatesNames.TakeLast(5).Any(q => result.ActualReviewers.Any(a => a == q));
+            result.TopTenIsAccurate = sortedCandidatesNames.TakeLast(10).Any(q => result.ActualReviewers.Any(a => a == q));
+            var firstCorretRecommendation = sortedCandidatesNames.TakeLast(10).LastOrDefault(q => result.ActualReviewers.Any(a => a == q));
 
             if (firstCorretRecommendation != null)
             {
-                result.MeanReciprocalRank = 1.0 / (Array.FindIndex(result.SortedCandidates.TakeLast(10).Reverse().ToArray(), q => q == firstCorretRecommendation) + 1);
+                result.MeanReciprocalRank = 1.0 / (Array.FindIndex(sortedCandidatesNames.TakeLast(10).Reverse().ToArray(), q => q == firstCorretRecommendation) + 1);
             }
             else
             {

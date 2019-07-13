@@ -7,9 +7,9 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
     {
         private DeveloperKnowledge[] _selectedReviewersKnowledge;
 
-        public PullRequestRecommendationResult(DeveloperKnowledge[] selectedReviewers, DeveloperKnowledge[] sortedCandidates = null)
+        public PullRequestRecommendationResult(DeveloperKnowledge[] selectedReviewers, DeveloperKnowledge[] sortedCandidates)
         {
-            SortedCandidates = sortedCandidates?.Select(q => q.DeveloperName).ToArray();
+            SortedCandidates = sortedCandidates;
             SelectedReviewers = selectedReviewers.Select(q => q.DeveloperName).ToArray();
             _selectedReviewersKnowledge = selectedReviewers;
         }
@@ -22,7 +22,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Models
 
         public string[] SelectedReviewers { get; internal set; }
 
-        public string[] SortedCandidates { get; internal set; }
+        public DeveloperKnowledge[] SortedCandidates { get; internal set; }
 
         public IEnumerable<RecommendedPullRequestReviewer> RecommendedPullRequestReviewers
         {

@@ -8,7 +8,13 @@ namespace RelationalGit
 {
     public class ReviewBasedKnowledgeMap
     {
+        private readonly HashSet<long> _mapReviews = new HashSet<long>();
+
+        private readonly Dictionary<string, List<PullRequest>> _mapDeveloperReview = new Dictionary<string, List<PullRequest>>();
+
         private readonly Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>> _map = new Dictionary<string, Dictionary<string, DeveloperFileReveiewDetail>>();
+
+        private static List<PullRequest> _emptyList = new List<PullRequest>(0);
 
         public Dictionary<string, DeveloperFileReveiewDetail> this[string filePath]
         {
@@ -62,11 +68,43 @@ namespace RelationalGit
             }
 
             _map[filePath][reviewerName].PullRequests.Add(pullRequest);
+
+            UpdateDeveloperReviews(pullRequest,reviewerName);
+        }
+
+        private void UpdateDeveloperReviews(PullRequest pullRequest, string reviewerName)
+        {
+            if (_mapReviews.Contains(pullRequest.Number))
+                return;
+
+            _mapReviews.Add(pullRequest.Number);
+
+            if (!_mapDeveloperReview.ContainsKey(reviewerName))
+            {
+                _mapDeveloperReview[reviewerName] = new List<PullRequest>();
+            }
+
+            _mapDeveloperReview[reviewerName].Add(pullRequest);
         }
 
         internal Dictionary<string, DeveloperFileReveiewDetail> GetReviewsOfFile(string filePath)
         {
             return _map.GetValueOrDefault(filePath);
+        }
+
+        internal List<PullRequest> GetDeveloperReviews(string reviewerName)
+        {
+            if (_mapDeveloperReview.ContainsKey(reviewerName))
+            {
+                return _mapDeveloperReview[reviewerName];
+            }
+
+            return _emptyList;
+        }
+
+        internal Dictionary<string, List<PullRequest>> GetReviewers()
+        {
+            return _mapDeveloperReview;
         }
     }
 }

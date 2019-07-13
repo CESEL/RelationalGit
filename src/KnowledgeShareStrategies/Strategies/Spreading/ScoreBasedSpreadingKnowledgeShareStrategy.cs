@@ -107,27 +107,26 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
         internal override sealed IEnumerable<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)> GetPossibleCandidateSets(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
         {
             var result = new List<(IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge)>();
-
-            var strategy = _pullRequestReviewerSelectionStrategies
-                .SingleOrDefault(q => q.ActualReviewerCount == pullRequestContext.ActualReviewers.Length.ToString());
+            var strategies = GetModificationStrategies(pullRequestContext);
 
             availableDevs = availableDevs.OrderByDescending(q => q.Score).ToArray();
 
             var actualReviewersLength = pullRequestContext.ActualReviewers.Length;
 
-            if (ShouldAddReviewer(pullRequestContext, strategy))
+            if (ShouldAddReviewer(pullRequestContext, strategies))
             {
-                var selectedCandidatesLength = GetSelectedCandidatesLength(pullRequestContext,strategy);
+                var selectedCandidatesLength = GetSelectedCandidatesLength(pullRequestContext, strategies,"add");
                 var selectedCandidates = GetTopCandidates(availableDevs, selectedCandidatesLength, pullRequestContext.ActualReviewers);
                 var newReviewerSet = pullRequestContext.ActualReviewers.Concat(selectedCandidates).ToArray();
 
                 result.Add((newReviewerSet, selectedCandidates));
             }
-            else if (ShouldReplaceReviewer(pullRequestContext, strategy))
+
+            if (ShouldReplaceReviewer(pullRequestContext, strategies))
             {
                 //result.Add((pullRequestContext.ActualReviewers, null));
 
-                var selectedCandidatesLength = GetSelectedCandidatesLength(pullRequestContext, strategy);
+                var selectedCandidatesLength = GetSelectedCandidatesLength(pullRequestContext, strategies, "replace");
                 var numberOfReplacements = Math.Min(availableDevs.Length, selectedCandidatesLength);
                 numberOfReplacements = Math.Min(actualReviewersLength, numberOfReplacements);
 
@@ -135,7 +134,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
 
                 var reviewerSet = new HashSet<string>();
 
-                if (IsRandomReplacement(pullRequestContext, strategy))
+                if (IsRandomReplacement(pullRequestContext, strategies))
                 {
                     var selectedActualCombination = actualReviewersCombination.ElementAt(_rnd.Next(0, actualReviewersCombination.Count()));
 
@@ -164,15 +163,38 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
                             result.Add((newReviewerSet, replacement.SelectedCandidateKnowledge));
                         }
                     }
-                }  
+                }
             }
 
             return result;
         }
 
-        private int GetSelectedCandidatesLength(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
+        private PullRequestReviewerSelectionStrategy[] GetModificationStrategies(PullRequestContext pullRequestContext)
         {
-            var length =strategy?.ActionArgument ?? _pullRequestReviewerSelectionDefaultStrategy.ActionArgument;
+            var strategies = _pullRequestReviewerSelectionStrategies
+                .Where(q => q.ActualReviewerCount == pullRequestContext.ActualReviewers.Length.ToString())
+                .ToArray();
+
+            if (strategies.Length > 2)
+                throw new InvalidOperationException($"There are more than two modification strategies for : {pullRequestContext.ActualReviewers.Length}");
+
+            if (strategies.Length == 2)
+            {
+                if(strategies[0].Action==strategies[1].Action)
+                    throw new InvalidOperationException($"There are duplicated modification strategies for : {pullRequestContext.ActualReviewers.Length}");
+            }
+
+            return strategies;
+        }
+
+        private int GetSelectedCandidatesLength(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy[] strategies,string policy)
+        {
+            var length = _pullRequestReviewerSelectionDefaultStrategy.ActionArgument;
+
+            if (strategies.Length > 0)
+            {
+                length = strategies.Single(q => q.Action.StartsWith(policy)).ActionArgument;
+            }
 
             if (length == "all")
                 return pullRequestContext.ActualReviewers.Length;
@@ -180,12 +202,7 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
             return int.Parse(length);
         }
 
-        private bool IsRandomReplacement(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
-        {
-            return pullRequestContext.ActualReviewers.Length >= 1
-                            && ((strategy != null && strategy.Action == "replacerandom")
-                            || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "replacerandom"));
-        }
+
 
         private (IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge) Replace(int numberOfReplacements, int actualReviewersLength, int[] selectedActualCombination, PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
         {
@@ -231,19 +248,68 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
             return selectedCandidates;
         }
 
-        private bool ShouldReplaceReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
+        private bool IsRandomReplacement(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy[] strategies)
         {
-            return pullRequestContext.ActualReviewers.Length >= 1
-                            && ((strategy != null && (strategy.Action == "replace" || strategy.Action == "replacerandom"))
-                            || (strategy == null && (_pullRequestReviewerSelectionDefaultStrategy.Action == "replace" || _pullRequestReviewerSelectionDefaultStrategy.Action == "replacerandom")));
+            if (pullRequestContext.ActualReviewers.Length == 0)
+                return false;
+
+            var result = false;
+
+            if (strategies.Length == 0)
+            {
+                result = _pullRequestReviewerSelectionDefaultStrategy.Action == "replacerandom";
+            }
+            else
+            {
+                result = strategies.Any(q => q.Action == "replacerandom");
+            }
+
+            return result;
         }
 
-        private bool ShouldAddReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy strategy)
+        private bool ShouldReplaceReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy[] strategies)
         {
-            return (!_addOnlyToUnsafePullrequests.HasValue || !_addOnlyToUnsafePullrequests.Value ||
-                            (_addOnlyToUnsafePullrequests.Value && !pullRequestContext.PullRequestFilesAreSafe))
-                            && ((strategy != null && strategy.Action == "add")
-                            || (strategy == null && _pullRequestReviewerSelectionDefaultStrategy.Action == "add"));
+
+            if (pullRequestContext.ActualReviewers.Length == 0)
+                return false;
+
+            var result = false;
+
+            if (strategies.Length == 0)
+            {
+                result = _pullRequestReviewerSelectionDefaultStrategy.Action.StartsWith("replace");
+            }
+            else
+            {
+                result = strategies.Any(q => q.Action.StartsWith("replace"));
+            }
+
+            return result;
+        }
+
+        private bool ShouldAddReviewer(PullRequestContext pullRequestContext, PullRequestReviewerSelectionStrategy[] strategies)
+        {
+            var result = false;
+
+            if (strategies.Length == 0)
+            {
+                result =  _pullRequestReviewerSelectionDefaultStrategy.Action == "add";
+            }
+            else
+            {
+                result = strategies.Any(q => q.Action == "add");
+            }
+
+            if (result)
+            {
+                if (!_addOnlyToUnsafePullrequests.HasValue || !_addOnlyToUnsafePullrequests.Value)
+                    return true;
+
+                if (_addOnlyToUnsafePullrequests.Value && !pullRequestContext.PullRequestFilesAreSafe)
+                    return true;
+            }
+
+            return false;
         }
 
         private IEnumerable<int[]> GetCombinations(int length, int n)

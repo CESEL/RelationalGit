@@ -60,6 +60,7 @@ namespace RelationalGit
             modelBuilder.ApplyConfiguration(new FileKnowledgeableEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new LossSimulationEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CommittedChangeBlameEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new RecommendedPullRequestCandidateEntityTypeConfiguration());
 
         }
 
@@ -114,6 +115,8 @@ namespace RelationalGit
         public DbSet<SimulatedLeaver> SimulatedLeavers { get; set; }
 
         public DbSet<PullRequestRecommendationResult> PullRequestRecommendationResults { get; set; }
+
+        public DbSet<RecommendedPullRequestCandidate> RecommendedPullRequestCandidates { get; set; }
 
         public DbQuery<PeriodReviewerCountQuery> PeriodReviewerCountQuery {get;set;}
 
@@ -274,6 +277,7 @@ namespace RelationalGit
             configuration.HasIndex(b => b.TotalKnowledgeables);
         }
     }
+    
 
     class CommitRelationshipEntityTypeConfiguration : IEntityTypeConfiguration<CommitRelationship>
     {
@@ -281,6 +285,17 @@ namespace RelationalGit
         {
             configuration
                 .HasKey(b => new { b.Parent, b.Child });
+        }
+    }
+
+
+    class RecommendedPullRequestCandidateEntityTypeConfiguration : IEntityTypeConfiguration<RecommendedPullRequestCandidate>
+    {
+        public void Configure(EntityTypeBuilder<RecommendedPullRequestCandidate> configuration)
+        {
+            configuration.HasIndex(q => q.LossSimulationId);
+            configuration.HasIndex(q => q.NormalizedReviewerName);
+            configuration.HasIndex(q => q.PullRequestNumber);
         }
     }
 

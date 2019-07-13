@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RelationalGit
 {
@@ -109,17 +111,28 @@ namespace RelationalGit
 
         public double GetEffort(string developer, int numberOfPeriodsForCalculatingProbabilityOfStay)
         {
+            var lastYear = PullRequest.CreatedAtDateTime.Value.Subtract(TimeSpan.FromDays(365));
+
+            var totalContribution = GetTotalContributionsBestweenPeriods(lastYear, PullRequest.CreatedAtDateTime.Value);
+            var developerTotalContribution = GetDeveloperTotalContributionsBestweenPeriods(lastYear, PullRequest.CreatedAtDateTime.Value, developer);
+
+            return ((developerTotalContribution.TotalReviews) + developerTotalContribution.TotalCommits)
+                / (double)((totalContribution.TotalReviews) + totalContribution.TotalCommits);
+        }
+        /*
+        public double GetEffort(string developer, int numberOfPeriodsForCalculatingProbabilityOfStay)
+        {
             var currentPeriod = PullRequestPeriod;
             var lastYearPeriod = Periods.GetValueOrDefault(currentPeriod.Id - numberOfPeriodsForCalculatingProbabilityOfStay + 1);
 
             var totalContribution = GetTotalContributionsBestweenPeriods(lastYearPeriod,currentPeriod);
             var developerTotalContribution = GetDeveloperTotalContributionsBestweenPeriods(lastYearPeriod, currentPeriod, developer);
 
-            return ((2 * developerTotalContribution.TotalReviews) + developerTotalContribution.TotalCommits)
-                / (double) ((2 * totalContribution.TotalReviews) + totalContribution.TotalCommits);
-        }
+            return ((developerTotalContribution.TotalReviews) + developerTotalContribution.TotalCommits)
+                / (double) ((totalContribution.TotalReviews) + totalContribution.TotalCommits);
+        }*/
 
-        private (int TotalReviews, int TotalCommits) GetDeveloperTotalContributionsBestweenPeriods(Period lastYearPeriod, Period currentPeriod, string developer)
+        /*private (int TotalReviews, int TotalCommits) GetDeveloperTotalContributionsBestweenPeriods(Period lastYearPeriod, Period currentPeriod, string developer)
         {
             var key = (lastYearPeriod?.Id ?? 1) + "-" + currentPeriod.Id + "-" + developer;
 
@@ -141,9 +154,9 @@ namespace RelationalGit
             }
 
             return _contributionsDic[key];
-        }
+        }*/
 
-        private (int TotalReviews, int TotalCommits) GetTotalContributionsBestweenPeriods(Period lastYearPeriod, Period currentPeriod)
+        /*private (int TotalReviews, int TotalCommits) GetTotalContributionsBestweenPeriods(Period lastYearPeriod, Period currentPeriod)
         {
             var key = (lastYearPeriod?.Id ?? 1) + "-" + currentPeriod.Id;
 
@@ -164,6 +177,69 @@ namespace RelationalGit
             }
 
             return _contributionsDic[key];
+        }*/
+
+        private (int TotalReviews, int TotalCommits) GetDeveloperTotalContributionsBestweenPeriods(DateTime from, DateTime to, string developer)
+        {
+            var totalCommits = 0;
+            var commits = KnowledgeMap.CommitBasedKnowledgeMap.GetDeveloperCommits(developer);
+
+            for (int i = commits.Count() - 1; i >= 0; i--)
+            {
+                if (commits[i].AuthorDateTime >= from && commits[i].AuthorDateTime <= to)
+                    totalCommits++;
+                else if (commits[i].AuthorDateTime < from)
+                    break;
+            }
+
+            var totalReviews = 0;
+            var reviews = KnowledgeMap.ReviewBasedKnowledgeMap.GetDeveloperReviews(developer);
+            for (int i = reviews.Count() - 1; i >= 0; i--)
+            {
+                if (reviews[i].CreatedAtDateTime >= from && reviews[i].CreatedAtDateTime <= to)
+                    totalReviews++;
+                else if (reviews[i].CreatedAtDateTime < from)
+                    break;
+            }
+
+            return (totalReviews, totalCommits);
+        }
+
+        private (int TotalReviews, int TotalCommits) GetTotalContributionsBestweenPeriods(DateTime from, DateTime to)
+        {
+            var totalCommits = 0;
+            var committers = KnowledgeMap.CommitBasedKnowledgeMap.GetCommitters();
+
+            foreach (var committer in committers)
+            {
+                var commits = committer.Value;
+
+                for (int i = commits.Count() - 1; i >= 0; i--)
+                {
+                    if (commits.ElementAt(i).AuthorDateTime >= from && commits.ElementAt(i).AuthorDateTime <= to)
+                        totalCommits++;
+                    else if (commits.ElementAt(i).AuthorDateTime < from)
+                        break;
+                }
+            }
+
+            var totalReviews = 0;
+            var reviewers = KnowledgeMap.ReviewBasedKnowledgeMap.GetReviewers();
+
+            foreach (var reviewer in reviewers)
+            {
+                var reviews = reviewer.Value;
+
+                for (int i = reviews.Count() - 1; i >= 0; i--)
+                {
+                    if (reviews.ElementAt(i).CreatedAtDateTime >= from && reviews.ElementAt(i).CreatedAtDateTime <= to)
+                        totalReviews++;
+                    else if (reviews.ElementAt(i).CreatedAtDateTime < from)
+                        break;
+                }
+            }       
+
+            return (totalReviews, totalCommits);
         }
 
         public double GetProbabilityOfStay(string reviewer, int numberOfPeriodsForCalculatingProbabilityOfStay)

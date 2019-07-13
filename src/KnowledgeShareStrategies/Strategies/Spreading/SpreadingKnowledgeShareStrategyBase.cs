@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RelationalGit.KnowledgeShareStrategies.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,7 +19,7 @@ namespace RelationalGit
 
             if (availableDevs.Length == 0)
             {
-                return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers);
+                return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>());
             }
 
             var simulationResults = new List<PullRequestKnowledgeDistribution>();
@@ -32,7 +33,7 @@ namespace RelationalGit
 
             if (simulationResults.Count == 0)
             {
-                return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers);
+                return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>());
             }
 
             var bestPullRequestKnowledgeDistribution = GetBestDistribution(simulationResults);

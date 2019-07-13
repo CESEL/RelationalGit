@@ -14,15 +14,17 @@ namespace RelationalGit.Calculation
         static void Main(string[] args)
         {
             var actualId = 2;
-            var simulationsIds = new int[] {3,4,5,6,7,8};
-            var path = @"Results\Kubernetes";
+            var simulationsIds = new int[] {38};
+            var path = @"Results\Corefx_new";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
 
+            //CalculateIoWRaw(simulationsIds.Concat(new int[] { 2 }).ToArray(),10,path);
+
             CalculateFaRReduction(actualId,simulationsIds,path);
             CalculateExpertiseLoss(actualId,simulationsIds, path);
-            CalculateIoW(actualId, simulationsIds,10, path);
+           CalculateIoW(actualId, simulationsIds,10, path);
         }
 
         private static void CalculateIoW(int actualId, int[] simulationsIds, int topReviewers,string path)
@@ -87,6 +89,57 @@ namespace RelationalGit.Calculation
                         var simulatedTop10Workload = simulatedWorkloadPeriod.Value.OrderByDescending(q => q.Value).Take(10).Sum(q => q.Value);
 
                         var value = CalculateReductionPercentage(simulatedTop10Workload, actualTop10Workload);
+
+                        simulationResult.Results.Add((periodId, value));
+                    }
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            Write(result, Path.Combine(path, "iow.csv"));
+        }
+
+        private static void CalculateIoWRaw(int[] simulationsIds, int topReviewers, string path)
+        {
+            var result = new List<SimulationResult>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+
+                foreach (var simulationId in simulationsIds)
+                {
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+                    var simulatedSelectedReviewers = dbContext.RecommendedPullRequestReviewers.Where(q => q.LossSimulationId == simulationId).ToArray();
+
+                    var simulatedWorkload = new Dictionary<long, Dictionary<string, int>>();
+                    foreach (var simulatedSelectedReviewer in simulatedSelectedReviewers)
+                    {
+                        var prDateTime = pullRequests[(int)simulatedSelectedReviewer.PullRequestNumber].CreatedAtDateTime;
+                        var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                        if (!simulatedWorkload.ContainsKey(period.Id))
+                            simulatedWorkload[period.Id] = new Dictionary<string, int>();
+
+                        if (!simulatedWorkload[period.Id].ContainsKey(simulatedSelectedReviewer.NormalizedReviewerName))
+                            simulatedWorkload[period.Id][simulatedSelectedReviewer.NormalizedReviewerName] = 0;
+
+                        simulatedWorkload[period.Id][simulatedSelectedReviewer.NormalizedReviewerName]++;
+                    }
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedWorkloadPeriod in simulatedWorkload)
+                    {
+                        var periodId = simulatedWorkloadPeriod.Key;
+                        var simulatedTop10Workload = simulatedWorkloadPeriod.Value.OrderByDescending(q => q.Value).Take(10).Sum(q => q.Value);
+
+                        var value = simulatedTop10Workload;
 
                         simulationResult.Results.Add((periodId, value));
                     }
