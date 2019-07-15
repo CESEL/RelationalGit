@@ -61,6 +61,7 @@ namespace RelationalGit
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private bool? _addOneReviewerToUnsafePullRequests;
         private static int _commit;
+        private static List<PullRequestFile> _emptyPullRequestFiles = new List<PullRequestFile>();
 
         #endregion
 
@@ -354,15 +355,15 @@ namespace RelationalGit
 
         private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
         {
-            var reviewersNamesOfPullRequest = PullRequestSimulatedRecommendationDic[pullRequest.Number].SelectedReviewers.Select(reviewerName => DevelopersDic[reviewerName]);
+            var reviewers = PullRequestSimulatedRecommendationDic[pullRequest.Number].SelectedReviewers.Select(reviewerName => DevelopersDic[reviewerName]);
             var period = GetPeriodOfPullRequest(pullRequest);
 
             // some of the pull requests have no modified files strangely
             // for example, https://github.com/dotnet/coreclr/pull/13534
-            foreach (var file in PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>()))
+            foreach (var file in PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, _emptyPullRequestFiles))
             {
                 var canonicalPath = CanononicalPathMapper.GetValueOrDefault(file.FileName);
-                ReviewBasedKnowledgeMap.Add(canonicalPath, reviewersNamesOfPullRequest, pullRequest, period);
+                ReviewBasedKnowledgeMap.Add(canonicalPath, reviewers, pullRequest, period);
             }
         }
 

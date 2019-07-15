@@ -33,6 +33,9 @@ namespace RelationalGit
         public bool? AddOnlyToUnsafePullrequests { get; internal set; }
 
         public IEnumerable<string> MegaDevelopers { get; set; }
+
         public string RecommenderOption { get; internal set; }
+
+        public bool? ChangePast { get; internal set; }
     }
 }

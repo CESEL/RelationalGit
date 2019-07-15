@@ -6,8 +6,8 @@ namespace RelationalGit
 {
     public class ActualKnowledgeShareStrategy : KnowledgeShareStrategy
     {
-        public ActualKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger)
-            : base(knowledgeSaveReviewerReplacementType, logger)
+        public ActualKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, bool changePast)
+            : base(knowledgeSaveReviewerReplacementType, logger, changePast)
         {
         }
 

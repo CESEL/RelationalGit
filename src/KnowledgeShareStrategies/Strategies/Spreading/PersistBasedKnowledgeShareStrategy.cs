@@ -11,8 +11,9 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
             int? numberOfPeriodsForCalculatingProbabilityOfStay, 
             string pullRequestReviewerSelectionStrategy, 
             bool? addOnlyToUnsafePullrequests,
-            string recommenderOption)
-            : base(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests,recommenderOption)
+            string recommenderOption,
+            bool changePast)
+            : base(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests,recommenderOption,changePast)
         {
             _numberOfPeriodsForCalculatingProbabilityOfStay = numberOfPeriodsForCalculatingProbabilityOfStay;
         }

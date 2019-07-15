@@ -14,17 +14,19 @@ namespace RelationalGit.Calculation
         static void Main(string[] args)
         {
             var actualId = 12;
-            var simulationsIds = new int[] {2,3,4,5,6,7,8,9,10,11};
-            var path = @"Results\Rust";
+            var simulationsIds = new int[] {2,3,4,5,6,7,8};
+            var path = @"Results\CoreFX";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
 
-            //CalculateIoWRaw(simulationsIds.Concat(new int[] { 2, 12 }).ToArray(),10,path);
+            CalculateWorkloadRaw(simulationsIds,10,path);
+            CalculateFaRRaw(simulationsIds, path);
+            CalculateExpertiseRaw(simulationsIds, path);
 
-            CalculateFaRReduction(actualId,simulationsIds,path);
-            CalculateExpertiseLoss(actualId,simulationsIds, path);
-            CalculateIoW(actualId, simulationsIds,10, path);
+            //CalculateFaRReduction(actualId,simulationsIds,path);
+            //CalculateExpertiseLoss(actualId,simulationsIds, path);
+            //CalculateIoW(actualId, simulationsIds,10, path);
         }
 
         private static void CalculateIoW(int actualId, int[] simulationsIds, int topReviewers,string path)
@@ -100,7 +102,7 @@ namespace RelationalGit.Calculation
             Write(result, Path.Combine(path, "iow.csv"));
         }
 
-        private static void CalculateIoWRaw(int[] simulationsIds, int topReviewers, string path)
+        private static void CalculateWorkloadRaw(int[] simulationsIds, int topReviewers, string path)
         {
             var result = new List<SimulationResult>();
 
@@ -144,11 +146,14 @@ namespace RelationalGit.Calculation
                         simulationResult.Results.Add((periodId, value));
                     }
 
+                    simulationResult.Results.AddRange(periods.Where(q => !simulationResult.Results.Any(r => r.PeriodId == q.Id)).Select(q => (q.Id, 0.0)));
+                    simulationResult.Results = simulationResult.Results.OrderBy(q => q.PeriodId).ToList();
                     result.Add(simulationResult);
                 }
             }
 
-            Write(result, Path.Combine(path, "iow.csv"));
+            result = result.OrderBy(q => q.LossSimulation.KnowledgeShareStrategyType).ToList();
+            Write(result, Path.Combine(path, "workload_raw.csv"));
         }
 
         private static void CalculateExpertiseLoss(int actualId, int[] simulationsIds, string path)
@@ -217,6 +222,49 @@ namespace RelationalGit.Calculation
             Write(result, Path.Combine(path, "expertiseloss.csv"));
         }
 
+        private static void CalculateExpertiseRaw(int[] simulationsIds, string path)
+        {
+            var result = new List<SimulationResult>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+
+                foreach (var simulationId in simulationsIds)
+                {
+                    var simulatedExpertise = new Dictionary<long, List<double>>();
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+
+                    var simulatedRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == simulationId && q.ActualReviewersLength > 0)
+                        .OrderBy(q=>q.PullRequestNumber).ToArray();
+
+                    foreach (var simulatedRecommendationResult in simulatedRecommendationResults)
+                    {
+                        if (!simulatedExpertise.ContainsKey(simulatedRecommendationResult.PullRequestNumber))
+                            simulatedExpertise[simulatedRecommendationResult.PullRequestNumber] = new List<double>();
+
+                        simulatedExpertise[simulatedRecommendationResult.PullRequestNumber].Add(simulatedRecommendationResult.Expertise);
+                    }
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedExpertisePeriod in simulatedExpertise)
+                    {
+                        var value = simulatedExpertisePeriod.Value[0];
+                        simulationResult.Results.Add((simulatedExpertisePeriod.Key, value));
+                    }
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            result = result.OrderBy(q => q.LossSimulation.KnowledgeShareStrategyType).ToList();
+            Write(result, Path.Combine(path, "expertise_raw.csv"));
+        }
+
         private static void CalculateFaRReduction(int actualId, int[] simulationsIds, string path)
         {
             var result = new List<SimulationResult>();
@@ -263,6 +311,44 @@ namespace RelationalGit.Calculation
 
         }
 
+        private static void CalculateFaRRaw(int[] simulationsIds, string path)
+        {
+            var result = new List<SimulationResult>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                foreach (var simulationId in simulationsIds)
+                {
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+
+                    var simulatedFaR = dbContext.FileKnowledgeables.Where(q => q.HasReviewed && q.TotalKnowledgeables < 2 && q.LossSimulationId == simulationId).
+                        GroupBy(q => q.PeriodId).
+                        Select(q => new { Count = q.Count(), PeriodId = q.Key })
+                        .ToArray();
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedFaRPeriod in simulatedFaR)
+                    {
+                        simulationResult.Results.Add((simulatedFaRPeriod.PeriodId, simulatedFaRPeriod.Count));
+                    }
+
+                    simulationResult.Results.AddRange(periods.Where(q => !simulationResult.Results.Any(r => r.PeriodId == q.Id)).Select(q => (q.Id, 0.0)));
+                    simulationResult.Results = simulationResult.Results.OrderBy(q=>q.PeriodId).ToList();
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            result = result.OrderBy(q => q.LossSimulation.KnowledgeShareStrategyType).ToList();
+            Write(result, Path.Combine(path, "far_raw.csv"));
+
+        }
+
         private static void Write(List<SimulationResult> simulationResults, string path)
         {
             using (var dt = new DataTable())
@@ -271,7 +357,7 @@ namespace RelationalGit.Calculation
 
                 foreach (var simulationResult in simulationResults)
                 {
-                    dt.Columns.Add(simulationResult.LossSimulation.KnowledgeShareStrategyType + simulationResult.LossSimulation.Id, typeof(double));
+                    dt.Columns.Add(simulationResult.LossSimulation.KnowledgeShareStrategyType, typeof(double));
                 }
 
                 var rows = simulationResults[0].Results.Select(q => q.PeriodId).Select(q =>

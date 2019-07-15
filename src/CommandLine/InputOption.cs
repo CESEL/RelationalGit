@@ -113,6 +113,9 @@ namespace RelationalGit.CommandLine
         [Option("add-only-to-unsafe-pullrequests")]
         public bool? AddOnlyToUnsafePullrequests { get; set; }
 
+        [Option("change-past")]
+        public bool? ChangePast { get; set; }
+
         internal InputOption Override(InputOption fileConfigurationOption)
         {
             var overridedInputOption = new InputOption()
@@ -155,6 +158,7 @@ namespace RelationalGit.CommandLine
             overridedInputOption.MinimumActualReviewersLength = Override(MinimumActualReviewersLength, fileConfigurationOption.MinimumActualReviewersLength);
             overridedInputOption.AddOnlyToUnsafePullrequests = Override(AddOnlyToUnsafePullrequests, fileConfigurationOption.AddOnlyToUnsafePullrequests);
             overridedInputOption.RecommenderOption = Override(RecommenderOption, fileConfigurationOption.RecommenderOption);
+            overridedInputOption.ChangePast = Override(ChangePast, fileConfigurationOption.ChangePast);
 
             return overridedInputOption;
         }

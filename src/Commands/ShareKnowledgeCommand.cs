@@ -322,6 +322,7 @@ namespace RelationalGit.Commands
                 LgtmTerms = lossSimulationOption.LgtmTerms.Aggregate((a, b) => a + "," + b),
                 MegaDevelopers = lossSimulationOption.MegaDevelopers,
                 RecommenderOption = lossSimulationOption.RecommenderOption,
+                ChangePast = lossSimulationOption.ChangePast.Value
             };
 
             _dbContext.Add(lossSimulation);
@@ -341,7 +342,8 @@ namespace RelationalGit.Commands
                 lossSimulation.NumberOfPeriodsForCalculatingProbabilityOfStay,
                 lossSimulation.PullRequestReviewerSelectionStrategy,
                 lossSimulation.AddOnlyToUnsafePullrequests,
-                lossSimulation.RecommenderOption);
+                lossSimulation.RecommenderOption,
+                lossSimulation.ChangePast);
 
             var timeMachine = new TimeMachine(knowledgeShareStrategy, _logger);
 

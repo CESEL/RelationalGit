@@ -20,8 +20,9 @@ namespace RelationalGit.KnowledgeShareStrategies.Strategies.Spreading
             ILogger logger, 
             string pullRequestReviewerSelectionStrategy,
             bool? addOnlyToUnsafePullrequests,
-            string recommenderOption)
-            : base(knowledgeSaveReviewerReplacementType, logger)
+            string recommenderOption,
+            bool changePast)
+            : base(knowledgeSaveReviewerReplacementType, logger,changePast)
         {
             _logger = logger;
 
