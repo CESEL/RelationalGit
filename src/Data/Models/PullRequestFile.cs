@@ -6,6 +6,11 @@ namespace RelationalGit
 {
     public class PullRequestFile
     {
+        public PullRequestFile()
+        {
+            Id = Guid.NewGuid();
+        }
+
         [Key]
         public Guid Id { get; set; }
 

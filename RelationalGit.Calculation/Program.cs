@@ -13,18 +13,18 @@ namespace RelationalGit.Calculation
     {
         static void Main(string[] args)
         {
-            var actualId = 2;
-            var simulationsIds = new int[] {38};
-            var path = @"Results\Corefx_new";
+            var actualId = 12;
+            var simulationsIds = new int[] {2,3,4,5,6,7,8,9,10,11};
+            var path = @"Results\Rust";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
 
-            //CalculateIoWRaw(simulationsIds.Concat(new int[] { 2 }).ToArray(),10,path);
+            //CalculateIoWRaw(simulationsIds.Concat(new int[] { 2, 12 }).ToArray(),10,path);
 
             CalculateFaRReduction(actualId,simulationsIds,path);
             CalculateExpertiseLoss(actualId,simulationsIds, path);
-           CalculateIoW(actualId, simulationsIds,10, path);
+            CalculateIoW(actualId, simulationsIds,10, path);
         }
 
         private static void CalculateIoW(int actualId, int[] simulationsIds, int topReviewers,string path)
@@ -271,7 +271,7 @@ namespace RelationalGit.Calculation
 
                 foreach (var simulationResult in simulationResults)
                 {
-                    dt.Columns.Add(simulationResult.LossSimulation.KnowledgeShareStrategyType, typeof(double));
+                    dt.Columns.Add(simulationResult.LossSimulation.KnowledgeShareStrategyType + simulationResult.LossSimulation.Id, typeof(double));
                 }
 
                 var rows = simulationResults[0].Results.Select(q => q.PeriodId).Select(q =>

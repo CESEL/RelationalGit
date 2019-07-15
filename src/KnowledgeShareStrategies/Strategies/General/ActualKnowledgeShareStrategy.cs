@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RelationalGit.KnowledgeShareStrategies.Models;
+using System;
 
 namespace RelationalGit
 {
@@ -12,7 +13,7 @@ namespace RelationalGit
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, null);
+            return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>());
         }
     }
 }

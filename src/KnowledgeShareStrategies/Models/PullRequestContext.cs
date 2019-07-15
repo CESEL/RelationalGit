@@ -21,6 +21,10 @@ namespace RelationalGit
 
         private static Dictionary<string, (int TotalReviews, int TotalCommits)> _contributionsDic = new Dictionary<string, (int TotalReviews, int TotalCommits)>();
 
+        private static CommitComparer _commitComparer = new CommitComparer();
+
+        private static PullRequestComparer _pullRequestComparer = new PullRequestComparer();
+
         public DeveloperKnowledge[] ActualReviewers { get; internal set; }
 
         public PullRequestFile[] PullRequestFiles { get; internal set; }
@@ -183,24 +187,22 @@ namespace RelationalGit
         {
             var totalCommits = 0;
             var commits = KnowledgeMap.CommitBasedKnowledgeMap.GetDeveloperCommits(developer);
+            var baselineCommit = new Commit() { AuthorDateTime = from };
+            var index = commits.BinarySearch(baselineCommit,_commitComparer);
 
-            for (int i = commits.Count() - 1; i >= 0; i--)
-            {
-                if (commits[i].AuthorDateTime >= from && commits[i].AuthorDateTime <= to)
-                    totalCommits++;
-                else if (commits[i].AuthorDateTime < from)
-                    break;
-            }
+            if (index < 0)
+                index = ~index;
+            totalCommits += commits.Count - index;
 
             var totalReviews = 0;
             var reviews = KnowledgeMap.ReviewBasedKnowledgeMap.GetDeveloperReviews(developer);
-            for (int i = reviews.Count() - 1; i >= 0; i--)
-            {
-                if (reviews[i].CreatedAtDateTime >= from && reviews[i].CreatedAtDateTime <= to)
-                    totalReviews++;
-                else if (reviews[i].CreatedAtDateTime < from)
-                    break;
-            }
+            var baselinePullRequest = new PullRequest() { CreatedAtDateTime = from };
+
+            index = reviews.BinarySearch(baselinePullRequest,_pullRequestComparer);
+
+            if (index < 0)
+                index = ~index;
+            totalReviews += reviews.Count - index;
 
             return (totalReviews, totalCommits);
         }
@@ -209,34 +211,28 @@ namespace RelationalGit
         {
             var totalCommits = 0;
             var committers = KnowledgeMap.CommitBasedKnowledgeMap.GetCommitters();
+            var baselineCommit = new Commit() { AuthorDateTime = from };
 
             foreach (var committer in committers)
             {
-                var commits = committer.Value;
+                var index = committer.Value.BinarySearch(baselineCommit,_commitComparer);
 
-                for (int i = commits.Count() - 1; i >= 0; i--)
-                {
-                    if (commits.ElementAt(i).AuthorDateTime >= from && commits.ElementAt(i).AuthorDateTime <= to)
-                        totalCommits++;
-                    else if (commits.ElementAt(i).AuthorDateTime < from)
-                        break;
-                }
+                if (index < 0)
+                    index = ~index;
+                totalCommits += committer.Value.Count - index;
             }
 
             var totalReviews = 0;
             var reviewers = KnowledgeMap.ReviewBasedKnowledgeMap.GetReviewers();
+            var baselinePullRequest = new PullRequest() { CreatedAtDateTime = from };
 
             foreach (var reviewer in reviewers)
             {
-                var reviews = reviewer.Value;
+                var index = reviewer.Value.BinarySearch(baselinePullRequest,_pullRequestComparer);
 
-                for (int i = reviews.Count() - 1; i >= 0; i--)
-                {
-                    if (reviews.ElementAt(i).CreatedAtDateTime >= from && reviews.ElementAt(i).CreatedAtDateTime <= to)
-                        totalReviews++;
-                    else if (reviews.ElementAt(i).CreatedAtDateTime < from)
-                        break;
-                }
+                if (index < 0)
+                    index = ~index;
+                totalReviews += reviewer.Value.Count - index;
             }       
 
             return (totalReviews, totalCommits);
@@ -264,6 +260,22 @@ namespace RelationalGit
             }
 
             return _totalContributionsInPeriodDic[periodId];
+        }
+    }
+
+    public class CommitComparer : IComparer<Commit>
+    {
+        public int Compare(Commit x, Commit y)
+        {
+            return x.AuthorDateTime.CompareTo(y.AuthorDateTime);
+        }
+    }
+
+    public class PullRequestComparer : IComparer<PullRequest>
+    {
+        public int Compare(PullRequest x, PullRequest y)
+        {
+            return x.CreatedAtDateTime.Value.CompareTo(y.CreatedAtDateTime);
         }
     }
 }
