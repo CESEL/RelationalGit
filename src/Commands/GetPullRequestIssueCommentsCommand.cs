@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using RelationalGit.Data;
+using RelationalGit.Gathering.GitHub;
 
 namespace RelationalGit.Commands
 {

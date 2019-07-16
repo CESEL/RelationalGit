@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using EFCore.BulkExtensions;
-using RelationalGit.Data.Models;
+using RelationalGit.Data;
+using RelationalGit.Simulation;
+using RelationalGit.KnowledgeShareStrategies;
 
 namespace RelationalGit.Commands
 {
@@ -79,12 +81,12 @@ namespace RelationalGit.Commands
         private void SavePullRequestSimulatedRecommendationResults(KnowledgeDistributionMap knowledgeDistributioneMap, LossSimulation lossSimulation)
         {
             var results = knowledgeDistributioneMap.PullRequestSimulatedRecommendationMap.Values;
-            var bulkPullRequestSimulatedRecommendationResults = new List<PullRequestRecommendationResult>();
+            var bulkPullRequestSimulatedRecommendationResults = new List<Data.PullRequestRecommendationResult>();
             var bulkRecommendedPullRequestCandidatess = new List<RecommendedPullRequestCandidate>(results.Count()*5);
             
             foreach (var result in results)
             {
-                bulkPullRequestSimulatedRecommendationResults.Add(new PullRequestRecommendationResult()
+                bulkPullRequestSimulatedRecommendationResults.Add(new Data.PullRequestRecommendationResult()
                 {
                     ActualReviewers = result.ActualReviewers?.Count() > 0 ? result.ActualReviewers?.Aggregate((a, b) => a + ", " + b) : null,
                     SelectedReviewers = result.SelectedReviewers?.Count() > 0 ? result.SelectedReviewers?.Aggregate((a, b) => a + ", " + b) : null,
@@ -336,7 +338,7 @@ namespace RelationalGit.Commands
 
             _logger.LogInformation("{datetime}: initializing the Time Machine.", DateTime.Now);
 
-            var knowledgeShareStrategy = KnowledgeShareStrategy.Create(_logger,
+            var knowledgeShareStrategy = KnowledgeShareStrategyFactory.Create(_logger,
                 lossSimulation.KnowledgeShareStrategyType,
                 lossSimulation.KnowledgeSaveReviewerReplacementType,
                 lossSimulation.NumberOfPeriodsForCalculatingProbabilityOfStay,

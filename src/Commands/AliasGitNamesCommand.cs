@@ -6,6 +6,7 @@ using Diacritics.Extensions;
 using F23.StringSimilarity;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using RelationalGit.Data;
 
 namespace RelationalGit.Commands
 {

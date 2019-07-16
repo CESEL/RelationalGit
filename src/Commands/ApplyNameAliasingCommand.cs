@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using RelationalGit.Data;
 
 namespace RelationalGit.Commands
 {

@@ -5,7 +5,15 @@ VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit", "RelationalGit.csproj", "{287B686C-31D4-4DBE-A70D-63412EC9E3FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelationalGit.Calculation", "..\RelationalGit.Calculation\RelationalGit.Calculation.csproj", "{DC4915C7-3719-45D9-B964-847B08F1D3CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Calculation", "..\RelationalGit.Calculation\RelationalGit.Calculation.csproj", "{DC4915C7-3719-45D9-B964-847B08F1D3CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelationalGit.Data", "..\RelationalGit.Data\RelationalGit.Data.csproj", "{56690A84-9E83-43DB-9794-9DCC8EFDAEEC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Recommendation", "..\RelationalGit.Recommendation\RelationalGit.Recommendation.csproj", "{7FA7AE24-66C7-437E-87A4-C0DE731F1101}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Simulation", "..\RelationalGit.Simulation\RelationalGit.Simulation.csproj", "{95A16B44-7681-4BF3-9A3C-1C04625CAEA5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Gathering", "..\RelationalGit.Gathering\RelationalGit.Gathering.csproj", "{8EA6634F-26E7-49C0-B09E-A5AA325E39DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +29,22 @@ Global
 		{DC4915C7-3719-45D9-B964-847B08F1D3CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC4915C7-3719-45D9-B964-847B08F1D3CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC4915C7-3719-45D9-B964-847B08F1D3CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56690A84-9E83-43DB-9794-9DCC8EFDAEEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56690A84-9E83-43DB-9794-9DCC8EFDAEEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56690A84-9E83-43DB-9794-9DCC8EFDAEEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56690A84-9E83-43DB-9794-9DCC8EFDAEEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FA7AE24-66C7-437E-87A4-C0DE731F1101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FA7AE24-66C7-437E-87A4-C0DE731F1101}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FA7AE24-66C7-437E-87A4-C0DE731F1101}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FA7AE24-66C7-437E-87A4-C0DE731F1101}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95A16B44-7681-4BF3-9A3C-1C04625CAEA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95A16B44-7681-4BF3-9A3C-1C04625CAEA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95A16B44-7681-4BF3-9A3C-1C04625CAEA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95A16B44-7681-4BF3-9A3C-1C04625CAEA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EA6634F-26E7-49C0-B09E-A5AA325E39DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EA6634F-26E7-49C0-B09E-A5AA325E39DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EA6634F-26E7-49C0-B09E-A5AA325E39DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EA6634F-26E7-49C0-B09E-A5AA325E39DD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

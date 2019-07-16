@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>latest</LangVersion>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-rgit</ToolCommandName>
     <Authors>Ehsan Mirsaeedi, Peter Rigby</Authors>
@@ -34,16 +34,16 @@
     <PackageReference Include="AutoMapper" Version="8.1.1" />
     <PackageReference Include="CommandLineParser" Version="2.5.0" />
     <PackageReference Include="Diacritics" Version="2.0.18316.1" />
-    <PackageReference Include="EFCore.BulkExtensions" Version="2.4.7" />
+    <PackageReference Include="EFCore.BulkExtensions" Version="2.5.1" />
     <PackageReference Include="F23.StringSimilarity" Version="3.1.0" />
     <PackageReference Include="LibGit2Sharp" Version="0.26.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.2">
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.2.4">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.2.6">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
@@ -55,6 +55,13 @@
     <PackageReference Include="Microsoft.WSMan.Management" Version="6.2.1" />
     <PackageReference Include="Octokit.Extensions" Version="1.0.7" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RelationalGit.Data\RelationalGit.Data.csproj" />
+    <ProjectReference Include="..\RelationalGit.Gathering\RelationalGit.Gathering.csproj" />
+    <ProjectReference Include="..\RelationalGit.Recommendation\RelationalGit.Recommendation.csproj" />
+    <ProjectReference Include="..\RelationalGit.Simulation\RelationalGit.Simulation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
 using RelationalGit.Commands;
-using RelationalGit.Mapping;
 using System.IO;
 using RelationalGit.CommandLine;
 using CommandLine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using RelationalGit.Data;
+using RelationalGit.Gathering;
 
 namespace RelationalGit
 {

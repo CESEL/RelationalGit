@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using RelationalGit.Data;
 
 namespace RelationalGit.Calculation
 {
@@ -13,16 +14,17 @@ namespace RelationalGit.Calculation
     {
         static void Main(string[] args)
         {
-            var actualId = 12;
-            var simulationsIds = new int[] {2,3,4,5,6,7,8};
+            var actualId = 2;
+            var simulationsIds = new int[] {1,2,3,4,5,6,7,8};
             var path = @"Results\CoreFX";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
 
-            CalculateWorkloadRaw(simulationsIds,10,path);
-            CalculateFaRRaw(simulationsIds, path);
-            CalculateExpertiseRaw(simulationsIds, path);
+            //CalculateWorkloadRaw(simulationsIds,10,path);
+            //CalculateFaRRaw(simulationsIds, path);
+            CalculateTotalFaRRaw(simulationsIds, path);
+            //CalculateExpertiseRaw(simulationsIds, path);
 
             //CalculateFaRReduction(actualId,simulationsIds,path);
             //CalculateExpertiseLoss(actualId,simulationsIds, path);
@@ -346,6 +348,44 @@ namespace RelationalGit.Calculation
 
             result = result.OrderBy(q => q.LossSimulation.KnowledgeShareStrategyType).ToList();
             Write(result, Path.Combine(path, "far_raw.csv"));
+
+        }
+
+        private static void CalculateTotalFaRRaw(int[] simulationsIds, string path)
+        {
+            var result = new List<SimulationResult>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                foreach (var simulationId in simulationsIds)
+                {
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+
+                    var simulatedFaR = dbContext.FileKnowledgeables.Where(q => q.TotalKnowledgeables < 2 && q.LossSimulationId == simulationId).
+                        GroupBy(q => q.PeriodId).
+                        Select(q => new { Count = q.Count(), PeriodId = q.Key })
+                        .ToArray();
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedFaRPeriod in simulatedFaR)
+                    {
+                        simulationResult.Results.Add((simulatedFaRPeriod.PeriodId, simulatedFaRPeriod.Count));
+                    }
+
+                    simulationResult.Results.AddRange(periods.Where(q => !simulationResult.Results.Any(r => r.PeriodId == q.Id)).Select(q => (q.Id, 0.0)));
+                    simulationResult.Results = simulationResult.Results.OrderBy(q => q.PeriodId).ToList();
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            result = result.OrderBy(q => q.LossSimulation.KnowledgeShareStrategyType).ToList();
+            Write(result, Path.Combine(path, "far_total_raw.csv"));
 
         }
 

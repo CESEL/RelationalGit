@@ -12,11 +12,11 @@ namespace RelationalGit
 
         public string LeaversType { get; internal set; }
 
-        public double FilesAtRiksOwnershipThreshold { get; internal set; }
+        public double FilesAtRiksOwnershipThreshold { get;  set; }
 
         public int FilesAtRiksOwnersThreshold { get; internal set; }
 
-        public int LeaversOfPeriodExtendedAbsence { get; internal set; }
+        public int LeaversOfPeriodExtendedAbsence { get;  set; }
 
         public int KnowledgeSaveReviewerFirstPeriod { get; set; }
 
@@ -30,12 +30,12 @@ namespace RelationalGit
 
         public int? NumberOfPeriodsForCalculatingProbabilityOfStay { get; set; }
 
-        public bool? AddOnlyToUnsafePullrequests { get; internal set; }
+        public bool? AddOnlyToUnsafePullrequests { get;  set; }
 
         public IEnumerable<string> MegaDevelopers { get; set; }
 
-        public string RecommenderOption { get; internal set; }
+        public string RecommenderOption { get;  set; }
 
-        public bool? ChangePast { get; internal set; }
+        public bool? ChangePast { get;  set; }
     }
 }
