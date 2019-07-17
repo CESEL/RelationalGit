@@ -15,6 +15,8 @@ namespace RelationalGit.Recommendation
 
         internal override double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
         {
+            var score = 0.0;
+
             foreach (var pullRequestFile in pullRequestContext.PullRequestFiles)
             {
                 var canonicalPath = pullRequestContext.CanononicalPathMapper.GetValueOrDefault(pullRequestFile.FileName);
@@ -43,12 +45,10 @@ namespace RelationalGit.Recommendation
                     ? 1
                     : 1 / (fileExpertise.RecentWorkDay - reviewerExpertise.RecentWorkDay).Value.TotalDays;
 
-                var score = scoreTotalComments + scoreTotalWorkDays + scoreRecency;
-
-                return score;
+                score += scoreTotalComments + scoreTotalWorkDays + scoreRecency;
             }
 
-            return 0;
+            return score / (3*pullRequestContext.PullRequestFiles.Length);
         }
     }
 }

@@ -181,7 +181,7 @@ namespace RelationalGit.Commands
                         TotalPullRequests = totalPullRequests.GetValueOrDefault(0)
                     });
 
-                    /*bulkFileTouches.AddRange(availableCommitters.Select(q => new FileTouch()
+                    bulkFileTouches.AddRange(availableCommitters.Select(q => new FileTouch()
                     {
                         CanonicalPath = filePath,
                         LossSimulationId = lossSimulation.Id,
@@ -197,7 +197,7 @@ namespace RelationalGit.Commands
                         NormalizeDeveloperName = q,
                         PeriodId = period.Id,
                         TouchType = "review",
-                    }));*/
+                    }));
                 }
             }
 

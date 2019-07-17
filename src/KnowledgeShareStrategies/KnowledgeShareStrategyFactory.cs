@@ -49,6 +49,10 @@ namespace RelationalGit.KnowledgeShareStrategies
             {
                 return new RandomBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
+            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.SophiaBasedKnowledgeShare)
+            {
+                return new SophiaBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+            }
 
             throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");
         }

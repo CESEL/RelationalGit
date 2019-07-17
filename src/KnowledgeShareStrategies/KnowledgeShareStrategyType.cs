@@ -20,6 +20,8 @@ namespace RelationalGit.KnowledgeShareStrategies
 
         public static string PersistSpreadingBasedKnowledgeShare => "persist-spreading";
 
+        public static string SophiaBasedKnowledgeShare => "sophia";
+
         public static string ReviewBasedKnowledgeShare => "review";
     }
 }

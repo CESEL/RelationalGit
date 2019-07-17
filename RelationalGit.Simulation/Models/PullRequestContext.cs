@@ -48,6 +48,8 @@ namespace RelationalGit.Simulation
 
         public HashSet<string> Hoarders { get;   set; } = null;
 
+        public Dictionary<string,List<string>> _fileOwners { get; set; } = null;
+
         public bool PullRequestFilesAreSafe
         {
             get
@@ -75,8 +77,10 @@ namespace RelationalGit.Simulation
         private void FindHoarders()
         {
             Hoarders = new HashSet<string>();
+            _fileOwners = new Dictionary<string,List<string>>();
+
             var availableDevelopersOfPeriod = AvailableDevelopers.Select(q => q.NormalizedName).ToHashSet();
-            var blameSnapshot = KnowledgeMap.BlameBasedKnowledgeMap.GetSnapshopOfPeriod(PullRequestPeriod.Id);
+            var blameSnapshot = KnowledgeMap.CommitBasedKnowledgeMap;
 
             foreach (var pullRequestFile in PullRequestFiles)
             {
@@ -87,12 +91,10 @@ namespace RelationalGit.Simulation
                     continue;
                 }
 
-                var blames = blameSnapshot[canonicalPath];
+                var committers = KnowledgeMap.CommitBasedKnowledgeMap[canonicalPath]?.Where(q => q.Value.Developer.LastParticipationDateTime > PullRequest.CreatedAtDateTime)
+                    ?.Select(q => q.Value.Developer.NormalizedName) ?? Array.Empty<string>();
 
-                var committers = blames?.Where(q => q.Value.OwnedPercentage > 0)
-                    ?.Select(q => q.Value.NormalizedDeveloperName) ?? Array.Empty<string>();
-
-                var reviewers = KnowledgeMap.ReviewBasedKnowledgeMap[canonicalPath]?.Where(q => q.Value.Periods.Any(p => p.Id <= PullRequestPeriod.Id))
+                var reviewers = KnowledgeMap.ReviewBasedKnowledgeMap[canonicalPath]?.Where(q => q.Value.Developer.LastParticipationDateTime > PullRequest.CreatedAtDateTime)
                     ?.Select(q => q.Value.Developer.NormalizedName) ?? Array.Empty<string>();
 
                 var availableContributors = committers.Union(reviewers).Where(q => availableDevelopersOfPeriod.Contains(q)).ToArray();
@@ -106,12 +108,32 @@ namespace RelationalGit.Simulation
                         Hoarders.Add(availableContributors[0]);
                     }
                 }
+
+                foreach (var availableContributor in availableContributors)
+                {
+                    if (!_fileOwners.ContainsKey(canonicalPath))
+                    {
+                        _fileOwners[canonicalPath] = new List<string>();
+                    }
+
+                    _fileOwners[canonicalPath].Add(availableContributor);
+                }
             }
 
             if (!_isSafe.HasValue)
             {
                 _isSafe = true;
             }
+        }
+
+        public string[] GetRiskyFiles(int riskOwnershipTreshold)
+        {
+            if (Hoarders == null)
+            {
+                FindHoarders();
+            }
+
+            return _fileOwners.Where(q=>q.Value.Count() < riskOwnershipTreshold).Select(q=>q.Key).ToArray();
         }
 
         public double GetEffort(string developer, int numberOfPeriodsForCalculatingProbabilityOfStay)
@@ -124,66 +146,7 @@ namespace RelationalGit.Simulation
             return ((developerTotalContribution.TotalReviews) + developerTotalContribution.TotalCommits)
                 / (double)((totalContribution.TotalReviews) + totalContribution.TotalCommits);
         }
-        /*
-        public double GetEffort(string developer, int numberOfPeriodsForCalculatingProbabilityOfStay)
-        {
-            var currentPeriod = PullRequestPeriod;
-            var lastYearPeriod = Periods.GetValueOrDefault(currentPeriod.Id - numberOfPeriodsForCalculatingProbabilityOfStay + 1);
-
-            var totalContribution = GetTotalContributionsBestweenPeriods(lastYearPeriod,currentPeriod);
-            var developerTotalContribution = GetDeveloperTotalContributionsBestweenPeriods(lastYearPeriod, currentPeriod, developer);
-
-            return ((developerTotalContribution.TotalReviews) + developerTotalContribution.TotalCommits)
-                / (double) ((totalContribution.TotalReviews) + totalContribution.TotalCommits);
-        }*/
-
-        /*private (int TotalReviews, int TotalCommits) GetDeveloperTotalContributionsBestweenPeriods(Period lastYearPeriod, Period currentPeriod, string developer)
-        {
-            var key = (lastYearPeriod?.Id ?? 1) + "-" + currentPeriod.Id + "-" + developer;
-
-            if (!_contributionsDic.ContainsKey(key))
-            {
-                var numberOfReviews = 0;
-                var numberOfCommits = 0;
-
-                for (long periodId = lastYearPeriod?.Id ?? 1; periodId <= currentPeriod.Id; periodId++)
-                {
-                    var contribution = Developers[developer].ContributionsPerPeriod.GetValueOrDefault(periodId);
-
-                    numberOfReviews += contribution?.TotalReviews ?? 0;
-                    numberOfCommits += contribution?.TotalCommits ?? 0;
-                }
-
-                _contributionsDic[key] = (numberOfReviews, numberOfCommits);
-
-            }
-
-            return _contributionsDic[key];
-        }*/
-
-        /*private (int TotalReviews, int TotalCommits) GetTotalContributionsBestweenPeriods(Period lastYearPeriod, Period currentPeriod)
-        {
-            var key = (lastYearPeriod?.Id ?? 1) + "-" + currentPeriod.Id;
-
-            if (!_contributionsDic.ContainsKey(key))
-            {
-                var totalCommitsSoFar = 0;
-                var totalReviewsSoFar = 0;
-
-                for (long periodId = lastYearPeriod?.Id ?? 1; periodId <= currentPeriod.Id; periodId++)
-                {
-                    var totalContributionOfPeriod = GetTotalContributionsOfPeriod(periodId);
-
-                    totalCommitsSoFar += totalContributionOfPeriod.TotalCommits;
-                    totalReviewsSoFar += totalContributionOfPeriod.TotalReviews;
-                }
-
-                _contributionsDic[key] = (totalReviewsSoFar, totalCommitsSoFar);
-            }
-
-            return _contributionsDic[key];
-        }*/
-
+        
         private (int TotalReviews, int TotalCommits) GetDeveloperTotalContributionsBestweenPeriods(DateTime from, DateTime to, string developer)
         {
             var totalCommits = 0;
