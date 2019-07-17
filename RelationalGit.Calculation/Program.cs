@@ -15,20 +15,20 @@ namespace RelationalGit.Calculation
         static void Main(string[] args)
         {
             var actualId = 2;
-            var simulationsIds = new int[] {1,2,3,4,5,6,7,8};
-            var path = @"Results\CoreFX";
+            var simulationsIds = new int[] {2,3,4,5,6,11,12};
+            var path = @"Results\CoreCLR";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
 
             //CalculateWorkloadRaw(simulationsIds,10,path);
             //CalculateFaRRaw(simulationsIds, path);
-            CalculateTotalFaRRaw(simulationsIds, path);
-            //CalculateExpertiseRaw(simulationsIds, path);
+            //CalculateTotalFaRRaw(simulationsIds, path);
+            CalculateExpertiseRaw(simulationsIds, path);
 
-            //CalculateFaRReduction(actualId,simulationsIds,path);
-            //CalculateExpertiseLoss(actualId,simulationsIds, path);
-            //CalculateIoW(actualId, simulationsIds,10, path);
+            CalculateFaRReduction(actualId,simulationsIds,path);
+            CalculateExpertiseLoss(actualId,simulationsIds, path);
+            CalculateIoW(actualId, simulationsIds,10, path);
         }
 
         private static void CalculateIoW(int actualId, int[] simulationsIds, int topReviewers,string path)

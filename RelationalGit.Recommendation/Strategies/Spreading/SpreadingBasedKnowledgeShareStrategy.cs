@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RelationalGit.Simulation;
+using System.Linq;
 
 namespace RelationalGit.Recommendation
 {
@@ -12,7 +13,13 @@ namespace RelationalGit.Recommendation
 
         internal override double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
         {
-            var specializedKnowledge = reviewer.NumberOfTouchedFiles / (double)pullRequestContext.PullRequestFiles.Length;
+            var prFiles = pullRequestContext.PullRequestFiles.Select(q => pullRequestContext.CanononicalPathMapper[q.FileName])
+                .Where(q => q != null).ToArray();
+
+            var reviewedFiles = reviewer.GetTouchedFiles().Where(q=>prFiles.Contains(q));
+
+            var specializedKnowledge = reviewedFiles.Count() / (double)pullRequestContext.PullRequestFiles.Length;
+
             return 1 - specializedKnowledge;
         }
     }

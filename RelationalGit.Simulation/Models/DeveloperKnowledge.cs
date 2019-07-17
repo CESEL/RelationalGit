@@ -10,7 +10,7 @@ namespace RelationalGit.Simulation
 
         private HashSet<string> _touchedFiles = new HashSet<string>();
 
-        public int NumberOfTouchedFiles => _reviewedFile.Count;
+        public int NumberOfTouchedFiles => _touchedFiles.Count;
 
         public int NumberOfReviewedFiles => _reviewedFile.Count;
 
@@ -33,10 +33,7 @@ namespace RelationalGit.Simulation
 
         public IEnumerable<string> GetTouchedFiles()
         {
-            foreach (var touchedFile in _touchedFiles)
-            {
-                yield return touchedFile;
-            }
+            return _touchedFiles;
         }
 
         public void AddCommittedFile(string fileName)
