@@ -204,8 +204,6 @@ namespace RelationalGit.Recommendation
             return int.Parse(length);
         }
 
-
-
         private (IEnumerable<DeveloperKnowledge> Reviewers, IEnumerable<DeveloperKnowledge> SelectedCandidateKnowledge) Replace(int numberOfReplacements, int actualReviewersLength, int[] selectedActualCombination, PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs)
         {
             var fixedReviewers = new List<DeveloperKnowledge>(numberOfReplacements);

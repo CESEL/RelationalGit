@@ -14,7 +14,7 @@ namespace RelationalGit.Recommendation
 
         protected override Simulation.PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            return new Simulation.PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>());
+            return new Simulation.PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>(),null,null);
         }
     }
 }

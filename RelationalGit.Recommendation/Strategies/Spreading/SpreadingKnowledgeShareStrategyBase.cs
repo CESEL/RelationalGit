@@ -19,7 +19,7 @@ namespace RelationalGit.Recommendation
 
             if (availableDevs.Length == 0)
             {
-                return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>());
+                return Actual(pullRequestContext);
             }
 
             var simulationResults = new List<PullRequestKnowledgeDistribution>();
@@ -33,11 +33,22 @@ namespace RelationalGit.Recommendation
 
             if (simulationResults.Count == 0)
             {
-                return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>());
+                return Actual(pullRequestContext);
             }
 
             var bestPullRequestKnowledgeDistribution = GetBestDistribution(simulationResults);
-            return new PullRequestRecommendationResult(bestPullRequestKnowledgeDistribution.PullRequestKnowledgeDistributionFactors.Reviewers.ToArray(), availableDevs);
+
+            return Recommendation(pullRequestContext, availableDevs, bestPullRequestKnowledgeDistribution);
+        }
+
+        private static PullRequestRecommendationResult Recommendation(PullRequestContext pullRequestContext, DeveloperKnowledge[] availableDevs, PullRequestKnowledgeDistribution bestPullRequestKnowledgeDistribution)
+        {
+            return new PullRequestRecommendationResult(bestPullRequestKnowledgeDistribution.PullRequestKnowledgeDistributionFactors.Reviewers.ToArray(), availableDevs, pullRequestContext.IsRisky(), pullRequestContext.Features);
+        }
+
+        private static PullRequestRecommendationResult Actual(PullRequestContext pullRequestContext)
+        {
+            return new PullRequestRecommendationResult(pullRequestContext.ActualReviewers, Array.Empty<DeveloperKnowledge>(), pullRequestContext.IsRisky(), pullRequestContext.Features);
         }
 
         internal PullRequestKnowledgeDistribution GetBestDistribution(List<PullRequestKnowledgeDistribution> simulationResults)

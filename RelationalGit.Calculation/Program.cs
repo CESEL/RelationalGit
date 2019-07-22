@@ -15,8 +15,8 @@ namespace RelationalGit.Calculation
         static void Main(string[] args)
         {
             var actualId = 2;
-            var simulationsIds = new int[] {2,3,4,5,6,9,10,11,12};
-            var path = @"Results\kubernetes";
+            var simulationsIds = new int[] {2,16,18};
+            var path = @"Results\rust_Sophia";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -24,11 +24,11 @@ namespace RelationalGit.Calculation
             //CalculateWorkloadRaw(simulationsIds,10,path);
             //CalculateFaRRaw(simulationsIds, path);
             //CalculateTotalFaRRaw(simulationsIds, path);
-            //CalculateExpertiseRaw(simulationsIds, path);
+            CalculateExpertiseRaw(simulationsIds, path);
 
-            //CalculateFaRReduction(actualId,simulationsIds,path);
+            CalculateFaRReduction(actualId,simulationsIds,path);
             CalculateExpertiseLoss(actualId,simulationsIds, path);
-            //CalculateIoW(actualId, simulationsIds,10, path);
+            CalculateIoW(actualId, simulationsIds,10, path);
         }
 
         private static void CalculateIoW(int actualId, int[] simulationsIds, int topReviewers,string path)
@@ -457,7 +457,7 @@ namespace RelationalGit.Calculation
 
         private static GitRepositoryDbContext GetDbContext()
         {
-            return new GitRepositoryDbContext();
+            return new GitRepositoryDbContext(autoDetectChangesEnabled:false);
         }
 
         public class SimulationResult

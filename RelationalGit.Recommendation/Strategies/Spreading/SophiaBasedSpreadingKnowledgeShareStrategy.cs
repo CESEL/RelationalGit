@@ -12,6 +12,7 @@ namespace RelationalGit.Recommendation
         private double _alpha;
         private double _beta;
         private int _riskOwenershipThreshold;
+        private double _hoarderRatio;
 
         public SophiaBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, 
             ILogger logger, int? numberOfPeriodsForCalculatingProbabilityOfStay, 
@@ -26,19 +27,21 @@ namespace RelationalGit.Recommendation
             _alpha = parameters.Alpha;
             _beta = parameters.Beta;
             _riskOwenershipThreshold = parameters.RiskOwenershipThreshold;
+            _hoarderRatio = parameters.HoarderRatio;
         }
 
-        private (double Alpha,double Beta,int RiskOwenershipThreshold) GetParameters(string recommenderOption)
+        private (double Alpha,double Beta,int RiskOwenershipThreshold,double HoarderRatio) GetParameters(string recommenderOption)
         {
             if (string.IsNullOrEmpty(recommenderOption))
-                return (0.5, 1,3);
+                return (0.5, 1,3,0.7);
 
             var options = recommenderOption.Split(',');
             var alphaOption = options.FirstOrDefault(q => q.StartsWith("alpha")).Substring("alpha".Length+1);
             var betaOption = options.FirstOrDefault(q => q.StartsWith("beta")).Substring("beta".Length + 1);
             var riskOwenershipThreshold = options.FirstOrDefault(q => q.StartsWith("risk")).Substring("risk".Length + 1);
+            var hoarderRatioOption = options.FirstOrDefault(q => q.StartsWith("hoarder_ratio")).Substring("hoarder_ratio".Length + 1);
 
-            return (double.Parse(alphaOption), double.Parse(betaOption),int.Parse(riskOwenershipThreshold));
+            return (double.Parse(alphaOption), double.Parse(betaOption),int.Parse(riskOwenershipThreshold),double.Parse(hoarderRatioOption));
         }
 
         internal override double ComputeReviewerScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
@@ -56,7 +59,7 @@ namespace RelationalGit.Recommendation
 
         private double GetPersistSpreadingScore(PullRequestContext pullRequestContext, DeveloperKnowledge reviewer)
         {
-            var reviewerImportance = pullRequestContext.IsHoarder(reviewer.DeveloperName) ? 0.7 : 1;
+            var reviewerImportance = pullRequestContext.IsHoarder(reviewer.DeveloperName) ? _hoarderRatio : 1;
 
             var probabilityOfStay = pullRequestContext.GetProbabilityOfStay(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
             var effort = pullRequestContext.GetEffort(reviewer.DeveloperName, _numberOfPeriodsForCalculatingProbabilityOfStay.Value);
@@ -68,14 +71,7 @@ namespace RelationalGit.Recommendation
 
             var spreadingScore = 0.0;
 
-            if (specializedKnowledge > 1) // if it's a folder level dev
-            {
-                spreadingScore = reviewerImportance * Math.Pow(probabilityOfStay * effort, _alpha);
-            }
-            else
-            {
-                spreadingScore = reviewerImportance * Math.Pow(probabilityOfStay * effort, _alpha) * Math.Pow(1 - specializedKnowledge, _beta);
-            }
+            spreadingScore = reviewerImportance * Math.Pow(probabilityOfStay * effort, _alpha) * Math.Pow(1 - specializedKnowledge, _beta);
 
             return spreadingScore;
         }

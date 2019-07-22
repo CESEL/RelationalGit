@@ -16,6 +16,8 @@ namespace RelationalGit.Simulation
 
         public string SelectedReviewersType { get; set; }
 
+        public string Features { get; set; }
+
         public Developer[] AvailableDevelopers;
 
         private bool? _isSafe;
@@ -25,6 +27,7 @@ namespace RelationalGit.Simulation
         private static CommitComparer _commitComparer = new CommitComparer();
 
         private static PullRequestComparer _pullRequestComparer = new PullRequestComparer();
+        private string[] _riskyFiles;
 
         public DeveloperKnowledge[] ActualReviewers { get;   set; }
 
@@ -133,7 +136,20 @@ namespace RelationalGit.Simulation
                 FindHoarders();
             }
 
-            return _fileOwners.Where(q=>q.Value.Count() < riskOwnershipTreshold).Select(q=>q.Key).ToArray();
+            if(_riskyFiles == null)
+            {
+                _riskyFiles = _fileOwners.Where(q => q.Value.Count() < riskOwnershipTreshold).Select(q => q.Key).ToArray();
+            }
+
+            return _riskyFiles;
+        }
+
+        public bool? IsRisky()
+        {
+            if (_riskyFiles == null)
+                return null;
+            
+            return _riskyFiles.Length > 0;
         }
 
         public double GetEffort(string developer, int numberOfPeriodsForCalculatingProbabilityOfStay)

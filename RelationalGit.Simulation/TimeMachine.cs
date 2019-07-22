@@ -166,11 +166,6 @@ namespace RelationalGit.Simulation
 
         private void UpdateReviewBasedKnowledgeMap(KnowledgeDistributionMap knowledgeMap, PullRequest pullRequest)
         {
-            var submitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
-
-            if (submitter==null || _megaDevelopersSet.Contains(submitter.NormalizedName))
-                return;
-
             AddProposedChangesToPrSubmitterKnowledge(pullRequest);
 
             ChangeThePastByRecommendingReviewers(knowledgeMap, pullRequest);
@@ -339,9 +334,11 @@ namespace RelationalGit.Simulation
 
         private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period, PullRequest pullRequest)
         {
+            // TO DO 
             return DevelopersDic.Values.Where(dev => dev.FirstParticipationDateTime <= pullRequest.CreatedAtDateTime
-                && dev.LastParticipationDateTime >= pullRequest.CreatedAtDateTime)
-                .Where(q => !_megaDevelopersSet.Contains(q.NormalizedName)); // remove mega devs;
+                //&& dev.LastParticipationDateTime >= pullRequest.CreatedAtDateTime
+                && !_megaDevelopersSet.Contains(dev.NormalizedName) // remove mega devs;
+                ); 
         }
 
         private Period GetPeriodOfPullRequest(PullRequest pullRequest)
@@ -352,7 +349,8 @@ namespace RelationalGit.Simulation
 
         private void UpdateReviewBasedKnowledgeMap(PullRequest pullRequest)
         {
-            var reviewers = PullRequestSimulatedRecommendationDic[pullRequest.Number].SelectedReviewers.Select(reviewerName => DevelopersDic[reviewerName]);
+            var reviewers = PullRequestSimulatedRecommendationDic[pullRequest.Number].SelectedReviewers
+                .Where(q=> !_megaDevelopersSet.Contains(q)).Select(reviewerName => DevelopersDic[reviewerName]);
             var period = GetPeriodOfPullRequest(pullRequest);
 
             // some of the pull requests have no modified files strangely
@@ -376,18 +374,18 @@ namespace RelationalGit.Simulation
                 return;
             }
 
-            // some of the pull requests have no modified files
-            // https://github.com/dotnet/coreclr/pull/13534
-            var pullRequestFiles = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>());
-
-            var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin)?.NormalizedName;
+            var submitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
 
             // we have ignored mega developers
-            if (prSubmitter == null)
-            {
+            if (submitter == null || _megaDevelopersSet.Contains(submitter.NormalizedName))
                 return;
-            }
 
+                // some of the pull requests have no modified files
+                // https://github.com/dotnet/coreclr/pull/13534
+            var pullRequestFiles = PullRequestFilesDic.GetValueOrDefault(pullRequest.Number, new List<PullRequestFile>());
+
+            var prSubmitter = submitter.NormalizedName;
+            
             var period = GetPeriodOfPullRequest(pullRequest);
 
             foreach (var file in pullRequestFiles)

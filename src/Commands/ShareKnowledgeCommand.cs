@@ -100,7 +100,9 @@ namespace RelationalGit.Commands
                     TopTenIsAccurate = result.TopTenIsAccurate,
                     IsSimulated = result.IsSimulated,
                     LossSimulationId = lossSimulation.Id,
-                    Expertise = result.Expertise
+                    Expertise = result.Expertise,
+                    IsRisky = result.IsRisky,
+                    Features=result.Features
                 });
 
                 for (int i = 0; i < result.SortedCandidates.Count(); i++)
@@ -181,7 +183,7 @@ namespace RelationalGit.Commands
                         TotalPullRequests = totalPullRequests.GetValueOrDefault(0)
                     });
 
-                    bulkFileTouches.AddRange(availableCommitters.Select(q => new FileTouch()
+                    /*bulkFileTouches.AddRange(availableCommitters.Select(q => new FileTouch()
                     {
                         CanonicalPath = filePath,
                         LossSimulationId = lossSimulation.Id,
@@ -197,7 +199,7 @@ namespace RelationalGit.Commands
                         NormalizeDeveloperName = q,
                         PeriodId = period.Id,
                         TouchType = "review",
-                    }));
+                    }));*/
                 }
             }
 

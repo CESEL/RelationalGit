@@ -8,11 +8,13 @@ namespace RelationalGit.Simulation
     {
         private DeveloperKnowledge[] _selectedReviewersKnowledge;
 
-        public PullRequestRecommendationResult(DeveloperKnowledge[] selectedReviewers, DeveloperKnowledge[] sortedCandidates)
+        public PullRequestRecommendationResult(DeveloperKnowledge[] selectedReviewers, DeveloperKnowledge[] sortedCandidates,bool? isRisky,string features)
         {
             SortedCandidates = sortedCandidates;
             SelectedReviewers = selectedReviewers.Select(q => q.DeveloperName).ToArray();
             _selectedReviewersKnowledge = selectedReviewers;
+            IsRisky = isRisky;
+            Features = features;
         }
 
         public long PullRequestNumber { get; set; }
@@ -46,6 +48,10 @@ namespace RelationalGit.Simulation
         public double? MeanReciprocalRank { get;  set; }
 
         public bool IsSimulated { get; set; }
+
+        public string Features { get; set; }
+
+        public bool? IsRisky { get; set; }
 
         public DeveloperKnowledge[] GetSelectedReviewersKnowledge()
         {

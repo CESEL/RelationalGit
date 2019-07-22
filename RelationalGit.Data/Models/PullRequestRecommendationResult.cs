@@ -28,5 +28,7 @@
 
         public long LossSimulationId { get;   set; }
         public bool IsSimulated { get;   set; }
+        public bool? IsRisky { get; set; }
+        public string Features { get; set; }
     }
 }

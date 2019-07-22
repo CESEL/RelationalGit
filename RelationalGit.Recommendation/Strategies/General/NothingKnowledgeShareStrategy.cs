@@ -13,7 +13,7 @@ namespace RelationalGit.Recommendation
 
         protected override PullRequestRecommendationResult RecommendReviewers(PullRequestContext pullRequestContext)
         {
-            return new PullRequestRecommendationResult(Array.Empty<DeveloperKnowledge>(), Array.Empty<DeveloperKnowledge>());
+            return new PullRequestRecommendationResult(Array.Empty<DeveloperKnowledge>(), Array.Empty<DeveloperKnowledge>(),null,null);
         }
     }
 }
