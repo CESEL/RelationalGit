@@ -14,9 +14,9 @@ namespace RelationalGit.Calculation
     {
         static void Main(string[] args)
         {
-            var actualId = 2;
-            var simulationsIds = new int[] {2,16,18};
-            var path = @"Results\rust_Sophia";
+            var actualId = 24;
+            var simulationsIds = new int[] {24,25,26,27,28,29,30,31};
+            var path = @"Results\roslyn_XXX";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);

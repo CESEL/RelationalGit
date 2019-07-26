@@ -23,5 +23,7 @@ namespace RelationalGit.KnowledgeShareStrategies
         public static string SophiaBasedKnowledgeShare => "sophia";
 
         public static string ReviewBasedKnowledgeShare => "review";
+
+        public static string ContributionBasedKnowledgeShare => "contribution";
     }
 }

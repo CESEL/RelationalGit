@@ -90,7 +90,7 @@ namespace RelationalGit.Commands
                 {
                     ActualReviewers = result.ActualReviewers?.Count() > 0 ? result.ActualReviewers?.Aggregate((a, b) => a + ", " + b) : null,
                     SelectedReviewers = result.SelectedReviewers?.Count() > 0 ? result.SelectedReviewers?.Aggregate((a, b) => a + ", " + b) : null,
-                    SortedCandidates = result.SortedCandidates?.Count() > 0 ? result.SortedCandidates.Select(q => q.DeveloperName)?.Aggregate((a, b) => a + ", " + b) : null,
+                    SortedCandidates = result.SortedCandidates?.Count() > 0 ? result.SortedCandidates.Take(10).Select(q => q.DeveloperName)?.Aggregate((a, b) => a + ", " + b) : null,
                     ActualReviewersLength = result.ActualReviewers.Length,
                     SelectedReviewersLength = result.SelectedReviewers.Length,
                     SortedCandidatesLength = result.SortedCandidates?.Length,
@@ -105,7 +105,7 @@ namespace RelationalGit.Commands
                     Features=result.Features
                 });
 
-                for (int i = 0; i < result.SortedCandidates.Count(); i++)
+                for (int i = 0; i < result.SortedCandidates.Take(10).Count(); i++)
                 {
                     bulkRecommendedPullRequestCandidatess.Add(new RecommendedPullRequestCandidate(
                         lossSimulationId: lossSimulation.Id, 
@@ -508,7 +508,7 @@ namespace RelationalGit.Commands
                 {
                     extendedPeriodId = period.Id + i;
                     contribution = developersContributions.GetValueOrDefault(extendedPeriodId + "-" + extendedLeaversOfPeriod[j].NormalizedName);
-                    hasPariticipatedInExtendedPeriods = (contribution?.TotalCommits ?? 0 + contribution?.TotalReviews ?? 0) > 0;
+                    hasPariticipatedInExtendedPeriods = ((contribution?.TotalCommits ?? 0) + (contribution?.TotalReviews ?? 0)) > 0;
                 }
 
                 if (hasPariticipatedInExtendedPeriods)
