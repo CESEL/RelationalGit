@@ -20,6 +20,8 @@ namespace RelationalGit.Simulation
 
         public int NumberOfReviews { get; set; }
 
+        public int NumberOContributions => NumberOfCommits + NumberOfReviews;
+
         public string DeveloperName { get; set; }
 
         public int NumberOfAuthoredLines { get; set; }

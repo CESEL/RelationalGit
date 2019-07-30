@@ -201,7 +201,7 @@ namespace RelationalGit.Simulation
 
             var period = GetPeriodOfPullRequest(pullRequest);
 
-            var availableDevelopers = GetAvailableDevelopersOfPeriod(period, pullRequest)
+            var availableDevelopers = GetAvailableDevelopersOfPeriod(pullRequest)
                 .ToArray();
 
             var prSubmitter = UsernameRepository.GetByGitHubLogin(pullRequest.UserLogin);
@@ -332,11 +332,10 @@ namespace RelationalGit.Simulation
             developersKnowledge[developerName].AddCommittedFile(developerFileCommitsDetail.FilePath);
         }
 
-        private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(Period period, PullRequest pullRequest)
+        private IEnumerable<Developer> GetAvailableDevelopersOfPeriod(PullRequest pullRequest)
         {
-            // TO DO 
             return DevelopersDic.Values.Where(dev => dev.FirstParticipationDateTime <= pullRequest.CreatedAtDateTime
-                //&& dev.LastParticipationDateTime >= pullRequest.CreatedAtDateTime
+                && dev.LastParticipationDateTime >= pullRequest.CreatedAtDateTime
                 && !_megaDevelopersSet.Contains(dev.NormalizedName) // remove mega devs;
                 ); 
         }

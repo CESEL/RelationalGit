@@ -73,7 +73,7 @@ namespace RelationalGit.Data
                 }
 
                 return LastCommitDateTime.Value < LastReviewDateTime.Value
-                    ? LastCommitDateTime.Value : LastReviewDateTime.Value;
+                    ? LastReviewDateTime.Value : LastCommitDateTime.Value;
             }
         }
 

@@ -14,9 +14,9 @@ namespace RelationalGit.Calculation
     {
         static void Main(string[] args)
         {
-            var actualId = 24;
-            var simulationsIds = new int[] {24,25,26,27,28,29,30,31};
-            var path = @"Results\roslyn_XXX";
+            var actualId = 29;
+            var simulationsIds = new int[] { 29, 30, 31, 32, 33, 34, 35, 36};
+            var path = @"Results\kubernetes_new";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -24,7 +24,7 @@ namespace RelationalGit.Calculation
             //CalculateWorkloadRaw(simulationsIds,10,path);
             //CalculateFaRRaw(simulationsIds, path);
             //CalculateTotalFaRRaw(simulationsIds, path);
-            CalculateExpertiseRaw(simulationsIds, path);
+            //CalculateExpertiseRaw(simulationsIds, path);
 
             CalculateFaRReduction(actualId,simulationsIds,path);
             CalculateExpertiseLoss(actualId,simulationsIds, path);

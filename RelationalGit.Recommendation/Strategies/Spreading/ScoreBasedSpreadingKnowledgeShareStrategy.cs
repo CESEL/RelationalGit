@@ -65,7 +65,9 @@ namespace RelationalGit.Recommendation
                 ComputeAllReviewerScores(pullRequestContext, availableDevs);
             }
 
-            return availableDevs.OrderByDescending(q => q.Score).ToArray();
+            return availableDevs
+                .OrderByDescending(q => q.Score)
+                .ThenByDescending(q=>q.NumberOContributions).ToArray();
         }
 
         internal override sealed double ComputeScore(PullRequestContext pullRequestContext, PullRequestKnowledgeDistributionFactors pullRequestKnowledgeDistributionFactors)
