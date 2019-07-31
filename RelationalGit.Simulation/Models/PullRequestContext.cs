@@ -221,12 +221,19 @@ namespace RelationalGit.Simulation
         public double GetProbabilityOfStay(string reviewer, int numberOfPeriodsForCalculatingProbabilityOfStay)
         {
             var currentPeriodId = PullRequestPeriod.Id;
-            var lastYearPeriodId = currentPeriodId - numberOfPeriodsForCalculatingProbabilityOfStay + 1;
+            var lastYear = PullRequest.CreatedAtDateTime.Value.Subtract(TimeSpan.FromDays(365));
 
-            var numberOfContributedPeriodsSoFar = Developers[reviewer].AllCommitsPeriodsId.Where(q => q <= currentPeriodId && q >= lastYearPeriodId)
-                .Union(Developers[reviewer].AllReviewsPeriodsId.Where(q => q <= currentPeriodId && q >= lastYearPeriodId)).Count();
+            var commitMonths = KnowledgeMap.CommitBasedKnowledgeMap.GetDeveloperCommits(reviewer)
+                .Where(q=>q.AuthorDateTime>=lastYear)
+                .Select(q=>q.AuthorDateTime.Month);
+            
+            var reviewMonths = KnowledgeMap.ReviewBasedKnowledgeMap.GetDeveloperReviews(reviewer)
+                .Where(q => q.CreatedAtDateTime >= lastYear)
+                .Select(q => q.CreatedAtDateTime.Value.Month);
 
-            return numberOfContributedPeriodsSoFar / (double) numberOfPeriodsForCalculatingProbabilityOfStay;
+            var numberOfContributedPeriodsSoFar = commitMonths.Union(reviewMonths).Count();
+
+            return numberOfContributedPeriodsSoFar / (double) 12.0;
         }
 
         private (int TotalReviews, int TotalCommits) GetTotalContributionsOfPeriod(long periodId)
