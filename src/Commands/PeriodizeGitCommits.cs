@@ -16,7 +16,7 @@ namespace RelationalGit.Commands
             _logger = logger;
         }
 
-        public async Task Execute(string repoPath, string branchName, string periodType, int periodLength)
+        public async Task Execute(string periodType, int periodLength)
         {
             var commitPeriods = new List<CommitPeriod>();
 

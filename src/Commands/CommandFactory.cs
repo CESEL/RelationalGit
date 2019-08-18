@@ -119,7 +119,7 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.Periodize)
             {
                 var cmd = new PeriodizeGitCommits(logger);
-                await cmd.Execute(options.RepositoryPath, options.GitBranch, options.PeriodType, options.PeriodLength.Value).ConfigureAwait(false);
+                await cmd.Execute(options.PeriodType, options.PeriodLength.Value).ConfigureAwait(false);
             }
             else if (options.Command.ToLower() == CommandType.DoNameAliasing)
             {

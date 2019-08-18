@@ -54,24 +54,31 @@ namespace RelationalGit.Simulation
 
         private void CalculateMetrics(PullRequestRecommendationResult result)
         {
+
+            // initiating values
+            result.TopFiveIsAccurate = false;
+            result.TopTenIsAccurate = false;
+            result.MeanReciprocalRank = 0;
+
             if (result.ActualReviewers.Count() == 0 || result.SortedCandidates == null || result.SortedCandidates.Count() == 0)
             {
                 return;
             }
 
-            var sortedCandidatesNames = result.SortedCandidates.Select(q => q.DeveloperName);
-
-            result.TopFiveIsAccurate = sortedCandidatesNames.TakeLast(5).Any(q => result.ActualReviewers.Any(a => a == q));
-            result.TopTenIsAccurate = sortedCandidatesNames.TakeLast(10).Any(q => result.ActualReviewers.Any(a => a == q));
-            var firstCorretRecommendation = sortedCandidatesNames.TakeLast(10).LastOrDefault(q => result.ActualReviewers.Any(a => a == q));
-
-            if (firstCorretRecommendation != null)
+            var found = false;
+            for (int i = 0; i < result.SortedCandidates.Length && !found; i++)
             {
-                result.MeanReciprocalRank = 1.0 / (Array.FindIndex(sortedCandidatesNames.TakeLast(10).Reverse().ToArray(), q => q == firstCorretRecommendation) + 1);
-            }
-            else
-            {
-                result.MeanReciprocalRank = 0;
+                foreach (var actualReviewer in result.ActualReviewers)
+                {
+                    if(result.SortedCandidates[i].DeveloperName == actualReviewer)
+                    {
+                        result.TopTenIsAccurate = i < 10;
+                        result.TopFiveIsAccurate = i < 5;
+                        result.MeanReciprocalRank = 1.0 / (i + 1);
+                        found = true;
+                        break;
+                    }
+                }
             }
         }
 

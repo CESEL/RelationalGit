@@ -15,8 +15,8 @@ namespace RelationalGit.Calculation
         static void Main(string[] args)
         {
             var actualId = 29;
-            var simulationsIds = new int[] { 29, 30, 31, 32, 33, 34, 35, 36};
-            var path = @"Results\kubernetes_new";
+            var simulationsIds = new int[] { 30,31,32,33,34,35,36};
+            var path = @"Results\Rust_Sort2";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -29,6 +29,7 @@ namespace RelationalGit.Calculation
             CalculateFaRReduction(actualId,simulationsIds,path);
             CalculateExpertiseLoss(actualId,simulationsIds, path);
             CalculateIoW(actualId, simulationsIds,10, path);
+            CalculateHoardings(actualId, simulationsIds, 10, path);
         }
 
         private static void CalculateIoW(int actualId, int[] simulationsIds, int topReviewers,string path)
@@ -222,6 +223,100 @@ namespace RelationalGit.Calculation
             }
 
             Write(result, Path.Combine(path, "expertiseloss.csv"));
+        }
+
+        private static void CalculateHoardings(int actualId, int[] simulationsIds, int topReviewers, string path)
+        {
+            var result = new List<SimulationResult>();
+            var dicActualHoarderPeriod = new Dictionary<long, int>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+                var actualSelectedReviewers = dbContext.RecommendedPullRequestReviewers.Where(q => q.LossSimulationId == actualId).ToArray();
+
+                var actualWorkload = new Dictionary<long, Dictionary<string, int>>();
+                foreach (var actualSelectedReviewer in actualSelectedReviewers)
+                {
+                    var prDateTime = pullRequests[(int)actualSelectedReviewer.PullRequestNumber].CreatedAtDateTime;
+                    var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                    if (!actualWorkload.ContainsKey(period.Id))
+                        actualWorkload[period.Id] = new Dictionary<string, int>();
+
+                    if (!actualWorkload[period.Id].ContainsKey(actualSelectedReviewer.NormalizedReviewerName))
+                        actualWorkload[period.Id][actualSelectedReviewer.NormalizedReviewerName] = 0;
+
+                    actualWorkload[period.Id][actualSelectedReviewer.NormalizedReviewerName]++;
+                }
+
+                foreach (var actualWorkloadPeriod in actualWorkload)
+                {
+                    var periodId = actualWorkloadPeriod.Key;
+                    var actualWorkLoadPeriod = actualWorkload.GetValueOrDefault(periodId);
+                    var files = dbContext.FileKnowledgeables.Where(q => q.HasReviewed && q.LossSimulationId == actualId
+                    && q.TotalKnowledgeables == 1 && q.PeriodId == periodId).ToArray();
+
+                    if (actualWorkLoadPeriod == null)
+                        continue;
+
+                    var actualTopReviewers = actualWorkLoadPeriod.OrderByDescending(q => q.Value).Take(10).Select(q => q.Key);
+                    var actualHoarders = files.Where(q => q.Knowledgeables.Split(',').All(q1 => actualTopReviewers.Contains(q1))).Count();
+
+                    dicActualHoarderPeriod[periodId]= actualHoarders;
+                }
+
+                foreach (var simulationId in simulationsIds)
+                {
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+                    var simulatedSelectedReviewers = dbContext.RecommendedPullRequestReviewers.Where(q => q.LossSimulationId == simulationId).ToArray();
+
+                    var simulatedWorkload = new Dictionary<long, Dictionary<string, int>>();
+                    foreach (var simulatedSelectedReviewer in simulatedSelectedReviewers)
+                    {
+                        var prDateTime = pullRequests[(int)simulatedSelectedReviewer.PullRequestNumber].CreatedAtDateTime;
+                        var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                        if (!simulatedWorkload.ContainsKey(period.Id))
+                            simulatedWorkload[period.Id] = new Dictionary<string, int>();
+
+                        if (!simulatedWorkload[period.Id].ContainsKey(simulatedSelectedReviewer.NormalizedReviewerName))
+                            simulatedWorkload[period.Id][simulatedSelectedReviewer.NormalizedReviewerName] = 0;
+
+                        simulatedWorkload[period.Id][simulatedSelectedReviewer.NormalizedReviewerName]++;
+                    }
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedWorkloadPeriod in simulatedWorkload)
+                    {
+                        var periodId = simulatedWorkloadPeriod.Key;
+                        var actualWorkLoadPeriod = actualWorkload.GetValueOrDefault(periodId);
+                        var files = dbContext.FileKnowledgeables.Where(q => q.HasReviewed && q.LossSimulationId == lossSimulation.Id
+                        && q.TotalKnowledgeables == 1 && q.PeriodId==periodId).ToArray();
+
+
+                        if (actualWorkLoadPeriod == null)
+                            continue;
+
+                        var simulatedTopReviewers = simulatedWorkloadPeriod.Value.OrderByDescending(q => q.Value).Take(10).Select(q => q.Key); ;
+
+                        var simulatedHoarders = files.Where(q => q.Knowledgeables.Split(',').All(q1 => simulatedTopReviewers.Contains(q1))).Count();
+
+                        var value = CalculateReductionPercentage(simulatedHoarders, dicActualHoarderPeriod[periodId]);
+
+                        simulationResult.Results.Add((periodId, value));
+                    }
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            Write(result, Path.Combine(path, "hoardings.csv"));
         }
 
         private static void CalculateExpertiseRaw(int[] simulationsIds, string path)
