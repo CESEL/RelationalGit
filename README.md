@@ -47,31 +47,42 @@ You need to create a configuration file with the following format. The configura
 
 ```JSON
 {
-  "ConnectionStrings": {
-    "RelationalGit": "Server=IP;User Id=user;Password=123;Database=db"
-  },
-  "Mining": {
-    "Extensions": [ ".cs", ".vb", ".ts", ".js", ".jsx", ".sh", ".yml", ".tsx", ".css", ".json", ".py", ".c", ".h", ".cpp", ".il", ".make", ".cmake", ".ps1", ".r", ".cmd", ".html", ".conf" ],
-    "GitBranch": "master",
-    "RepositoryPath": "",
-    "GitHubRepo": "corefx",
-    "GitHubOwner": "dotnet",
-    "GitHubToken": "",
-    "PeriodLength": 3,
-    "PeriodType": "month",
-    "MegaDevelopers": [ "dotnet-bot" ],
-    "MegaCommitSize": 200,
-    "FilesAtRiksOwnersThreshold": 1,
-    "FilesAtRiksOwnershipThreshold": 0.90,
-    "LeaversOfPeriodExtendedAbsence": 4,
-    "MegaPullRequestSize": 100,
-    "CoreDeveloperThreshold": 0.1,
-    "CoreDeveloperCalculationType": "ownership-percentage",
-    "KnowledgeSaveStrategyType": "nothing",
-    "LeaversType": "all",
-    "BlamePeriods": [1],
-    "BlamePeriodsRange":[10,20],
-    "ExcludedBlamePaths": ["*\\lib\\*"]
+"ConnectionStrings": {
+   "RelationalGit": "Server=IP;User Id=user;Password=123;Database=db"
+},
+"Mining": {
+  "Extensions": [ ".cs",".java",".scala", ".vb",".rs",".go",".s",".proto",".coffee", ".sql",".rb",".ruby",".ts", ".js", ".jsx", ".sh", ".tsx", ".py", ".c", ".h", ".cpp", ".il", ".make", ".cmake", ".ps1", ".r", ".cmd"],
+  "GitBranch": "master",
+  "RepositoryPath": "PATH_TO_REPO",
+  "GitHubRepo": "REPO_NAME",
+  "GitHubOwner": "REPO_OWNER",
+  "GitHubToken": "GITHUB_TOKEN",
+  "PeriodLength": 3,
+  "PeriodType": "month",
+  "MegaDevelopers": [ "dotnetbot","dotnetmaestro","dotnetmaestrobot","bors","dotnet bot","dotnetgitsyncbot","k8scirobot","k8smergerobot","dotnetautomergebot" ],
+  "MegaCommitSize": 100,
+  "ExtractBlames":true,
+  "FilesAtRiksOwnersThreshold": 1,
+  "FilesAtRiksOwnershipThreshold": 0.09999,
+  "LeaversOfPeriodExtendedAbsence": 1,
+  "MegaPullRequestSize": 100,
+  "CoreDeveloperThreshold": 5000,
+  "CoreDeveloperCalculationType": "ownership-lines",
+  "KnowledgeSaveStrategyType": "reviewers-expertise-review",
+  "KnowledgeSaveReviewerReplacementType": "one-of-actuals",
+  "KnowledgeSaveReviewerFirstPeriod": "1",
+  "SelectedReviewersType":"core",
+  "LeaversType": "all",
+  "BlamePeriods": [],
+  "BlamePeriodsRange":[10,20],
+  "ExcludedBlamePaths": ["*\\lib\\*"],
+  "LgtmTerms":["%lgtm%","%looks good%","%look good%","%seems good%","%seem good%","%sounds good%","%sound good%","%its good%","%its good%","%r+%","%good job%"],
+  "MinimumActualReviewersLength":"0",
+  "PullRequestReviewerSelectionStrategy" : "0:nothing-nothing,-:replacerandom-1",
+  "AddOnlyToUnsafePullrequests" : true,
+  "NumberOfPeriodsForCalculatingProbabilityOfStay":4,
+  "RecommenderOption": "alpha-1,beta-1,risk-3,hoarder_ratio-1",
+  "ChangePast":true
   }
 }
 ```
