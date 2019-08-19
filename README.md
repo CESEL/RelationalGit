@@ -156,7 +156,6 @@ dotnet-rgit --cmd get-merge-events
 dotnet-rgit --cmd get-pullrequest-issue-comments
 dotnet-rgit --cmd map-git-github-names
 dotnet-rgit --cmd extract-dev-info
-dotnet-rgit --cmd compute-loss
 ```
 
 # Run the Simulations
