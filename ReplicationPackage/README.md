@@ -52,7 +52,7 @@
 
 ### RQ1, Review and Turnover: What is the reduction in files atrisk to turnover when both authors and reviewers are considered knowledgeable?
 
-1) **Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file.
+**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file.
 
 ```PowerShell
 
@@ -71,7 +71,7 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy reviewers-actual --conf-path "PATH_TO_CONF_Kubernetes"
 ```
 
-2) **Result**: 
+**Result**: 
 
 ---
 
@@ -163,4 +163,19 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy sophia --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Roslyn" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy sophia --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Rust" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy sophia --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Kubernetes" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
+```
+
+## Result (RQ2, RQ3, RQ4, RQ5) 
+
+You need to produce the result per project. 1) Open the database of a project that you want to see its results. 2) Query the LossSimulations table. 3) Note the id of the actual simulation and all recommendation simulations. 4) run the following command to dump the result.
+
+Note: 1) Replace actual_sim_id with the id of the actual simulation. 2) replace rec_sim_idX with the id of the recommendation simulations. These ids are separated by a space. in these samples we have 3 ids for the recommendation simulation. 3) replace path_to_result with the path of a folder you want to store the result.
+
+```PowerShell
+
+dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id  --conf-path "PATH_TO_CONF_CoreFX"
+dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_CoreCLR"
+dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Roslyn"
+dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Rust"
+dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id" --conf-path "PATH_TO_CONF_Kubernetes"
 ```
