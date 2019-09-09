@@ -83,7 +83,9 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy sofia  --conf-p
 
 ```
 
-## Result (RQ2, RQ3, RQ4, RQ5) 
+## Results RQ1
+
+## Results RQ2, RQ3, RQ4, and RQ5
 
 You need to produce the result per project. 1) Open the database of a project that you want to see its results. 2) Query the LossSimulations table. 3) Note the id of the actual simulation and all recommendation simulations. 4) run the following command to dump the result of quartely percentage change of Expertise, CoreWorkload, and Files at Risk.
 
