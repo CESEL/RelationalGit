@@ -180,7 +180,7 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 
 ## Result (RQ2, RQ3, RQ4, RQ5) 
 
-You need to produce the result per project. 1) Open the database of a project that you want to see its results. 2) Query the LossSimulations table. 3) Note the id of the actual simulation and all recommendation simulations. 4) run the following command to dump the result.
+You need to produce the result per project. 1) Open the database of a project that you want to see its results. 2) Query the LossSimulations table. 3) Note the id of the actual simulation and all recommendation simulations. 4) run the following command to dump the result of quartely percentage change of Expertise, CoreWorkload, and Files at Risk.
 
 **Note** 1) Replace _actual_sim_id_ parameter with the id of the actual simulation. 2) replace _rec_sim_idX_ parameters with the id of the recommendation simulations. These ids are separated by a space. in these samples we have three ids for the recommendation simulation. 3) replace _path_to_result_ parameter with the path of a folder you want to store the result.
 
