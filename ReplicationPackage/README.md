@@ -177,5 +177,5 @@ dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --r
 dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_CoreCLR"
 dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Roslyn"
 dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Rust"
-dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id" --conf-path "PATH_TO_CONF_Kubernetes"
+dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Kubernetes"
 ```
