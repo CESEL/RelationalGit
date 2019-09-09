@@ -6,6 +6,8 @@
 2) You need to [restore](https://www.janbasktraining.com/blog/restore-a-database-backup-from-sql/) the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into Sql Server. For each studied project there is a separate database. 
 3) For each project, you need to have a configuration file. It is a json file that has the connection string to the databases and the required parameters for running the simulation. You can name this file whatever you like. In the following, we assume the path to these configuration files are _PATH_TO_CONF_CoreFX_, _PATH_TO_CONF_CoreCLR_, _PATH_TO_CONF_Roslyn_, _PATH_TO_CONF_Rust_, _PATH_TO_CONF_Kubernetes_.
 
+**Note** For each project, the connection string of the configuration file must refer to the db that contains the information of the project. Make sure you change it accordingly.
+
 ```JSON
 {
 "ConnectionStrings": {
