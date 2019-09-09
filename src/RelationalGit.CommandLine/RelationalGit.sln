@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.CommandLine", ".\RelationalGit.CommandLine\RelationalGit.csproj", "{287B686C-31D4-4DBE-A70D-63412EC9E3FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit", "RelationalGit.csproj", "{287B686C-31D4-4DBE-A70D-63412EC9E3FC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Calculation", ".\RelationalGit.Calculation\RelationalGit.Calculation.csproj", "{DC4915C7-3719-45D9-B964-847B08F1D3CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Calculation", "..\RelationalGit.Calculation\RelationalGit.Calculation.csproj", "{DC4915C7-3719-45D9-B964-847B08F1D3CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelationalGit.Data", ".\RelationalGit.Data\RelationalGit.Data.csproj", "{56690A84-9E83-43DB-9794-9DCC8EFDAEEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Data", "..\RelationalGit.Data\RelationalGit.Data.csproj", "{56690A84-9E83-43DB-9794-9DCC8EFDAEEC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Recommendation", ".\RelationalGit.Recommendation\RelationalGit.Recommendation.csproj", "{7FA7AE24-66C7-437E-87A4-C0DE731F1101}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Recommendation", "..\RelationalGit.Recommendation\RelationalGit.Recommendation.csproj", "{7FA7AE24-66C7-437E-87A4-C0DE731F1101}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Simulation", ".\RelationalGit.Simulation\RelationalGit.Simulation.csproj", "{95A16B44-7681-4BF3-9A3C-1C04625CAEA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Simulation", "..\RelationalGit.Simulation\RelationalGit.Simulation.csproj", "{95A16B44-7681-4BF3-9A3C-1C04625CAEA5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Gathering", ".\RelationalGit.Gathering\RelationalGit.Gathering.csproj", "{8EA6634F-26E7-49C0-B09E-A5AA325E39DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelationalGit.Gathering", "..\RelationalGit.Gathering\RelationalGit.Gathering.csproj", "{8EA6634F-26E7-49C0-B09E-A5AA325E39DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

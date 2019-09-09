@@ -14,9 +14,9 @@ namespace RelationalGit.Calculation
     {
         static void Main(string[] args)
         {
-            var actualId = 29;
-            var simulationsIds = new int[] { 30,31,32,33,34,35,36};
-            var path = @"Results\Rust_Sort2";
+            var actualId = 38;
+            var simulationsIds = new int[] { 39,40,41,42,43,44,45};
+            var path = @"Results\kubernetes_accuracy";
 
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -93,7 +93,7 @@ namespace RelationalGit.Calculation
                         var actualTop10Workload = actualWorkLoadPeriod.OrderByDescending(q => q.Value).Take(10).Sum(q => q.Value);
                         var simulatedTop10Workload = simulatedWorkloadPeriod.Value.OrderByDescending(q => q.Value).Take(10).Sum(q => q.Value);
 
-                        var value = CalculateReductionPercentage(simulatedTop10Workload, actualTop10Workload);
+                        var value = CalculateIncreasePercentage(simulatedTop10Workload, actualTop10Workload);
 
                         simulationResult.Results.Add((periodId, value));
                     }
@@ -212,7 +212,7 @@ namespace RelationalGit.Calculation
                         if (actualExpertises == null)
                             continue;
 
-                       var value = CalculateReductionPercentage(simulatedExpertisePeriod.Value.Sum(),
+                       var value = CalculateIncreasePercentage(simulatedExpertisePeriod.Value.Sum(),
                            actualExpertises.Sum());
 
                         simulationResult.Results.Add((periodId, value));
@@ -307,7 +307,7 @@ namespace RelationalGit.Calculation
 
                         var simulatedHoarders = files.Where(q => q.Knowledgeables.Split(',').All(q1 => simulatedTopReviewers.Contains(q1))).Count();
 
-                        var value = CalculateReductionPercentage(simulatedHoarders, dicActualHoarderPeriod[periodId]);
+                        var value = CalculateIncreasePercentage(simulatedHoarders, dicActualHoarderPeriod[periodId]);
 
                         simulationResult.Results.Add((periodId, value));
                     }
@@ -394,7 +394,7 @@ namespace RelationalGit.Calculation
                         if (actualValue == null)
                             continue;
 
-                        var value = CalculateReductionPercentage(simulatedFaRPeriod.Count, actualValue.Count);
+                        var value = CalculateIncreasePercentage(simulatedFaRPeriod.Count, actualValue.Count);
                         simulationResult.Results.Add((simulatedFaRPeriod.PeriodId, value));
                     }
 
@@ -511,24 +511,7 @@ namespace RelationalGit.Calculation
                     dt.Rows.Add(row);
                 }
 
-                var medianRow = dt.NewRow();
-                medianRow[0] = 0;
-
-                for (int i = 0; i < simulationResults.Count; i++)
-                {
-                    medianRow[i + 1] = simulationResults[i].Median;
-                }
-                dt.Rows.Add(medianRow);
-
-                var avgRow = dt.NewRow();
-                avgRow[0] = 0;
-
-                for (int i = 0; i < simulationResults.Count; i++)
-                {
-                    avgRow[i + 1] = simulationResults[i].Average;
-                }
-                dt.Rows.Add(avgRow);
-
+              
                 using (var writer = new StreamWriter(path))
                 using (var csv = new CsvWriter(writer))
                 {
@@ -566,9 +549,9 @@ namespace RelationalGit.Calculation
             public double Average => Results.Select(q => q.Value).Average();
         }
 
-        private static double CalculateReductionPercentage(double first, double second)
+        private static double CalculateIncreasePercentage(double first, double second)
         {
-            return (1 - (first / second)) * 100;
+            return ((first / second)-1) * 100;
         }
     }
 }
