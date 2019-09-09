@@ -73,7 +73,7 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 
 **Result**: You need to produce the result per project. 1) Open the database of a project that you want to see its results. 2) Query the LossSimulations table. 3) Note the id of the _nothing_ simulation and the actual simulation . 4) run the following query.
 
-**Note** 1) Replace _actual_sim_id_ parameter with the id of the actual simulation. 2) Replace nothing_sim_id parameter with the id of the _nothing_ simulation
+**Note** 1) Replace the _actual_sim_id_ parameter with the id of the actual simulation. 2) Replace the _nothing_sim_id_ parameter with the id of the _nothing_ simulation
 
 ```sql
 
