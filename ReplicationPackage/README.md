@@ -6,7 +6,7 @@
 2) You need to [restore](https://www.janbasktraining.com/blog/restore-a-database-backup-from-sql/) the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into Sql Server. For each studied project there is a separate database. 
 3) Copy the contents of the replication package into your system.
 4) Modify the conf file of each project and set the correct connection string.
-5) Run the simulations.ps1.
+5) Run the [simulations.ps1]().
 
 ## Research Questions
 
@@ -42,6 +42,8 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --conf-
 
 ### RQ2, Ownership: Does recommending reviewers based on code ownership reduce the number of files at risk to turnover?
 
+Following commands are samples to show how AuthorshipRec and RevOwnRec affect Expertise, CoreWorkload, and FaR of CoreFX. See the full list of simulations in [simulations.ps1]().
+
 ```PowerShell
 
 # AuthorshipRec
@@ -57,7 +59,7 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy RecOwnRec  --co
 
 ### RQ3, cHRev: Does a state-of-the-art recommender reduce the number of files at risk to turnover?
 
-**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
+Following commands are samples to show how cHRev affects Expertise, CoreWorkload, and FaR of CoreFX on CoreFX. See the full list of simulations in [simulations.ps1]().
 
 ```PowerShell
 
@@ -69,7 +71,7 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy cHRev --conf-pa
 
 ### RQ4, Learning and Retention: Can we reduce the number of files at risk to turnover by developing learning and retention aware review recommenders?
 
-**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
+Following commands are samples to show how LearnRec, RetentionRec, TurnoverRec affect Expertise, CoreWorkload, and FaR of CoreFX. See the full list of simulations in [simulations.ps1]().
 
 ```PowerShell
 
@@ -87,7 +89,7 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy TurnoverRec --c
 
 ### RQ5, Sofia: Can we combine recommenders to balance Expertise, CoreWorkload, and FaR? 
 
-**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
+Following commands are samples to show how Sofia affects Expertise, CoreWorkload, and FaR of CoreFX. See the full list of simulations in [simulations.ps1]().
 
 ```PowerShell
 
@@ -105,8 +107,4 @@ You need to produce the result per project. 1) Open the database of a project th
 ```PowerShell
 
 dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id  --conf-path "PATH_TO_CONF_CoreFX"
-dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_CoreCLR"
-dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Roslyn"
-dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Rust"
-dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id --conf-path "PATH_TO_CONF_Kubernetes"
 ```
