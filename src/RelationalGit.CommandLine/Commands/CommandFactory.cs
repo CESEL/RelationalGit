@@ -146,6 +146,11 @@ namespace RelationalGit.Commands
                 var cmd = new MapGitHubGitNamesCommand(logger);
                 await cmd.Execute(options.GitHubToken, agenName:"mirsaeedi", options.GitHubOwner, options.GitHubRepo).ConfigureAwait(false);
             }
+            else if (options.Command.ToLower() == CommandType.AnalyzeSimulations)
+            {
+                var cmd = new AnalyzeSimulationsCommand(logger);
+                await cmd.Execute(options.ActualSimulationId,options.RecommenderSimulationId.ToArray(),options.AnalyzeResultPath).ConfigureAwait(false);
+            }
             else if (options.Command.ToLower() == CommandType.ComputeKnowledgeLoss)
             {
                 var cmd = new ShareKnowledgeCommand(logger);

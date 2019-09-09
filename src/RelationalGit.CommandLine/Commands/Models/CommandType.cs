@@ -37,5 +37,7 @@
         public static string GetPullRequestIssueComments => "get-pullrequest-issue-comments";
 
         public static string GetBlamesOfCommitedChanges => "get-committed-changes-blames";
+
+        public static string AnalyzeSimulations => "analyze-simulations";
     }
 }

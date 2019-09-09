@@ -58,6 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RelationalGit.Calculation\RelationalGit.Calculation.csproj" />
     <ProjectReference Include="..\RelationalGit.Data\RelationalGit.Data.csproj" />
     <ProjectReference Include="..\RelationalGit.Gathering\RelationalGit.Gathering.csproj" />
     <ProjectReference Include="..\RelationalGit.Recommendation\RelationalGit.Recommendation.csproj" />

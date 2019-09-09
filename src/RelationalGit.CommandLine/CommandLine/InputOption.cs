@@ -6,6 +6,7 @@ namespace RelationalGit.CommandLine
 {
     internal class InputOption
     {
+        
         [Option("conf-path")]
         public string AppsettingsPath { get; set; }
 
@@ -116,6 +117,15 @@ namespace RelationalGit.CommandLine
         [Option("change-past")]
         public bool? ChangePast { get; set; }
 
+        [Option("actual-simulation")]
+        public long ActualSimulationId { get; set; }
+
+        [Option("recommender-simulation")]
+        public IEnumerable<long> RecommenderSimulationId { get; set; }
+
+        [Option("analyze-result-path")]
+        public string AnalyzeResultPath { get; set; }
+
         internal InputOption Override(InputOption fileConfigurationOption)
         {
             var overridedInputOption = new InputOption()
@@ -159,6 +169,9 @@ namespace RelationalGit.CommandLine
             overridedInputOption.AddOnlyToUnsafePullrequests = Override(AddOnlyToUnsafePullrequests, fileConfigurationOption.AddOnlyToUnsafePullrequests);
             overridedInputOption.RecommenderOption = Override(RecommenderOption, fileConfigurationOption.RecommenderOption);
             overridedInputOption.ChangePast = Override(ChangePast, fileConfigurationOption.ChangePast);
+            overridedInputOption.AnalyzeResultPath = Override(AnalyzeResultPath, fileConfigurationOption.AnalyzeResultPath);
+            overridedInputOption.ActualSimulationId = Override(ActualSimulationId, fileConfigurationOption.ActualSimulationId);
+            overridedInputOption.RecommenderSimulationId = Override(RecommenderSimulationId, fileConfigurationOption.RecommenderSimulationId);
 
             return overridedInputOption;
         }
