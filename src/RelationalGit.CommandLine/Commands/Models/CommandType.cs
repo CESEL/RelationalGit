@@ -30,7 +30,7 @@
 
         public static string MapGitHubGitNames => "map-git-github-names";
 
-        public static string ComputeKnowledgeLoss => "compute-loss";
+        public static string ComputeKnowledgeLoss => "simulate-recommender";
 
         public static string GetPullRequestMergeEvents => "get-merge-events";
 

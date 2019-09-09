@@ -51,7 +51,7 @@ namespace RelationalGit.CommandLine
         [Option("mega-commit-size")]
         public int? MegaCommitSize { get; set; }
 
-        [Option("save-strategy")]
+        [Option("recommendation-strategy")]
         public string KnowledgeSaveStrategyType { get; set; }
 
         [Option("replacement-strategy")]

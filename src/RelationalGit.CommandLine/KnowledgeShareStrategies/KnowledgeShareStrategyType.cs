@@ -2,27 +2,27 @@ namespace RelationalGit.KnowledgeShareStrategies
 {
     public static class KnowledgeShareStrategyType
     {
-        public static string Nothing => "nothing";
+        public static string Nothing => "NoReviews";
 
-        public static string ActualReviewers => "reviewers-actual";
+        public static string ActualReviewers => "Reality";
 
         public static string BlameBasedKnowledgeShare => "line";
 
-        public static string CommitBasedKnowledgeShare => "commit";
+        public static string CommitBasedKnowledgeShare => "AuthorshipRec";
 
-        public static string BirdBasedKnowledgeShare => "bird";
+        public static string BirdBasedKnowledgeShare => "cHRev";
 
         public static string RandomBasedKnowledgeShare => "random";
 
-        public static string PersistBasedKnowledgeShare => "persist";
+        public static string PersistBasedKnowledgeShare => "RetentionRec";
 
-        public static string SpreadingBasedKnowledgeShare => "spreading";
+        public static string SpreadingBasedKnowledgeShare => "LearnRec";
 
-        public static string PersistSpreadingBasedKnowledgeShare => "persist-spreading";
+        public static string PersistSpreadingBasedKnowledgeShare => "TurnoverRec";
 
-        public static string SophiaBasedKnowledgeShare => "sophia";
+        public static string SophiaBasedKnowledgeShare => "Sofia";
 
-        public static string ReviewBasedKnowledgeShare => "review";
+        public static string ReviewBasedKnowledgeShare => "RevOwnRec";
 
         public static string ContributionBasedKnowledgeShare => "contribution";
     }
