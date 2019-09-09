@@ -52,7 +52,7 @@
 
 ### RQ1, Review and Turnover: What is the reduction in files atrisk to turnover when both authors and reviewers are considered knowledgeable?
 
-
+1) **Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file.
 
 ```PowerShell
 
@@ -71,7 +71,11 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy reviewers-actual --conf-path "PATH_TO_CONF_Kubernetes"
 ```
 
+2) **Result**: 
+
 ### RQ2, Ownership: Does recommending reviewers based on code ownership reduce the number of files at risk to turnover?
+
+**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
 
 ```PowerShell
 
@@ -94,6 +98,8 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 
 ### RQ3, cHRev: Does a state-of-the-art recommender reduce the number of files at risk to turnover?
 
+**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
+
 ```PowerShell
 
 # cHRev
@@ -107,6 +113,7 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 
 ### RQ4, Learning and Retention: Can we reduce the number of files at risk to turnover by developing learning and retention aware review recommenders?
 
+**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
 
 ```PowerShell
 
@@ -136,6 +143,8 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 ```
 
 ### RQ5, Sofia: Can we combine recommenders to balance Expertise, CoreWorkload, and FaR? 
+
+**Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
 
 ```PowerShell
 
