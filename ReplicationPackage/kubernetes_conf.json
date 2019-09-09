@@ -30,7 +30,7 @@
       "ExcludedBlamePaths": [],
 	  "LgtmTerms":["%lgtm%","%looks good%","%look good%","%seems good%","%seem good%","%sounds good%","%sound good%","%its good%","%its good%","%r+%","%good job%"],
 	  "MinimumActualReviewersLength":"0",
-	  "PullRequestReviewerSelectionStrategy" : "0:nothing-nothing,1:replace-1,2:replace-1,-:replace-1",
+	  "PullRequestReviewerSelectionStrategy" : "0:nothing-nothing,-:replacerandom-1",
 	  "AddOnlyToUnsafePullrequests" : true,
 	  "NumberOfPeriodsForCalculatingProbabilityOfStay":4,
 	  "RecommenderOption": "alpha-1,beta-1,risk-3,hoarder_ratio-1",
