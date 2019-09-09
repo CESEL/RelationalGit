@@ -71,7 +71,20 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy reviewers-actual --conf-path "PATH_TO_CONF_Kubernetes"
 ```
 
-**Result**: 
+**Result**: You need to produce the result per project. 1) Open the database of a project that you want to see its results. 2) Query the LossSimulations table. 3) Note the id of the _nothing_ simulation and the actual simulation . 4) run the following query.
+
+**Note** 1) Replace _actual_sim_id_ parameter with the id of the actual simulation. 2) Replace nothing_sim_id parameter with the id of the _nothing_ simulation
+
+```sql
+
+  SELECT f1.PeriodId, f1.c,f2.c, ((f2.c/CAST(f1.c as float))-1)*100 from
+  (select PeriodId, COUNT(*) as c from FileKnowledgeables where TotalKnowledgeables<2  and LossSimulationId=nothing_sim_id group by PeriodId) as f1
+  INNER JOIN
+  (select PeriodId, COUNT(*) as c from FileKnowledgeables where TotalKnowledgeables<2  and LossSimulationId=actual_sim_id group by PeriodId) as f2
+  on f1.PeriodId=f2.PeriodId
+  order by f1.PeriodId
+
+```
 
 ---
 
