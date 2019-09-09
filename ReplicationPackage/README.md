@@ -110,17 +110,23 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 
 ```PowerShell
 
+# LearnRec
+
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreFX"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreCLR"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Roslyn"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Rust"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Kubernetes"
 
+# RetentionRec
+
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreFX"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreCLR"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Roslyn"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Rust"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Kubernetes"
+
+# TurnoverRec
 
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist-spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreFX" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist-spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreCLR" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
@@ -132,6 +138,9 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 ### RQ5, Sofia: Can we combine recommenders to balance Expertise, CoreWorkload, and FaR? 
 
 ```PowerShell
+
+# Sofia
+
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy sophia --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreFX" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy sophia --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_CoreCLR" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy sophia --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Roslyn" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
