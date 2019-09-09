@@ -4,12 +4,12 @@
 
 1) You need to install [RelationalGit](https://github.com/CESEL/RelationalGit) with all the required dependencies.
 2) You need to [restore](https://www.janbasktraining.com/blog/restore-a-database-backup-from-sql/) the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into Sql Server. For each studied project there is a separate database. 
-3) For each project, you need to have a configuration file. It is a json file that has the connection string to the databases and the required parameters for running the simulation. You can name this file whatever you like.
+3) For each project, you need to have a configuration file. It is a json file that has the connection string to the databases and the required parameters for running the simulation. You can name this file whatever you like. In the following, we assume the path to these configuration files are _PATH_TO_CONF_CoreFX_, _PATH_TO_CONF_CoreCLR_, _PATH_TO_CONF_Roslyn_, _PATH_TO_CONF_Rust_, _PATH_TO_CONF_Kubernetes_.
 
 ```JSON
 {
 "ConnectionStrings": {
-   "RelationalGit": "Server=IP;User Id=user;Password=123;Database=db"
+   "RelationalGit": "Server=IP_of_db_server;User Id=user_name;Password=pass_word;Database=db_name"
 },
 "Mining": {
   "Extensions": [ ".cs",".java",".scala", ".vb",".rs",".go",".s",".proto",".coffee", ".sql",".rb",".ruby",".ts", ".js", ".jsx", ".sh", ".tsx", ".py", ".c", ".h", ".cpp", ".il", ".make", ".cmake", ".ps1", ".r", ".cmd"],
