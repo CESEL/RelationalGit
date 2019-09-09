@@ -73,6 +73,8 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 
 2) **Result**: 
 
+---
+
 ### RQ2, Ownership: Does recommending reviewers based on code ownership reduce the number of files at risk to turnover?
 
 **Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
@@ -96,6 +98,8 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy review --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Kubernetes"
 ```
 
+---
+
 ### RQ3, cHRev: Does a state-of-the-art recommender reduce the number of files at risk to turnover?
 
 **Generate Data**: Run the following commands. Make sure the _--conf-path_ has the correct path to the configuration file. (**Make sure you have already ran the simulations of reality: RQ1**)
@@ -110,6 +114,8 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy bird --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Rust"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy bird --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Kubernetes"
 ```
+
+---
 
 ### RQ4, Learning and Retention: Can we reduce the number of files at risk to turnover by developing learning and retention aware review recommenders?
 
@@ -141,6 +147,8 @@ dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist-spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Rust" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
 dotnet-rgit --cmd compute-loss --simulation-first-period 1 --mega-pr-size 100 --save-strategy persist-spreading --pullRequests-reviewer-selection "0:nothing-nothing,-:replacerandom-1" --conf-path "PATH_TO_CONF_Kubernetes" --recommender-option "alpha-1,beta-1,risk-3,hoarder_ratio-1"
 ```
+
+---
 
 ### RQ5, Sofia: Can we combine recommenders to balance Expertise, CoreWorkload, and FaR? 
 
