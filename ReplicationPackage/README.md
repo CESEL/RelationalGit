@@ -2,17 +2,27 @@
 
 ## Install The Tool
 
-1) You need to install [RelationalGit](https://github.com/CESEL/RelationalGit) with all the required dependencies.
+1) Install [RelationalGit](https://github.com/CESEL/RelationalGit) along with all the required dependencies.
 
 ## Prepare Data 
 
-1) You need to [restore](https://www.janbasktraining.com/blog/restore-a-database-backup-from-sql/) the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into Sql Server. For each studied project there is a separate database. 
-2) Copy the contents of the replication package into your system.
-3) Modify the conf file of each project and set the correct connection string.
+1) [Restore](https://www.janbasktraining.com/blog/restore-a-database-backup-from-sql/) the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into Sql Server. For each studied project there is a separate database. 
+2) Copy the **configuration files** and **simulation.ps1** which are provided in the [replication package](https://github.com/CESEL/RelationalGit/tree/master/ReplicationPackage).
+3) Open and modify each configuration file to set the connection string. You need to provide the server address along with the credentials.
 
 ## Run Simulations
 
-1) Run the [simulations.ps1](https://github.com/CESEL/RelationalGit/blob/master/ReplicationPackage/simulations.ps1).
+1) Open **simulations.ps1** using an editor and make sure the config variables defined at the top of the file are reffering to the correct location of the downloaded config files. 
+
+```powershell
+# Each of the following variables contains the absolute path of the corresponding configuation file.
+
+$corefx_conf = "absolute/path/to/corefx_conf.json"
+$coreclr_conf = "absolute/path/to/coreclr_conf.json"
+$roslyn_conf = "absolute/path/to/roslyn_conf.json"
+$rust_conf = "absolute/path/to/rust_conf.json"
+$kubernetes_conf = "absolute/path/to/kubernetes_conf.json"
+```
 
 ## Research Questions
 
