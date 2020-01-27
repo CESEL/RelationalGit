@@ -1,8 +1,8 @@
-$corefx_conf = "corefx_conf"
-$coreclr_conf = "coreclr_conf"
-$roslyn_conf = "roslyn_conf"
-$rust_conf = "rust_conf"
-$kubernetes_conf = "kubernetes_conf"
+$corefx_conf = "corefx_conf.json"
+$coreclr_conf = "coreclr_conf.json"
+$roslyn_conf = "roslyn_conf.json"
+$rust_conf = "rust_conf.json"
+$kubernetes_conf = "kubernetes_conf.json"
 
 
 
