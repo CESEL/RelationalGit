@@ -34,7 +34,7 @@ In following sections, we show which simulations are used for which research que
 
 ```PowerShell
 
-# Using the NoReviews parameter for recommendation-strategy, we perform a simulation in which no review has been conducted in the project.
+# Using the NoReviews parameter for recommendation-strategy, we perform a simulation in which no review will be conducted in the project.
 
 # simulations without considering reviewers
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy NoReviews --conf-path $corefx_conf
@@ -105,15 +105,22 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy sofia  --conf-p
 
 ```
 
+# Results
+
+You need to produce the result per project. The tool provides a set of easy to use commands for generating the results based on the simulations.
+
 ## Results RQ1
 
 ## Results RQ2, RQ3, RQ4, and RQ5
 
-You need to produce the result per project. 1) Open the database of a project that you want to see its results. 2) Query the LossSimulations table. 3) Note the id of the actual simulation and all recommendation simulations. 4) run the following command to dump the result of quartely percentage change of Expertise, CoreWorkload, and Files at Risk.
-
-**Note** 1) Replace _actual_sim_id_ parameter with the id of the actual simulation. 2) replace _rec_sim_idX_ parameters with the id of the recommendation simulations. These ids are separated by a space. in these samples we have three ids for the recommendation simulation. 3) replace _path_to_result_ parameter with the path of a folder you want to store the result.
+1) Open the database of a project that you want to see its results.
+2) Query the **LossSimulations** table. 
+3) Note the id of the **Reality** simulation and all other simulations. 
+4) run the following command to dump the result of quartely percentage change of Expertise, CoreWorkload, and Files at Risk.
 
 ```PowerShell
 
 dotnet-rgit --cmd analyze-simulations --analyze-result-path "path_to_result" --recommender-simulation rec_sim_id1 rec_sim_id2 rec_sim_id3 --actual-simulation actual_sim_id  --conf-path "PATH_TO_CONF_CoreFX"
 ```
+
+**Note** 1) Replace _actual_sim_id_ parameter with the id of the Reality simulation. 2) replace _rec_sim_idX_ parameters with the id of other simulations. These ids are separated by a space. in these samples we have three ids for other simulation. 3) replace _path_to_result_ parameter with the path of a folder you want to store the result.
