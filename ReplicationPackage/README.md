@@ -1,12 +1,18 @@
 # Replication Package
 
-## Install the package
+## Install The Tool
 
 1) You need to install [RelationalGit](https://github.com/CESEL/RelationalGit) with all the required dependencies.
-2) You need to [restore](https://www.janbasktraining.com/blog/restore-a-database-backup-from-sql/) the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into Sql Server. For each studied project there is a separate database. 
-3) Copy the contents of the replication package into your system.
-4) Modify the conf file of each project and set the correct connection string.
-5) Run the [simulations.ps1](https://github.com/CESEL/RelationalGit/blob/master/ReplicationPackage/simulations.ps1).
+
+## Prepare Data 
+
+1) You need to [restore](https://www.janbasktraining.com/blog/restore-a-database-backup-from-sql/) the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into Sql Server. For each studied project there is a separate database. 
+2) Copy the contents of the replication package into your system.
+3) Modify the conf file of each project and set the correct connection string.
+
+## Run Simulations
+
+1) Run the [simulations.ps1](https://github.com/CESEL/RelationalGit/blob/master/ReplicationPackage/simulations.ps1).
 
 ## Research Questions
 
@@ -16,8 +22,12 @@
 
 ```PowerShell
 
+# Using the NoReviews parameter for recommendation-strategy, we perform a simulation in which no review has been conducted in the project.
+
 # simulations without considering reviewers
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy NoReviews --conf-path $corefx_conf
+
+# Using the Reality parameter for recommendation-strategy, we perform a simulation which reflects exactly what has been happened in reallity during code reviews.
 
 # simulations of reality
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --conf-path $corefx_conf
