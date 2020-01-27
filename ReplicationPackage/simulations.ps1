@@ -1,10 +1,14 @@
+# Each of the following variables contains the path to the corresponding configuation file.
+
 $corefx_conf = "corefx_conf.json"
 $coreclr_conf = "coreclr_conf.json"
 $roslyn_conf = "roslyn_conf.json"
 $rust_conf = "rust_conf.json"
 $kubernetes_conf = "kubernetes_conf.json"
 
-
+# For each project, run all the simulations.
+# Using the NoReviews parameter for recommendation-strategy, we perform a simulation in which no review has been conducted in the project.
+# Using the Reality parameter for recommendation-strategy, we perform a simulation which reflects exactly what has been happened in reallity during code reviews.
 
 # CoreFX Simulations
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy NoReviews --conf-path $corefx_conf
