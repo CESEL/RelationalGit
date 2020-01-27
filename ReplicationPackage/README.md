@@ -26,6 +26,8 @@ $kubernetes_conf = "absolute/path/to/kubernetes_conf.json"
 
 ## Research Questions
 
+In following sections, we show which simulations are used for which research questions. For each simulation, a sample is provided that illustrates how the simulation can be run using the tool.
+
 ### RQ1, Review and Turnover: What is the reduction in files atrisk to turnover when both authors and reviewers are considered knowledgeable?
 
 **Generate Data**: The following commands run two simulations on the CoreFX project. First, without considering reviewers. Second, with considering reviews that have happened in reality.
