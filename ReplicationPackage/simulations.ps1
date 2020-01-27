@@ -1,10 +1,10 @@
 # Each of the following variables contains the path to the corresponding configuation file.
 
-$corefx_conf = "corefx_conf.json"
-$coreclr_conf = "coreclr_conf.json"
-$roslyn_conf = "roslyn_conf.json"
-$rust_conf = "rust_conf.json"
-$kubernetes_conf = "kubernetes_conf.json"
+$corefx_conf = "absolute/path/to/corefx_conf.json"
+$coreclr_conf = "absolute/path/to/coreclr_conf.json"
+$roslyn_conf = "absolute/path/to/roslyn_conf.json"
+$rust_conf = "absolute/path/to/rust_conf.json"
+$kubernetes_conf = "absolute/path/to/kubernetes_conf.json"
 
 # For each project, run all the simulations.
 # Using the NoReviews parameter for recommendation-strategy, we perform a simulation in which no review has been conducted in the project.
