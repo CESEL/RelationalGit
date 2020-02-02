@@ -7,58 +7,58 @@ namespace RelationalGit.KnowledgeShareStrategies
 {
     public static class KnowledgeShareStrategyFactory
     {
-        public static KnowledgeShareStrategy Create(ILogger logger, string knowledgeShareStrategyType, string knowledgeSaveReviewerReplacementType, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy, bool? addOnlyToUnsafePullrequests, string recommenderOption, bool changePast)
+        public static RecommendationStrategy Create(ILogger logger, string recommendationStrategy, string knowledgeSaveReviewerReplacementType, int? numberOfPeriodsForCalculatingProbabilityOfStay, string pullRequestReviewerSelectionStrategy, bool? addOnlyToUnsafePullrequests, string recommenderOption, bool changePast)
         {
-            if (knowledgeShareStrategyType == KnowledgeShareStrategyType.Nothing)
+            if (recommendationStrategy == KnowledgeShareStrategyType.NoReviewer)
             {
-                return new NothingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, changePast);
+                return new NoReviewerRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ActualReviewers)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.Reality)
             {
-                return new ActualKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, changePast);
+                return new RealityRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.CommitBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.AuthorshipRec)
             {
-                return new CommitBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new AuthorshipRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BlameBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.LineRec)
             {
-                return new BlameBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new LineRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.BirdBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.CHRev)
             {
-                return new BirdSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new CHRevRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ReviewBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.RevOwnRec)
             {
-                return new ReviewBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new RevOwnRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.SpreadingBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.LearnRec)
             {
-                return new SpreadingBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new LearnRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.PersistBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.RetentionRec)
             {
-                return new PersistBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new RetentionRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.PersistSpreadingBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.TurnoverRec)
             {
-                return new PersistSpreadingBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new TurnoverRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.RandomBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.RandomRec)
             {
-                return new RandomBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new RandomRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.SophiaBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.Sofia)
             {
-                return new SophiaBasedSpreadingKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new SofiaRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, numberOfPeriodsForCalculatingProbabilityOfStay, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
-            else if (knowledgeShareStrategyType == KnowledgeShareStrategyType.ContributionBasedKnowledgeShare)
+            else if (recommendationStrategy == KnowledgeShareStrategyType.ContributionRec)
             {
-                return new ContributionBasedKnowledgeShareStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
+                return new ContributionRecRecommendationStrategy(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests, recommenderOption, changePast);
             }
 
-            throw new ArgumentException($"invalid {nameof(knowledgeShareStrategyType)}");
+            throw new ArgumentException($"invalid {nameof(recommendationStrategy)}");
         }
     }
 }

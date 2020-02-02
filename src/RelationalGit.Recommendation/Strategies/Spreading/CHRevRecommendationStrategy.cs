@@ -1,14 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using RelationalGit.Simulation;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace RelationalGit.Recommendation
 {
-    public class BirdSpreadingKnowledgeShareStrategy : ScoreBasedSpreadingKnowledgeShareStrategy
+    public class CHRevRecommendationStrategy : ScoreBasedRecommendationStrategy
     {
-        public BirdSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, string pullRequestReviewerSelectionStrategy, bool? addOnlyToUnsafePullrequests, string recommenderOption, bool changePast)
+        public CHRevRecommendationStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, string pullRequestReviewerSelectionStrategy, bool? addOnlyToUnsafePullrequests, string recommenderOption, bool changePast)
             : base(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests,recommenderOption, changePast)
         {
         }

@@ -1,17 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace RelationalGit.Simulation
 {
-    public abstract class KnowledgeShareStrategy
+    public abstract class RecommendationStrategy
     {
         protected string ReviewerReplacementStrategyType { get; private set; }
 
         protected bool ChangePast { get; private set; }
 
-        public KnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger,bool changePast)
+        public RecommendationStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger,bool changePast)
         {
             ReviewerReplacementStrategyType = knowledgeSaveReviewerReplacementType;
             ChangePast = changePast;
@@ -54,7 +53,6 @@ namespace RelationalGit.Simulation
 
         private void CalculateMetrics(PullRequestRecommendationResult result)
         {
-
             // initiating values
             result.TopFiveIsAccurate = false;
             result.TopTenIsAccurate = false;

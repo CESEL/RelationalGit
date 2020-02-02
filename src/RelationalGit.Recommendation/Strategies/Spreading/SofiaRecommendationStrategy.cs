@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace RelationalGit.Recommendation
 {
-    public class SophiaBasedSpreadingKnowledgeShareStrategy : ScoreBasedSpreadingKnowledgeShareStrategy
+    public class SofiaRecommendationStrategy : ScoreBasedRecommendationStrategy
     {
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private double _alpha;
@@ -14,7 +14,7 @@ namespace RelationalGit.Recommendation
         private int _riskOwenershipThreshold;
         private double _hoarderRatio;
 
-        public SophiaBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, 
+        public SofiaRecommendationStrategy(string knowledgeSaveReviewerReplacementType, 
             ILogger logger, int? numberOfPeriodsForCalculatingProbabilityOfStay, 
             string pullRequestReviewerSelectionStrategy,
             bool? addOnlyToUnsafePullrequests,

@@ -3,11 +3,11 @@ using RelationalGit.Simulation;
 
 namespace RelationalGit.Recommendation
 {
-    public class PersistBasedKnowledgeShareStrategy : ScoreBasedSpreadingKnowledgeShareStrategy
+    public class RetentionRecRecommendationStrategy : ScoreBasedRecommendationStrategy
     {
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
 
-        public PersistBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, 
+        public RetentionRecRecommendationStrategy(string knowledgeSaveReviewerReplacementType, 
             ILogger logger, 
             int? numberOfPeriodsForCalculatingProbabilityOfStay, 
             string pullRequestReviewerSelectionStrategy, 

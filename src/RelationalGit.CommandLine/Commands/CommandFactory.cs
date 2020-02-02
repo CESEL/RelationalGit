@@ -149,7 +149,7 @@ namespace RelationalGit.Commands
             else if (options.Command.ToLower() == CommandType.AnalyzeSimulations)
             {
                 var cmd = new AnalyzeSimulationsCommand(logger);
-                await cmd.Execute(options.ActualSimulationId,options.RecommenderSimulationId.ToArray(),options.AnalyzeResultPath).ConfigureAwait(false);
+                await cmd.Execute(options.ActualSimulationId, options.NoReviewsSimulationId,options.RecommenderSimulationId?.ToArray(),options.AnalyzeResultPath).ConfigureAwait(false);
             }
             else if (options.Command.ToLower() == CommandType.ComputeKnowledgeLoss)
             {

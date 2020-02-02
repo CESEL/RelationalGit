@@ -117,8 +117,11 @@ namespace RelationalGit.CommandLine
         [Option("change-past")]
         public bool? ChangePast { get; set; }
 
-        [Option("actual-simulation")]
+        [Option("reality-simulation")]
         public long ActualSimulationId { get; set; }
+
+        [Option("no-reviews-simulation")]
+        public long? NoReviewsSimulationId { get; set; }
 
         [Option("recommender-simulation")]
         public IEnumerable<long> RecommenderSimulationId { get; set; }
@@ -171,6 +174,7 @@ namespace RelationalGit.CommandLine
             overridedInputOption.ChangePast = Override(ChangePast, fileConfigurationOption.ChangePast);
             overridedInputOption.AnalyzeResultPath = Override(AnalyzeResultPath, fileConfigurationOption.AnalyzeResultPath);
             overridedInputOption.ActualSimulationId = Override(ActualSimulationId, fileConfigurationOption.ActualSimulationId);
+            overridedInputOption.NoReviewsSimulationId = Override(NoReviewsSimulationId, fileConfigurationOption.NoReviewsSimulationId);
             overridedInputOption.RecommenderSimulationId = Override(RecommenderSimulationId, fileConfigurationOption.RecommenderSimulationId);
 
             return overridedInputOption;

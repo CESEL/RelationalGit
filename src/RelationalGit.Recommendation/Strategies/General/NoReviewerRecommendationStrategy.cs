@@ -4,9 +4,9 @@ using System;
 
 namespace RelationalGit.Recommendation
 {
-    public class NothingKnowledgeShareStrategy : KnowledgeShareStrategy
+    public class NoReviewerRecommendationStrategy : RecommendationStrategy
     {
-        public NothingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger,bool changePast)
+        public NoReviewerRecommendationStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger,bool changePast)
             : base(knowledgeSaveReviewerReplacementType, logger,changePast)
         {
         }

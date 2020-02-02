@@ -1,9 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using RelationalGit.Data;
 using RelationalGit.Calculation;
 
 namespace RelationalGit.Commands
@@ -17,10 +13,19 @@ namespace RelationalGit.Commands
             _logger = logger;
         }
 
-        public async Task Execute(long actualSimulationId, long[] recommenderSimulationIds, string analyzeResultPath)
+        public async Task Execute(long actualSimulationId, long? noReviewSimulationId, long[] recommenderSimulationIds, string analyzeResultPath)
         {
             var analyzer = new Analyzer();
-            analyzer.AnalyzeSimulations(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+
+            if(noReviewSimulationId.HasValue)
+            {
+                analyzer.CalculateFaRReductionBetweenRealityAndNoReviews(actualSimulationId, noReviewSimulationId.Value , analyzeResultPath);
+
+            }
+            else
+            {
+                analyzer.AnalyzeSimulations(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            }
         }
     }
 }

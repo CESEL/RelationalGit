@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace RelationalGit.Recommendation
 {
-    public abstract class ScoreBasedSpreadingKnowledgeShareStrategy : SpreadingKnowledgeShareStrategyBase
+    public abstract class ScoreBasedRecommendationStrategy : SpreadingKnowledgeShareStrategyBase
     {
         private static Random _rnd = new Random();
         private ILogger _logger;
@@ -17,7 +17,7 @@ namespace RelationalGit.Recommendation
 
         protected string RrecommenderOption { get; private set; }
 
-        public ScoreBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType,
+        public ScoreBasedRecommendationStrategy(string knowledgeSaveReviewerReplacementType,
             ILogger logger, 
             string pullRequestReviewerSelectionStrategy,
             bool? addOnlyToUnsafePullrequests,
@@ -67,7 +67,6 @@ namespace RelationalGit.Recommendation
 
             return availableDevs
                 .OrderByDescending(q => q.Score)
-                //.ThenByDescending(q=>q.NumberOfContributions)
                 .ToArray();
         }
 
@@ -129,8 +128,6 @@ namespace RelationalGit.Recommendation
 
             if (ShouldReplaceReviewer(pullRequestContext, strategies))
             {
-                //result.Add((pullRequestContext.ActualReviewers, null));
-
                 var selectedCandidatesLength = GetSelectedCandidatesLength(pullRequestContext, strategies, "replace");
                 var numberOfReplacements = Math.Min(availableDevs.Length, selectedCandidatesLength);
                 numberOfReplacements = Math.Min(actualReviewersLength, numberOfReplacements);

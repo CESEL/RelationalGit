@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using RelationalGit.Data;
 using RelationalGit.Simulation;
 using System;
 
 namespace RelationalGit.Recommendation
 {
-    public class ActualKnowledgeShareStrategy : KnowledgeShareStrategy
+    public class RealityRecommendationStrategy : RecommendationStrategy
     {
-        public ActualKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, bool changePast)
+        public RealityRecommendationStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, bool changePast)
             : base(knowledgeSaveReviewerReplacementType, logger, changePast)
         {
         }

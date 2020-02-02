@@ -1,19 +1,18 @@
 ﻿using Microsoft.Extensions.Logging;
 using RelationalGit.Simulation;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace RelationalGit.Recommendation
 {
-    public class PersistSpreadingBasedSpreadingKnowledgeShareStrategy : ScoreBasedSpreadingKnowledgeShareStrategy
+    public class TurnoverRecRecommendationStrategy : ScoreBasedRecommendationStrategy
     {
         private int? _numberOfPeriodsForCalculatingProbabilityOfStay;
         private double _alpha;
         private double _beta;
         private double _hoarderRatio;
 
-        public PersistSpreadingBasedSpreadingKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, 
+        public TurnoverRecRecommendationStrategy(string knowledgeSaveReviewerReplacementType, 
             ILogger logger, int? numberOfPeriodsForCalculatingProbabilityOfStay, 
             string pullRequestReviewerSelectionStrategy,
             bool? addOnlyToUnsafePullrequests,

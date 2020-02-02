@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace RelationalGit.Recommendation
 {
-    public class ContributionBasedKnowledgeShareStrategy : ScoreBasedSpreadingKnowledgeShareStrategy
+    public class ContributionRecRecommendationStrategy : ScoreBasedRecommendationStrategy
     {
-        public ContributionBasedKnowledgeShareStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, string pullRequestReviewerSelectionStrategy, bool? addOnlyToUnsafePullrequests, string recommenderOption, bool changePast)
+        public ContributionRecRecommendationStrategy(string knowledgeSaveReviewerReplacementType, ILogger logger, string pullRequestReviewerSelectionStrategy, bool? addOnlyToUnsafePullrequests, string recommenderOption, bool changePast)
             : base(knowledgeSaveReviewerReplacementType, logger, pullRequestReviewerSelectionStrategy, addOnlyToUnsafePullrequests,recommenderOption, changePast)
         {
         }

@@ -1,10 +1,4 @@
-﻿using CsvHelper;
-using MathNet.Numerics.Statistics;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.IO;
+﻿using System;
 using System.Linq;
 using RelationalGit.Data;
 
@@ -14,20 +8,48 @@ namespace RelationalGit.Calculation
     {
         static void Main(string[] args)
         {
-            var actualId = 38;
-            var simulationsIds = new int[] { 39,40,41,42,43,44,45};
-            var path = @"Results\kubernetes_accuracy";
+            var actualId = 47;
 
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
+            using (var dbContext = GetDbContext())
+            {
+                var simulationsIds = dbContext.LossSimulations.Where(q => q.KnowledgeShareStrategyType == "persist-spreading" || q.KnowledgeShareStrategyType== "TurnoverRec")
+                    .Where(q=>q.EndDateTime>DateTime.MinValue && q.ChangePast)
+                    .Select(q => q.Id).ToArray();
 
-            //CalculateWorkloadRaw(simulationsIds,10,path);
-            //CalculateFaRRaw(simulationsIds, path);
-            //CalculateTotalFaRRaw(simulationsIds, path);
-            //CalculateExpertiseRaw(simulationsIds, path);
+                var path = @"Results\rust-TurnoverRec";
 
+                var analyzer = new Analyzer();
+                analyzer.AnalyzeSimulations(actualId, simulationsIds, path);
+            }
+
+            using (var dbContext = GetDbContext())
+            {
+                var simulationsIds = dbContext.LossSimulations.Where(q => q.KnowledgeShareStrategyType == "bird" || q.KnowledgeShareStrategyType == "cHRev")
+                    .Where(q => q.EndDateTime > DateTime.MinValue && q.ChangePast)
+                    .Select(q => q.Id).ToArray();
+
+                var path = @"Results\roslyn-chrev";
+
+                var analyzer = new Analyzer();
+                analyzer.AnalyzeSimulations(actualId, simulationsIds, path);
+            }
+
+            using (var dbContext = GetDbContext())
+            {
+                var simulationsIds = dbContext.LossSimulations.Where(q => q.KnowledgeShareStrategyType == "sophia" || q.KnowledgeShareStrategyType == "Sofia")
+                    .Where(q => q.EndDateTime > DateTime.MinValue && q.ChangePast)
+                    .Select(q => q.Id).ToArray();
+
+                var path = @"Results\roslyn-sophia";
+
+                var analyzer = new Analyzer();
+                analyzer.AnalyzeSimulations(actualId, simulationsIds, path);
+            }
         }
 
-
+        private static GitRepositoryDbContext GetDbContext()
+        {
+            return new GitRepositoryDbContext(autoDetectChangesEnabled: false);
+        }
     }
 }

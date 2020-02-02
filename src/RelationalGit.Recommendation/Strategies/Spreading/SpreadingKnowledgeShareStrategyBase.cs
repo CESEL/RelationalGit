@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace RelationalGit.Recommendation
 {
-    public abstract class SpreadingKnowledgeShareStrategyBase : KnowledgeShareStrategy
+    public abstract class SpreadingKnowledgeShareStrategyBase : RecommendationStrategy
     {
         public SpreadingKnowledgeShareStrategyBase(string knowledgeSaveReviewerReplacementType, ILogger logger,bool changePast)
             : base(knowledgeSaveReviewerReplacementType, logger,changePast)

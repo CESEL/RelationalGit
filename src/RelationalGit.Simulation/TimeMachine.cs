@@ -50,7 +50,7 @@ namespace RelationalGit.Simulation
 
         private readonly ILogger _logger;
 
-        private readonly KnowledgeShareStrategy KnowledgeShareStrategy;
+        private readonly RecommendationStrategy KnowledgeShareStrategy;
         private int _firstSimulationPeriod;
         private string _selectedReviewersType;
         private int _minimumActualReviewersLength;
@@ -62,7 +62,7 @@ namespace RelationalGit.Simulation
 
         #endregion
 
-        public TimeMachine(KnowledgeShareStrategy knowledgeShareStrategy, ILogger logger)
+        public TimeMachine(RecommendationStrategy knowledgeShareStrategy, ILogger logger)
         {
             _logger = logger;
             KnowledgeShareStrategy = knowledgeShareStrategy;
