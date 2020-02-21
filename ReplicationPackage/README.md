@@ -6,7 +6,9 @@
 
 ## Preparation 
 
-1) Restore the [backup of data](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv) into MS Sql Server. For each studied project there is a separate database. 
+1) Restore the backup of the data into MS Sql Server. For each studied project there is a separate database. 
+a) You can use the [DOI](https://doi.org/10.5281/zenodo.3678551)
+b) You can select individual files from the [googledrive backup](https://drive.google.com/drive/folders/1nc7Hu7kbPpavYrCMmCU5SEBlLlZTo5Fv)
 2) Copy the **configuration files** and **simulation.ps1** which are provided in the [replication package](https://github.com/CESEL/RelationalGit/tree/master/ReplicationPackage).
 3) Open and modify each configuration file to set the connection string. You need to provide the server address along with the credentials. Following snippet shows a sample of how connection string should be set.
 
