@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="8.1.1" />
+    <PackageReference Include="AutoMapper" Version="15.1.1" />
     <PackageReference Include="CommandLineParser" Version="2.5.0" />
     <PackageReference Include="Diacritics" Version="2.0.18316.1" />
     <PackageReference Include="EFCore.BulkExtensions" Version="2.5.1" />
